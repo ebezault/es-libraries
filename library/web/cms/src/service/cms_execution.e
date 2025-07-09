@@ -55,6 +55,11 @@ feature {NONE} -- Initialization
 			elseif attached api.storage.error_handler.as_single_error as err then
 				response.put_error ("ROC: Error during Storage initialization!")
 				response.put_error (api.utf_8_encoded (err.string_representation))
+				debug
+					if attached api.setup.storage_configuration as l_storage_config then
+						response.put_error ("ROC: storage -> " + api.utf_8_encoded (l_storage_config.connection_string))
+					end
+				end
 			end
 			modules := api.enabled_modules
 
@@ -173,7 +178,6 @@ feature -- Settings: router
 			l_router := router
 
 				-- Configure root of api handler.
---			l_router.set_base_url (l_api.webapi_path (Void))
 			l_router.set_base_url (l_api.webapi_base_url)
 
 				-- Find insertion location for new filter
@@ -227,7 +231,6 @@ feature -- Settings: router
 			l_router := router
 
 				-- Configure root of api handler.
---			l_router.set_base_url (l_api.administration_path (Void))
 			l_router.set_base_url (l_api.administration_base_url)
 
 				-- Apply normal filters
@@ -325,6 +328,8 @@ feature -- Settings: router
 				fhdl.set_access_control_allow_origin (l_allow_all_origin)
 			end
 			fhdl.disable_index
+--			fhdl.enable_directory_index
+			fhdl.set_directory_index (<<"index.html">>)
 			fhdl.set_not_found_handler (l_not_found_handler_agent)
 			a_router.handle ("/", fhdl, router.methods_GET)
 		end
