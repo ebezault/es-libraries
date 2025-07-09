@@ -754,6 +754,10 @@ feature -- Change Temp User
 			then
 				user_storage.new_user_from_temp_user (a_temp_user)
 				error_handler.append (user_storage.error_handler)
+				if attached user_storage.user_by_email (l_email) as u then
+					cms_api.log ("users", "New user " + utf_8_encoded (cms_api.real_user_display_name (u)), {CMS_LOG}.level_info, cms_api.user_local_link (u, Void))
+					cms_api.hooks.invoke_new_user (u)
+				end
 			else
 				error_handler.add_custom_error (0, "bad new user request", "Missing password or email to create new user!")
 			end
@@ -822,6 +826,6 @@ feature -- Change Temp User
 --		end
 
 note
-	copyright: "2011-2023, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
