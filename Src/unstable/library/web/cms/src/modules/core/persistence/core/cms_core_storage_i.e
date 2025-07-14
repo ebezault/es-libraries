@@ -68,7 +68,7 @@ feature -- Emails
 
 	save_mail (a_mail: CMS_EMAIL)
 		require
-			not a_mail.has_id
+			a_mail.has_id
 		deferred
 		end
 
@@ -99,6 +99,6 @@ feature -- Misc
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

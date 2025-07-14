@@ -62,6 +62,7 @@ feature -- Token Generation
 			l_user_api: CMS_USER_API
 			l_temp_id: INTEGER_64
 			es: CMS_AUTHENTICATION_EMAIL_SERVICE
+			l_new_user: CMS_USER
 		do
 			l_temp_id := a_temp_user.id
 
@@ -69,11 +70,16 @@ feature -- Token Generation
 			a_temp_user.set_id (0)
 			a_temp_user.mark_active
 			l_user_api := cms_api.user_api
-			l_user_api.new_user_from_temp_user (a_temp_user)
-
+			l_new_user := l_user_api.user_by_name (a_temp_user.name)
+			if l_new_user /= Void then
+					-- Already activated ... maybe corrupted db
+			else
+				l_user_api.new_user_from_temp_user (a_temp_user)
+				l_new_user := l_user_api.user_by_name (a_temp_user.name)
+			end
 			if
 				not l_user_api.has_error and then
-				attached l_user_api.user_by_name (a_temp_user.name) as l_new_user
+				l_new_user /= Void
 			then
 				if attached a_temp_user.personal_information as l_perso_info then
 						-- Keep personal information in profile item!
