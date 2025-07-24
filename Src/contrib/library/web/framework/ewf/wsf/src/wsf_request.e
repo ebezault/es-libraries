@@ -1850,8 +1850,10 @@ feature -- URL Utility
 			-- Server url, as http://example.com:8080
 		local
 			s: like internal_server_url
-			p: like server_port
+			fwd_p, p: like server_port
 			l_is_fwd: BOOLEAN
+			idx: INTEGER
+			l_port_set: BOOLEAN
 		do
 			s := internal_server_url
 			if s = Void then
@@ -1865,6 +1867,11 @@ feature -- URL Utility
 					l_is_fwd and then
 					attached meta_string_variable ("HTTP_X_FORWARDED_HOST") as l_fwd_host
 				then
+					idx := l_fwd_host.last_index_of (':', l_fwd_host.count)
+					if idx > 0 then
+						l_port_set := True
+						p := l_fwd_host.substring (idx + 1, l_fwd_host.count).to_integer
+					end
 					s.append ({UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (l_fwd_host))
 				else
 					s.append (server_name)
@@ -1872,17 +1879,29 @@ feature -- URL Utility
 				p := server_port
 				if l_is_fwd then
 					if attached meta_string_variable ("HTTP_X_FORWARDED_PORT") as l_fwd_port and then l_fwd_port.is_integer then
-						p := l_fwd_port.to_integer
-					elseif l_is_fwd and is_https then
+						fwd_p := l_fwd_port.to_integer
+						if l_port_set then
+							if fwd_p /= p then
+								s.replace_substring_all (":" + p.out, ":" + fwd_p.out)
+							end
+						end
+						p := fwd_p
+					elseif not l_port_set and is_https then
 						p := 443 -- If ever HTTP_X_FORWARDED_PORT is missing
 					end
 				end
 				if p > 0 then
 					if is_https and p = 443 then
 							-- :443 is default for https, so no need to put it
+						if l_port_set then
+							s.remove_substring (idx, s.count)
+						end
 					elseif not is_https and p = 80 then
 							-- :80 is default for http, so no need to put it
-					else
+						if l_port_set then
+							s.remove_substring (idx, s.count)
+						end
+					elseif not l_port_set then
 						s.append_character (':')
 						s.append_integer (p)
 					end
