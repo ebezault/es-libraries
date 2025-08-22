@@ -30,12 +30,12 @@ feature -- Execution
 	process
 			-- Computed response message.
 		do
-			set_title ("Not Found")
-			set_page_title ("Not Found")
-			set_main_content ("<em>The requested page %"" + html_encoded (request.request_uri) + "%" could not be found.</em>")
+			set_title_if_empty ("Not Found")
+			set_page_title_if_empty ("Not Found")
+			set_main_content_if_empty ("<em>The requested page %"" + html_encoded (request.request_uri) + "%" could not be found.</em>")
 		end
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
 

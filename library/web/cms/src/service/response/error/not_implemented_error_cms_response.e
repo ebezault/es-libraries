@@ -32,16 +32,15 @@ feature -- Execution
 		local
 			s: STRING
 		do
-			set_title ("Not Implemented")
+			set_title_if_empty ("Not Implemented")
 			set_page_title (Void)
-			if main_content = Void then
-				create s.make_from_string (html_encoded (request.percent_encoded_path_info))
-				s.append (" is not implemented!")
-				set_main_content (s)
-			end
+			create s.make_from_string (html_encoded (request.percent_encoded_path_info))
+			s.append (" is not implemented!")
+			set_main_content_if_empty (s)
 		end
+
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
 

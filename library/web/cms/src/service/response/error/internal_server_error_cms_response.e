@@ -30,12 +30,12 @@ feature -- Execution
 	process
 			-- Computed response message.
 		do
-			set_title ("Internal Server Error")
+			set_title_if_empty ("Internal Server Error")
 			set_page_title (Void)
-			set_main_content ("<em>Internal Server Error</em>")
+			set_main_content_if_empty ("<em>Internal Server Error</em>")
 		end
 note
-	copyright: "2011-2017, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
 
