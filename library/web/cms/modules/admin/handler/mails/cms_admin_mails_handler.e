@@ -79,6 +79,9 @@ feature -- Execution
 		end
 
 	append_cms_email_info_to (a_index: INTEGER; e: CMS_EMAIL; a_html: STRING_8)
+		local
+			ft: HTML_SOURCE_CONTENT_FORMAT
+			is_notif: BOOLEAN
 		do
 			if e.is_sent then
 				a_html.append ("<div class=%"message success%">")
@@ -87,14 +90,69 @@ feature -- Execution
 			end
 			a_html.append ("<span class=%"index%">" + a_index.out + "</span> ")
 			if attached e.to_user as u then
-				a_html.append (" <strong>User:</strong> ")
+				a_html.append (" <strong>user:</strong> ")
 				a_html.append (api.user_html_administration_link (u))
 			end
-			a_html.append (" <span class=%"date%"><strong>Date:</strong> " + api.formatted_date_time_ago (e.date))
+			a_html.append (" <span class=%"date%"><strong>date:</strong> " + api.formatted_date_time_ago (e.date))
 			a_html.append (" (" + api.date_time_to_iso8601_string (e.date) + ")</span>")
 			a_html.append ("<br/>")
-			a_html.append (" <strong>Subject:</strong> " + e.subject)
-			a_html.append (" <strong>Content:</strong>%N<pre>" + e.content + "</pre>%N")
+
+			if not e.from_address.same_string (api.setup.site_email) then
+				a_html.append (" <span class=%"address%"><strong>from:</strong> ")
+				a_html.append (html_encoded (e.from_address))
+				a_html.append ("</span>")
+				a_html.append ("<br/>")
+			end
+
+			across
+				e.to_addresses as ic
+			loop
+				if ic.item.has_substring (api.setup.site_notification_email) then
+					is_notif := True
+				else
+					is_notif := False
+				end
+				a_html.append (" <span class=%"address ")
+				if is_notif then
+					a_html.append (" notification")
+				end
+				a_html.append ("%"><strong>to:</strong> ")
+				a_html.append (html_encoded (ic.item))
+				a_html.append ("</span>")
+				a_html.append ("<br/>")
+			end
+			if attached e.cc_addresses as l_cc_addresses then
+				across
+					l_cc_addresses as ic
+				loop
+					is_notif := False
+					a_html.append (" <span class=%"address%"><strong>cc:</strong> ")
+					a_html.append (html_encoded (ic.item))
+					a_html.append ("</span>")
+					a_html.append ("<br/>")
+				end
+			end
+			if attached e.bcc_addresses as l_bcc_addresses then
+				across
+					l_bcc_addresses as ic
+				loop
+					is_notif := False
+					a_html.append (" <span class=%"address%"><strong>bcc:</strong> ")
+					a_html.append (html_encoded (ic.item))
+					a_html.append ("</span>")
+					a_html.append ("<br/>")
+				end
+			end
+			a_html.append (" <strong")
+			if is_notif then
+				a_html.append (" class=%"notification%"")
+			end
+			a_html.append (">subject:</strong> " + e.subject)
+
+			a_html.append ("<blockquote><pre>")
+			create ft
+			ft.append_formatted_to (e.content, a_html)
+			a_html.append ("</pre></blockquote>%N")
 			a_html.append ("</div>%N")
 			a_html.append ("<hr/>%N")
 		end
