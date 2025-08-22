@@ -87,11 +87,11 @@ feature -- Access
 		do
 			Result := Precursor
 			Result.force (perm_account_register)
-			Result.force ("account auto activate")
+			Result.force (perm_account_auto_activate)
 			Result.force (perm_view_own_account)
 			Result.force (perm_edit_own_account)
-			Result.force ("change own username")
-			Result.force ("change own password")
+			Result.force (perm_change_own_username)
+			Result.force (perm_change_own_password)
 			Result.force (perm_view_users)
 		end
 
@@ -99,10 +99,14 @@ feature -- Access
 
 	perm_view_own_account: STRING = "view own account"
 	perm_edit_own_account: STRING = "edit own account"
+	perm_change_own_username: STRING = "change own username"
+	perm_change_own_password: STRING = "change own password"
 
 	perm_view_users: STRING = "view users"
 
+
 	perm_account_register: STRING = "account register"
+	perm_account_auto_activate: STRING = "account auto activate"
 
 feature {CMS_EXECUTION} -- Administration
 
@@ -389,7 +393,7 @@ feature -- Handler
 				r.add_to_primary_tabs (lnk)
 
 				if
-					r.has_permission ("change own username") and then
+					r.has_permission (perm_change_own_username) and then
 					attached new_change_username_form (r) as f
 				then
 					f.append_to_html (r.wsf_theme, b)
@@ -399,7 +403,7 @@ feature -- Handler
 				end
 
 				if
-					r.has_permission ("change own password") and then
+					r.has_permission (perm_change_own_password) and then
 					attached new_change_password_form (r) as f
 				then
 					f.append_to_html (r.wsf_theme, b)
@@ -471,7 +475,7 @@ feature -- Handler
 			l_captcha_passed: BOOLEAN
 			l_email: READABLE_STRING_8
 		do
-			if a_auth_api.cms_api.has_permission ("account register") then
+			if a_auth_api.cms_api.has_permission (perm_account_register) then
 				create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
 				if req.is_post_request_method then
 					create f.make (req.percent_encoded_path_info, register_account_form_id)
@@ -714,7 +718,7 @@ feature -- Handler
 								r.set_main_content (f.to_html (r.wsf_theme))
 							end
 						elseif l_fieldname.is_case_insensitive_equal ("username") then
-							if a_auth_api.cms_api.has_permission ("change own username") then
+							if a_auth_api.cms_api.has_permission (perm_change_own_username) then
 								f := new_change_username_form (r)
 								f.process (r)
 								if
@@ -749,7 +753,7 @@ feature -- Handler
 						f := new_change_email_form (r)
 						f.append_to_html (r.wsf_theme, b)
 					elseif l_fieldname.is_case_insensitive_equal_general ("new_username") then
-						if a_auth_api.cms_api.has_permission ("change own username") then
+						if a_auth_api.cms_api.has_permission (perm_change_own_username) then
 							f := new_change_username_form (r)
 							f.append_to_html (r.wsf_theme, b)
 						end
@@ -905,7 +909,7 @@ feature {NONE} -- Block views
 
 	get_block_view_register (a_block_id: READABLE_STRING_8; a_response: CMS_RESPONSE)
 		do
-			if a_response.has_permission ("account register") then
+			if a_response.has_permission (perm_account_register) then
 				if
 					a_response.request.is_get_request_method
 					or else (
