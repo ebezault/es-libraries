@@ -129,9 +129,9 @@ feature -- Hooks
 		do
 			if attached cms_api.hooks.subscribers ({CMS_HOOK_AUTHENTICATION}) as lst then
 				across
-					lst as ic
+					lst as i
 				loop
-					if attached {CMS_HOOK_AUTHENTICATION} ic.item as h then
+					if attached {CMS_HOOK_AUTHENTICATION} i as h then
 						h.get_login_redirection (a_response, a_destination_url)
 					end
 				end

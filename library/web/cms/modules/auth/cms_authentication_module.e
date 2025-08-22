@@ -1171,8 +1171,8 @@ feature {NONE} -- Implementation
 			then
 				create l_errors.make_empty
 				l_errors.append_character ('%N')
-				across l_api_errors as ic loop
-					l_errors.append (ic.item)
+				across l_api_errors as err loop
+					l_errors.append (err)
 					l_errors.append_character ('%N')
 				end
 			end
