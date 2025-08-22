@@ -25,6 +25,12 @@ feature -- Access
 	api: detachable CMS_API assign set_api
 			-- Associated CMS API.
 
+	description: STRING_32
+			-- Description of Current storage
+		do
+			Result := generator
+		end
+
 feature -- Conversion
 
 	as_sql_storage: detachable CMS_STORAGE_SQL_I
@@ -76,6 +82,6 @@ feature -- Element change
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
