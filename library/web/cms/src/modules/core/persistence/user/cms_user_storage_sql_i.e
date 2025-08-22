@@ -1278,11 +1278,13 @@ feature {NONE} -- Implementation: User
 				if attached sql_read_string (6) as l_application then
 					Result.set_personal_information (l_application)
 				end
+				if attached sql_read_date_time (8) as l_creation_date then
+					Result.set_creation_date (l_creation_date)
+				end
 			else
 				check expected_valid_user: False end
 			end
 		end
-
 
 feature -- New Temp User
 
@@ -1425,19 +1427,19 @@ feature {NONE} -- SQL select
 	sql_last_insert_temp_user_id: STRING = "SELECT MAX(uid) FROM auth_temp_users;"
 
 
-	select_user_auth_temp_by_id: STRING = "SELECT uid, name, password, salt, email, application FROM auth_temp_users as u WHERE uid=:uid;"
+	select_user_auth_temp_by_id: STRING = "SELECT u.uid, u.name, u.password, u.salt, u.email, u.application, ua.token, ua.created FROM auth_temp_users as u JOIN users_activations as ua ON ua.uid = u.uid WHERE u.uid = :uid;"
 
 
 	sql_insert_temp_user: STRING = "INSERT INTO auth_temp_users (name, password, salt, email, application) VALUES (:name, :password, :salt, :email, :application);"
 			-- SQL Insert to add a new user.
 
-	select_temp_user_by_name: STRING = "SELECT uid, name, password, salt, email, application FROM auth_temp_users WHERE name =:name;"
+	select_temp_user_by_name: STRING = "SELECT u.uid, u.name, u.password, u.salt, u.email, u.application, ua.token, ua.created FROM auth_temp_users as u JOIN users_activations as ua ON ua.uid = u.uid WHERE u.name = :name;"
 			-- Retrieve user by name if exists.
 
-	select_temp_user_by_email: STRING = "SELECT uid, name, password, salt, email, application FROM auth_temp_users WHERE email =:email;"
+	select_temp_user_by_email: STRING = "SELECT u.uid, u.name, u.password, u.salt, u.email, u.application, ua.token, ua.created FROM auth_temp_users as u JOIN users_activations as ua ON ua.uid = u.uid WHERE u.email = :email;"
 			-- Retrieve user by email if exists.
 
-	select_temp_user_by_activation_token: STRING = "SELECT u.uid, u.name, u.password, u.salt, u.email, u.application FROM auth_temp_users as u JOIN users_activations as ua ON ua.uid = u.uid and ua.token = :token;"
+	select_temp_user_by_activation_token: STRING = "SELECT u.uid, u.name, u.password, u.salt, u.email, u.application, ua.token, ua.created FROM auth_temp_users as u JOIN users_activations as ua ON ua.uid = u.uid WHERE ua.token = :token;"
 			-- Retrieve user by activation token if exist.
 
 	select_temp_user_salt_by_username: STRING = "SELECT salt FROM auth_temp_users WHERE name =:name;"
@@ -1448,13 +1450,13 @@ feature {NONE} -- SQL select
 	select_temp_users_count: STRING = "SELECT count(*) FROM auth_temp_users;"
 			-- Number of temporal users.			
 
-	sql_select_temp_recent_users: STRING = "SELECT uid, name, password, salt, email, application FROM auth_temp_users ORDER BY uid DESC LIMIT :rows OFFSET :offset ;"
+	sql_select_temp_recent_users: STRING = "SELECT u.uid, u.name, u.password, u.salt, u.email, u.application, ua.token, ua.created FROM auth_temp_users as u JOIN users_activations as ua ON ua.uid = u.uid ORDER BY u.uid DESC LIMIT :rows OFFSET :offset ;"
 			-- Retrieve recent users
 
 	select_token_activation_by_user_id: STRING = "SELECT token FROM users_activations WHERE uid = :uid;"
 
 
 note
-	copyright: "2011-2023, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
