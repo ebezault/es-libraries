@@ -639,10 +639,7 @@ feature -- Handler
 		local
 			r: CMS_RESPONSE
 			l_user_api: CMS_USER_API
-			f: CMS_FORM
 			l_token: detachable READABLE_STRING_8
-			b: STRING
-			lnk: CMS_LOCAL_LINK
 		do
 			if attached {WSF_STRING} req.path_parameter ("token") as p_token then
 				l_token := p_token.url_encoded_value
