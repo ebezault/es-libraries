@@ -53,6 +53,38 @@ feature -- Test routines
 
 		end
 
+	test_url_content_filter
+		local
+			html: HTML_CONTENT_FILTER
+			f: URL_CONTENT_FILTER
+			text: STRING
+			expected_text: STRING
+		do
+			text := "Hello %"Eiffel%",%NPlease visit https://example.com/foo/bar/ or https://localhost:9090/foo/bar/?local=yes ."
+			expected_text := "Hello %"Eiffel%",%NPlease visit <a href=%"https://example.com/foo/bar/%">https://example.com/foo/bar/</a> or <a href=%"https://localhost:9090/foo/bar/?local=yes%">https://localhost:9090/foo/bar/?local=yes</a> ."
+			create f
+			f.filter (text)
+			assert ("expected no html filtered text", text.same_string (expected_text))
+
+			text := "Hello <strong>%"Eiffel%"</strong>,%NPlease visit <ul><li>https://example.com/foo/bar/</li>%N<li>or https://localhost:9090/foo/bar/?local=yes</li></ul> ."
+			expected_text := "Hello <strong>%"Eiffel%"</strong>,%NPlease visit <ul><li><a href=%"https://example.com/foo/bar/%">https://example.com/foo/bar/</a></li>%N<li>or <a href=%"https://localhost:9090/foo/bar/?local=yes%">https://localhost:9090/foo/bar/?local=yes</a></li></ul> ."
+			create f
+			f.filter (text)
+			assert ("expected no html filtered text", text.same_string (expected_text))
+
+			text := "Hello <strong>%"Eiffel%"</strong>,%NPlease visit <ul><li>https://example.com/foo/bar/</li>%N<li>or https://localhost:9090/foo/bar/?local=yes</li></ul>.%NBack to <a href=%"https://eiffel.com/%">https://eiffel.com</a>"
+			expected_text := "Hello &lt;strong&gt;&quot;Eiffel&quot;&lt;/strong&gt;,%NPlease visit &lt;ul&gt;&lt;li&gt;<a href=%"https://example.com/foo/bar/%">https://example.com/foo/bar/</a>&lt;/li&gt;%N&lt;li&gt;or <a href=%"https://localhost:9090/foo/bar/?local=yes%">https://localhost:9090/foo/bar/?local=yes</a>&lt;/li&gt;&lt;/ul&gt;.%NBack to &lt;a href=&quot;<a href=%"https://eiffel.com/%">https://eiffel.com/</a>&quot;&gt;<a href=%"https://eiffel.com%">https://eiffel.com</a>&lt;/a&gt;"
+			create html
+			html.filter (text)
+			text.replace_substring_all ("&", "&amp;")
+			text.replace_substring_all ("%"", "&quot;")
+			text.replace_substring_all ("<", "&lt;")
+			text.replace_substring_all (">", "&gt;")
+			create f
+			f.filter (text)
+			assert ("expected no html filtered text", text.same_string (expected_text))
+		end
+
 end
 
 
