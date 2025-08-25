@@ -87,11 +87,11 @@ feature -- Access
 		do
 			Result := Precursor
 			Result.force (perm_account_register)
-			Result.force ("account auto activate")
+			Result.force (perm_account_auto_activate)
 			Result.force (perm_view_own_account)
 			Result.force (perm_edit_own_account)
-			Result.force ("change own username")
-			Result.force ("change own password")
+			Result.force (perm_change_own_username)
+			Result.force (perm_change_own_password)
 			Result.force (perm_view_users)
 		end
 
@@ -99,10 +99,14 @@ feature -- Access
 
 	perm_view_own_account: STRING = "view own account"
 	perm_edit_own_account: STRING = "edit own account"
+	perm_change_own_username: STRING = "change own username"
+	perm_change_own_password: STRING = "change own password"
 
 	perm_view_users: STRING = "view users"
 
+
 	perm_account_register: STRING = "account register"
+	perm_account_auto_activate: STRING = "account auto activate"
 
 feature {CMS_EXECUTION} -- Administration
 
@@ -175,6 +179,8 @@ feature -- Router
 			a_router.handle ("/" + roc_new_password_location, create {WSF_URI_AGENT_HANDLER}.make (agent handle_new_password(a_api, ?, ?)), a_router.methods_get_post)
 			a_router.handle ("/" + roc_reset_password_location, create {WSF_URI_AGENT_HANDLER}.make (agent handle_reset_password(a_api, ?, ?)), a_router.methods_get_post)
 			a_router.handle ("/" + roc_account_location + "/change/{field}", create {WSF_URI_TEMPLATE_AGENT_HANDLER}.make (agent handle_change_field (a_api, ?, ?)), a_router.methods_get_post)
+
+			a_router.handle ("/" + roc_account_location + "/confirm-email/{token}", create {WSF_URI_TEMPLATE_AGENT_HANDLER}.make (agent handle_confirm_account_email (a_api, ?, ?)), a_router.methods_get)
 		end
 
 feature -- Hooks configuration
@@ -389,7 +395,7 @@ feature -- Handler
 				r.add_to_primary_tabs (lnk)
 
 				if
-					r.has_permission ("change own username") and then
+					r.has_permission (perm_change_own_username) and then
 					attached new_change_username_form (r) as f
 				then
 					f.append_to_html (r.wsf_theme, b)
@@ -399,7 +405,7 @@ feature -- Handler
 				end
 
 				if
-					r.has_permission ("change own password") and then
+					r.has_permission (perm_change_own_password) and then
 					attached new_change_password_form (r) as f
 				then
 					f.append_to_html (r.wsf_theme, b)
@@ -471,7 +477,7 @@ feature -- Handler
 			l_captcha_passed: BOOLEAN
 			l_email: READABLE_STRING_8
 		do
-			if a_auth_api.cms_api.has_permission ("account register") then
+			if a_auth_api.cms_api.has_permission (perm_account_register) then
 				create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
 				if req.is_post_request_method then
 					create f.make (req.percent_encoded_path_info, register_account_form_id)
@@ -629,6 +635,46 @@ feature -- Handler
 			r.execute
 		end
 
+	handle_confirm_account_email (a_auth_api: CMS_AUTHENTICATION_API; req: WSF_REQUEST; res: WSF_RESPONSE)
+		local
+			r: CMS_RESPONSE
+			l_user_api: CMS_USER_API
+			l_token: detachable READABLE_STRING_8
+		do
+			if attached {WSF_STRING} req.path_parameter ("token") as p_token then
+				l_token := p_token.url_encoded_value
+			end
+			if l_token = Void then
+				a_auth_api.cms_api.response_api.send_bad_request ("Missing required token value", req, res)
+			elseif a_auth_api.cms_api.has_permission (perm_account_auto_activate) then
+				l_user_api := a_auth_api.cms_api.user_api
+
+				if attached {CMS_TEMP_USER} l_user_api.temp_user_by_activation_token (l_token) as l_temp_user then
+					create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
+					a_auth_api.activate_user (l_temp_user, l_token)
+					if
+						not a_auth_api.has_error and then
+						attached l_user_api.user_by_name (l_temp_user.name) as l_new_user
+					then
+						r.set_main_content ("<p> Thank you for confirming the email address, the account <i>" + a_auth_api.cms_api.user_html_link (l_new_user) + "</i> is now active.</p>")
+					else
+							-- Failure!!!
+						r.set_status_code ({HTTP_CONSTANTS}.internal_server_error)
+						r.set_main_content ("<p>ERROR: User activation failed for <i>" + html_encoded (l_temp_user.name) + "</i>!</p>")
+						if attached l_user_api.error_handler.as_single_error as err then
+							r.add_error_message (html_encoded (err.string_representation))
+						end
+					end
+					r.execute
+				else
+						-- the token does not exist, or it was already used.
+					a_auth_api.cms_api.response_api.send_bad_request ("<p>The activation token <i>" + html_encoded (l_token) + "</i> is not valid!</p>", req, res)
+				end
+			else
+				a_auth_api.cms_api.response_api.send_access_denied (Void, req, res)
+			end
+		end
+
 	handle_change_field (a_auth_api: CMS_AUTHENTICATION_API; req: WSF_REQUEST; res: WSF_RESPONSE)
 		local
 			r: CMS_RESPONSE
@@ -714,7 +760,7 @@ feature -- Handler
 								r.set_main_content (f.to_html (r.wsf_theme))
 							end
 						elseif l_fieldname.is_case_insensitive_equal ("username") then
-							if a_auth_api.cms_api.has_permission ("change own username") then
+							if a_auth_api.cms_api.has_permission (perm_change_own_username) then
 								f := new_change_username_form (r)
 								f.process (r)
 								if
@@ -749,7 +795,7 @@ feature -- Handler
 						f := new_change_email_form (r)
 						f.append_to_html (r.wsf_theme, b)
 					elseif l_fieldname.is_case_insensitive_equal_general ("new_username") then
-						if a_auth_api.cms_api.has_permission ("change own username") then
+						if a_auth_api.cms_api.has_permission (perm_change_own_username) then
 							f := new_change_username_form (r)
 							f.append_to_html (r.wsf_theme, b)
 						end
@@ -905,7 +951,7 @@ feature {NONE} -- Block views
 
 	get_block_view_register (a_block_id: READABLE_STRING_8; a_response: CMS_RESPONSE)
 		do
-			if a_response.has_permission ("account register") then
+			if a_response.has_permission (perm_account_register) then
 				if
 					a_response.request.is_get_request_method
 					or else (
@@ -1167,8 +1213,8 @@ feature {NONE} -- Implementation
 			then
 				create l_errors.make_empty
 				l_errors.append_character ('%N')
-				across l_api_errors as ic loop
-					l_errors.append (ic.item)
+				across l_api_errors as err loop
+					l_errors.append (err)
 					l_errors.append_character ('%N')
 				end
 			end

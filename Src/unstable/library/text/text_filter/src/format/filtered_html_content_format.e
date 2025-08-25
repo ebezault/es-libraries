@@ -20,7 +20,8 @@ feature {NONE} -- Initialization
 		do
 			Precursor
 			create filters.make (3)
-			filters.force (create {URL_CONTENT_FILTER})
+				-- TODO: Check if URL_CONTENT_FILTER is wanted:
+--			filters.force (create {URL_CONTENT_FILTER})
 			filters.force (create {HTML_CONTENT_FILTER})
 			filters.force (create {LINE_BREAK_TO_HTML_CONTENT_FILTER})
 

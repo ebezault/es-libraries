@@ -8,7 +8,8 @@ class
 inherit
 	CMS_STORAGE_SQL
 		redefine
-			sql_read_string_32
+			sql_read_string_32,
+			description
 		end
 
 	CMS_CORE_STORAGE_SQL_I
@@ -38,6 +39,15 @@ feature {NONE} -- Initialization
 
 	sqlite: SQLITE_DATABASE
 			-- Associated SQLite database.
+
+feature -- Access
+
+	description: STRING_32
+		do
+			create Result.make_from_string (Precursor)
+			Result.append_string_general (" location=")
+			Result.append (sqlite.source.locator)
+		end
 
 feature -- Status report
 

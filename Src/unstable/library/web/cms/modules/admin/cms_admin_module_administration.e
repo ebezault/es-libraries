@@ -30,7 +30,7 @@ feature -- Security
 		do
 			Result := Precursor
 			Result.force (perm_view_system_info)
-			Result.force (perm_access_admin)
+			Result.force ({CMS_ADMIN_MODULE}.perm_access_admin)
 			Result.force (perm_admin_users)
 			Result.force (perm_admin_roles)
 			Result.force (perm_admin_modules)
@@ -50,7 +50,6 @@ feature -- Security
 	perm_admin_modules: STRING = "admin modules"
 	perm_admin_users: STRING = "admin users" -- See {CMS_CORE_MODULE}.perm_admin_users
 	perm_admin_roles: STRING = "admin roles"
-	perm_access_admin: STRING = "access admin"
 	perm_view_logs: STRING = "view logs"
 	perm_view_mails: STRING = "view mails"
 	perm_admin_cleanup: STRING = "admin cleanup"

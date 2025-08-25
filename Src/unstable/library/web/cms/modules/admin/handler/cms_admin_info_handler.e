@@ -22,21 +22,28 @@ feature -- Execution
 		local
 			r: like new_generic_response
 			s: STRING
+			ok: BOOLEAN
+			l_is_full: BOOLEAN
 		do
 			if req.is_get_request_method then
-				if api.has_permission ({CMS_ADMIN_MODULE_ADMINISTRATION}.perm_view_system_info) then
+				ok := api.has_permission ({CMS_ADMIN_MODULE_ADMINISTRATION}.perm_view_system_info)
+					or else has_debug_permission ({CMS_ADMIN_MODULE_ADMINISTRATION}.perm_view_system_info, req)
+				if ok then
 					r := new_generic_response (req, res)
 					create s.make_empty
 					r.set_title ("System Information")
 					r.add_to_primary_tabs (api.administration_link ("Administration", ""))
 					append_system_info_to (s)
 					if attached {WSF_STRING} req.query_parameter ("query") as p_query then
+						l_is_full := p_query.is_case_insensitive_equal ("full")
 						if
-							p_query.is_case_insensitive_equal ("environment")
+							l_is_full
+							or p_query.is_case_insensitive_equal ("environment")
 							or p_query.is_case_insensitive_equal ("env")
 						then
 							append_system_environment_to (s)
-						elseif p_query.is_case_insensitive_equal ("request") then
+						end
+						if l_is_full or p_query.is_case_insensitive_equal ("request") then
 							append_request_info_to (req, s)
 						end
 					end
@@ -49,6 +56,37 @@ feature -- Execution
 				send_bad_request (req, res)
 			end
 		end
+
+feature -- Settings
+
+	has_debug_permission (p: READABLE_STRING_8; req: WSF_REQUEST): BOOLEAN
+			-- Has debug permission?
+			-- Note: see site/config/module/admin/debug.ini
+			--| example:
+			--|   [debug]
+			--|   key=your-debug-private-key
+			--|   app[view system info]=yes
+		do
+			if attached {WSF_STRING} req.query_parameter ("debug") as p_debug then
+				if attached api.module_configuration_by_name ({CMS_ADMIN_MODULE}.name, "debug") as cfg then
+					if
+						attached cfg.utf_8_text_item ("debug.key") as k
+					then
+						if p_debug.same_string (k) then
+							if
+								attached cfg.text_table_item ("app") as tb_app and then
+								attached tb_app [p] as s and then
+								s.same_string ("yes")
+							then
+								Result := True
+							end
+						end
+					end
+				end
+			end
+		end
+
+feature -- Execution		
 
 	append_system_info_to (s: STRING)
 		local
@@ -65,7 +103,7 @@ feature -- Execution
 			end
 			s.append ("<li><strong>Storage:</strong> ")
 			s.append (" -&gt; ")
-			s.append (api.storage.generator)
+			s.append (html_encoded (api.storage.description))
 			s.append ("</li>")
 
 			s.append ("<li><strong>Mailer:</strong> ")

@@ -52,9 +52,12 @@ feature -- Security
 			-- List of permission ids, used by this module, and declared.
 		do
 			Result := Precursor
-			Result.force ("access admin")
-			Result.force ("clear blocks cache")
+			Result.force (perm_access_admin)
+			Result.force (perm_clear_blocks_cache)
 		end
+
+	perm_access_admin: STRING_8 = "access admin"
+	perm_clear_blocks_cache: STRING_8 = "clear blocks cache"
 
 note
 	copyright: "2011-2015, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"

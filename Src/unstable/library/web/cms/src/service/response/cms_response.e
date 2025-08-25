@@ -179,6 +179,24 @@ feature -- Element change
 			set_page_title (t)
 		end
 
+	set_title_if_empty (s: READABLE_STRING_GENERAL)
+		do
+			if not attached title as v or else v.is_whitespace then
+				set_title (s)
+			end
+		end
+
+	set_page_title_if_empty (s: attached like main_content)
+		do
+			if attached page_title as v then
+				if v.is_whitespace or else attached title as t and then t.same_string (v) then
+					set_page_title (s)
+				end
+			else
+				set_page_title (s)
+			end
+		end
+
 	set_head_title (t: detachable READABLE_STRING_GENERAL)
 			-- Set the html head title to `t`
 		do
@@ -225,6 +243,13 @@ feature -- Element change
 	set_main_content (s: like main_content)
 		do
 			main_content := s
+		end
+
+	set_main_content_if_empty (s: attached like main_content)
+		do
+			if not attached main_content as l_content or else l_content.is_whitespace then
+				set_main_content (s)
+			end
 		end
 
 	set_optional_content_type (a_content_type: detachable ANY)
@@ -1276,6 +1301,6 @@ feature {NONE} -- Execution
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

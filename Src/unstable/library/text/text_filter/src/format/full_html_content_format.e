@@ -1,7 +1,7 @@
 note
-	description : "[
-				Full html format
-			]"
+	description: "[
+			Full html format
+		]"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -20,10 +20,12 @@ feature {NONE} -- Initialization
 		do
 			Precursor
 			create filters.make (2)
-			filters.force (create {URL_CONTENT_FILTER})
+				-- TODO: Check if URL_CONTENT_FILTER is wanted:
+--			filters.force (create {URL_CONTENT_FILTER})
+
 			debug ("text_filter")
-						-- Check if this is ok for a full html content.
-				 filters.force (create {LINE_BREAK_TO_HTML_CONTENT_FILTER})
+					-- Check if this is ok for a full html content.
+				filters.force (create {LINE_BREAK_TO_HTML_CONTENT_FILTER})
 			end
 		end
 

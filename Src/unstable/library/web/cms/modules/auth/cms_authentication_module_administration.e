@@ -100,9 +100,9 @@ feature -- Request handling
 				if attached l_user_api.temp_recent_users (create {CMS_DATA_QUERY_PARAMETERS}.make (l_page_helper.current_page_offset, l_page_helper.page_size)) as lst then
 					s.append ("<ul class=%"cms-temp-users%">%N")
 					across
-						lst as ic
+						lst as i
 					loop
-						u := ic.item
+						u := i
 						s.append ("<li class=%"cms_temp_user%">")
 						s.append ("User:" + html_encoded (u.name))
 						s.append ("<ul class=%"cms_temp_user_details%">")
