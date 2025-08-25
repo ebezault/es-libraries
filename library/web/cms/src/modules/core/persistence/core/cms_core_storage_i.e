@@ -93,6 +93,14 @@ feature -- Misc
 		deferred
 		end
 
+	custom_string_8_value (a_name: READABLE_STRING_GENERAL; a_type: detachable READABLE_STRING_8): detachable READABLE_STRING_8
+			-- Data for name `a_name' and type `a_type' (or default if none).
+		do
+			if attached custom_value (a_name, a_type) as v then
+				Result := {UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (v)
+			end
+		end
+
 	custom_values: detachable LIST [TUPLE [name: READABLE_STRING_GENERAL; type: detachable READABLE_STRING_8; value: detachable READABLE_STRING_32]]
 			-- Values as list of [name, type, value].
 		deferred

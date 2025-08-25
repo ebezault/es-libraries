@@ -203,7 +203,6 @@ feature {NONE} -- Initialize
 			l_filters.extend (create {HTML_CONTENT_FILTER})
 			l_filters.extend (create {SECURITY_HTML_CONTENT_FILTER})
 
-
 				-- Initialize built-in formats
 			create formats.make (4)
 		end
@@ -367,7 +366,7 @@ feature {CMS_ACCESS} -- Module management
 			end
 		end
 
- 	installed_module_version (m: CMS_MODULE): detachable READABLE_STRING_32
+ 	installed_module_version (m: CMS_MODULE): detachable READABLE_STRING_8
  		require
  			module_installed: is_module_installed (m)
  		do
@@ -2044,7 +2043,7 @@ invariant
 	attached base_url as inv_base_url implies inv_base_url [inv_base_url.count] /= '/'
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
 

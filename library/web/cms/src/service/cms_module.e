@@ -104,11 +104,11 @@ feature {CMS_API, CMS_MODULE} -- Access: API
 
 feature {CMS_API} -- Module management
 
-	installed_version (api: CMS_API): detachable READABLE_STRING_32
+	installed_version (api: CMS_API): detachable READABLE_STRING_8
 		require
 			is_installed (api)
 		do
-			Result := api.storage.custom_value ("is_installed", "module-" + name)
+			Result := api.storage.custom_string_8_value ("is_installed", "module-" + name)
 		end
 
 	is_installed (api: CMS_API): BOOLEAN
@@ -261,6 +261,6 @@ invariant
 	version_set: not version.is_whitespace
 
 note
-	copyright: "2011-2021, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

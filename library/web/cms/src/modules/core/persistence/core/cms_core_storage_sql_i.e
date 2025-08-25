@@ -720,7 +720,7 @@ feature -- Misc
 			sql_finalize_delete (sql_delete_custom_value)
 		end
 
-	custom_value (a_name: READABLE_STRING_GENERAL; a_type: READABLE_STRING_8): detachable READABLE_STRING_32
+	custom_value (a_name: READABLE_STRING_GENERAL; a_type: detachable READABLE_STRING_8): detachable READABLE_STRING_32
 			-- <Precursor>
 		local
 			l_parameters: STRING_TABLE [detachable ANY]
@@ -785,6 +785,6 @@ feature -- Misc
 
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
