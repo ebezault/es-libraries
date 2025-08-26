@@ -9,7 +9,9 @@ class
 inherit
 	CMS_MODULE
 		redefine
-			permissions
+			permissions,
+			is_installed,
+			installed_version
 		end
 
 	CMS_ADMINISTRABLE
@@ -37,6 +39,18 @@ feature {CMS_EXECUTION} -- Administration
 	administration: CMS_ADMIN_MODULE_ADMINISTRATION
 		do
 			create Result.make (Current)
+		end
+
+feature {CMS_API} -- Module management
+
+	installed_version (api: CMS_API): detachable READABLE_STRING_8
+		do
+			Result := version
+		end
+
+	is_installed (api: CMS_API): BOOLEAN
+		do
+			Result := True
 		end
 
 feature -- Access: router

@@ -721,7 +721,7 @@ feature -- Access - Temp User
 			Result := user_storage.temp_user_by_email (a_email)
 		end
 
-	temp_user_by_activation_token (a_token: READABLE_STRING_32): detachable CMS_TEMP_USER
+	temp_user_by_activation_token (a_token: READABLE_STRING_GENERAL): detachable CMS_TEMP_USER
 			-- User by activation token `a_token'.
 		do
 			Result := user_storage.temp_user_by_activation_token (a_token)

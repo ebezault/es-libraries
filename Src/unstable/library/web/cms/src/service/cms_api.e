@@ -203,7 +203,6 @@ feature {NONE} -- Initialize
 			l_filters.extend (create {HTML_CONTENT_FILTER})
 			l_filters.extend (create {SECURITY_HTML_CONTENT_FILTER})
 
-
 				-- Initialize built-in formats
 			create formats.make (4)
 		end
@@ -232,6 +231,14 @@ feature {NONE} -- Initialize
 
 				save_formats
 			end
+		end
+
+feature -- Access
+
+	version: CMS_VERSION
+			-- Global CMS version
+		once
+			create Result
 		end
 
 feature {CMS_API_ACCESS} -- CMS Formats management
@@ -367,7 +374,7 @@ feature {CMS_ACCESS} -- Module management
 			end
 		end
 
- 	installed_module_version (m: CMS_MODULE): detachable READABLE_STRING_32
+ 	installed_module_version (m: CMS_MODULE): detachable READABLE_STRING_8
  		require
  			module_installed: is_module_installed (m)
  		do
@@ -1359,6 +1366,11 @@ feature -- Permissions system
 
 feature -- Query: module
 
+	is_cms_installed: BOOLEAN
+		do
+			Result := enabled_modules.count > 2  --| Should have at least the required Core and admin modules!
+		end
+
 	is_module_installed (a_module: CMS_MODULE): BOOLEAN
 			-- Is `a_module' installed?
 		do
@@ -2044,7 +2056,7 @@ invariant
 	attached base_url as inv_base_url implies inv_base_url [inv_base_url.count] /= '/'
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
 
