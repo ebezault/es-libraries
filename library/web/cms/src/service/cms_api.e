@@ -233,6 +233,14 @@ feature {NONE} -- Initialize
 			end
 		end
 
+feature -- Access
+
+	version: CMS_VERSION
+			-- Global CMS version
+		once
+			create Result
+		end
+
 feature {CMS_API_ACCESS} -- CMS Formats management
 
 	load_formats
@@ -1357,6 +1365,11 @@ feature -- Permissions system
 		end
 
 feature -- Query: module
+
+	is_cms_installed: BOOLEAN
+		do
+			Result := enabled_modules.count > 2  --| Should have at least the required Core and admin modules!
+		end
 
 	is_module_installed (a_module: CMS_MODULE): BOOLEAN
 			-- Is `a_module' installed?

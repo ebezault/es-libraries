@@ -47,7 +47,7 @@ feature -- HTTP Methods
 			l_denied: BOOLEAN
 			l_is_fresh_installation: BOOLEAN
 		do
-			l_is_fresh_installation := api.enabled_modules.count <= 1 --| Should have at least the required Core module!
+			l_is_fresh_installation := not api.is_cms_installed
 
 				--| FIXME: improve the installer.
 			create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, api)
@@ -145,6 +145,6 @@ feature -- HTTP Methods
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

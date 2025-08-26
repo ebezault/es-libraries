@@ -952,7 +952,7 @@ feature -- Generation
 			l_empty_blocks: detachable ARRAYED_LIST [CMS_BLOCK]
 			l_block_html: STRING
 		do
-			if api.enabled_modules.count <= 1 then
+			if not api.is_cms_installed then
 					-- It is the required CMS_CORE_MODULE!
 				if api.has_storage_error then
 					add_error_message ("Issue with the storage initialization!")
