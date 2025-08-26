@@ -46,7 +46,7 @@ feature -- Access
 		do
 			create Result.make_from_string (Precursor)
 			Result.append_string_general (" location=")
-			Result.append (sqlite.source.locator)
+			Result.append_string_general (sqlite.source.locator)
 		end
 
 feature -- Status report
