@@ -207,7 +207,7 @@ feature {NONE} -- Implementation: routes
 							l_subject := "Your temporary " + utf_8_encoded (api.setup.site_name) + " login magic link" -- + lnk.token
 							create vals.make (4)
 							vals ["site_url"] := api.absolute_url ("", Void)
-							vals ["site_name"] := api.setup.site_name
+							vals ["site_name"] := html_encoded (api.setup.site_name)
 							vals ["lnk"] := lnk.url
 							vals ["token"] := lnk.token
 
