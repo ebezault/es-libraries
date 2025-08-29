@@ -41,12 +41,12 @@ feature -- Access
 			if attached applications as apps and then not apps.is_empty then
 				create Result.make_empty
 				across
-					apps as ic
+					apps as v
 				loop
 					if not Result.is_empty then
 						Result.append_character (',')
 					end
-					Result.append_string_general (ic.item)
+					Result.append_string_general (v)
 				end
 			end
 		end

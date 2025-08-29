@@ -66,12 +66,12 @@ feature -- Access
 			if attached applications as apps and then not apps.is_empty then
 				create Result.make_empty
 				across
-					apps as ic
+					apps as v
 				loop
 					if not Result.is_empty then
 						Result.append_character (',')
 					end
-					Result.append_string_general (ic.item)
+					Result.append_string_general (v)
 				end
 			end
 		end
@@ -181,9 +181,9 @@ feature -- Element change
 			applications := Void
 			if apps /= Void and then not apps.is_empty then
 				across
-					apps as ic
+					apps as v
 				loop
-					set_application (ic.item)
+					set_application (v)
 				end
 			end
 		end

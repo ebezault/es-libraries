@@ -112,9 +112,9 @@ feature -- Request execution
 							l_form.append_html_attributes_to ("<br/>")
 
 							across
-								lst as ic
+								lst as v
 							loop
-								inf := ic.item
+								inf := v
 								if inf.is_expired (l_now) then
 									s.append ("<!-- <div>Expired JWT TOKEN</div> -->%N")
 								else
@@ -269,8 +269,8 @@ feature -- Request execution
 								end
 								l_expiration := l_expiration.max ({NATURAL_32} 30).min ({NATURAL_32} 48 * 60 * 60) -- Max 48H
 								if attached jwt_auth_api.new_magic_login_link (l_user, l_expiration) as l_link then
-									rep.add_success_message ("New magic link: <a href=%"" + l_link + "%">"+ html_encoded (l_link) +"</a>")
-									s.append ("To sign-in, use the following magic link: <a href=%"" + l_link + "%">"+ html_encoded (l_link) +"</a>")
+									rep.add_success_message ("New magic link: <a href=%"" + l_link.url + "%">"+ html_encoded (l_link.url) +"</a>")
+									s.append ("To sign-in, use the following magic link: <a href=%"" + l_link.url + "%">"+ html_encoded (l_link.url) +"</a>")
 									rep.set_main_content (s)
 								else
 									rep.add_error_message ("Error when trying to create a new magic link !")
