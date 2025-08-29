@@ -1838,6 +1838,32 @@ feature -- Environment/ module
 			Result := module_location_by_name (a_module_name).extended_path (a_resource)
 		end
 
+	config_module_location (a_module: CMS_MODULE): PATH
+			-- Location associated with `a_module'.
+		do
+			Result := config_module_location_by_name (a_module.name)
+		end
+
+	config_module_location_by_name (a_module_name: READABLE_STRING_GENERAL): PATH
+			-- Location associated with `a_module_name'.
+		do
+			Result := site_location.extended ("config").extended ("modules").extended (a_module_name)
+		end
+
+	config_module_resource_location (a_module: CMS_MODULE; a_resource: PATH): PATH
+			-- Location of resource `a_resource' for `a_module' in site/config/modules/$modname/
+		do
+				--| site/config/modules/$modname/$a_resource
+			Result := config_module_resource_location_by_name (a_module.name_for_resource, a_resource)
+		end
+
+	config_module_resource_location_by_name (a_module_name: READABLE_STRING_GENERAL; a_resource: PATH): PATH
+			-- Location of resource `a_resource' for `a_module' in site/config/modules/$modname/
+		do
+				--| site/config/modules/$modname/$a_resource
+			Result := config_module_location_by_name (a_module_name).extended_path (a_resource)
+		end
+
 feature -- Environment/ modules and theme
 
 	module_theme_resource_location (a_module: CMS_MODULE; a_resource: PATH): detachable PATH
@@ -1853,10 +1879,14 @@ feature -- Environment/ modules and theme
 				-- Check first in selected theme folder.
 			Result := module_theme_location (a_module).extended_path (a_resource)
 			if not ut.file_path_exists (Result) then
-					-- And if not found, look into site/modules/$a_module.name/.... folders.
-				Result := module_resource_location (a_module, a_resource)
+					-- And if not found, look into site/config/modules/$a_module.name/.... folders.
+				Result := config_module_resource_location (a_module, a_resource)
 				if not ut.file_path_exists (Result) then
-					Result := Void
+						-- And if not found, look into site/modules/$a_module.name/.... folders.
+					Result := module_resource_location (a_module, a_resource)
+					if not ut.file_path_exists (Result) then
+						Result := Void
+					end
 				end
 			end
 		end
@@ -1874,10 +1904,14 @@ feature -- Environment/ modules and theme
 				-- Check first in selected theme folder.
 			Result := module_theme_location_by_name (a_module_name).extended_path (a_resource)
 			if not ut.file_path_exists (Result) then
-					-- And if not found, look into site/modules/$a_module.name/.... folders.
-				Result := module_resource_location_by_name (a_module_name, a_resource)
+					-- And if not found, look into site/config/modules/$a_module.name/.... folders.
+				Result := config_module_resource_location_by_name (a_module_name, a_resource)
 				if not ut.file_path_exists (Result) then
-					Result := Void
+						-- And if not found, look into site/modules/$a_module.name/.... folders.
+					Result := module_resource_location_by_name (a_module_name, a_resource)
+					if not ut.file_path_exists (Result) then
+						Result := Void
+					end
 				end
 			end
 		end
