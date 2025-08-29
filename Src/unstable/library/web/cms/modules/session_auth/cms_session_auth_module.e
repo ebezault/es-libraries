@@ -167,28 +167,13 @@ feature {NONE} -- Implementation: routes
 
 	handle_login (api: CMS_API; req: WSF_REQUEST; res: WSF_RESPONSE)
 		local
-			vals: CMS_VALUE_TABLE
 			r: CMS_RESPONSE
 		do
 			create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, api)
 			if api.user_is_authenticated then
 				r.add_error_message ("You are already signed in!")
 			else
-				if attached smarty_template_login_block (req, Current, "login", api) as l_tpl_block then
-					create vals.make (1)
-						-- add the variable to the block
-					l_tpl_block.set_value (api.user, "user")
-					l_tpl_block.set_value (api.site_url, "site_url")
-					api.hooks.invoke_value_table_alter (vals, r)
-					across
-						vals as ic
-					loop
-						l_tpl_block.set_value (ic.item, ic.key)
-					end
-					r.add_block (l_tpl_block, "content")
-				else
-					r.add_error_message ("Error: missing block [login]")
-				end
+				get_block_view_login ("login", r)
 			end
 			r.execute
 		end
@@ -317,6 +302,8 @@ feature {NONE} -- Block views
 			if attached smarty_template_login_block (a_response.request, Current, a_block_id, a_response.api) as l_tpl_block then
 				create vals.make (1)
 					-- add the variable to the block
+				l_tpl_block.set_value (a_response.api.user, "user")
+				l_tpl_block.set_value (a_response.api.site_url, "site_url")
 				a_response.api.hooks.invoke_value_table_alter (vals, a_response)
 				across
 					vals as ic

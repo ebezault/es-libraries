@@ -7,7 +7,7 @@ class
 	JWT_AUTH_API
 
 inherit
-	CMS_MODULE_API
+	CMS_AUTH_API_I
 		redefine
 			initialize
 		end
@@ -89,9 +89,9 @@ feature -- Factory
 			Result.set_secret (sec)
 			if apps /= Void then
 				across
-					apps as ic
+					apps as a
 				loop
-					Result.set_application (ic.item)
+					Result.set_application (a)
 				end
 			end
 			record_user_token (Result)
@@ -119,10 +119,13 @@ feature -- Factory
 			end
 		end
 
-	new_magic_login_link (a_user: CMS_USER; a_expiration_in_seconds: NATURAL_32): detachable STRING_8
+	new_magic_login_link (a_user: CMS_USER; a_expiration_in_seconds: NATURAL_32): detachable TUPLE [url: READABLE_STRING_8; token: READABLE_STRING_8]
+		local
+			url: READABLE_STRING_8
 		do
 			if attached {JWT_AUTH_TOKEN} new_token_with_expiration (a_user, <<"magic-login">>, a_expiration_in_seconds) as l_magic_token then
-				Result := cms_api.absolute_url ("/user/" + a_user.id.out + "/magic-login/" + url_encoded (l_magic_token.token), Void)
+				url := cms_api.absolute_url ("/user/" + a_user.id.out + "/magic-login/" + url_encoded (l_magic_token.token), Void)
+				Result := [url, l_magic_token.token]
 			end
 		end
 
@@ -208,7 +211,7 @@ feature -- Access
 					Result.off
 				loop
 					tok := Result.item
-					if attached tok.applications as lst and then across lst as ic some a_app.is_case_insensitive_equal (ic.item) end then
+					if attached tok.applications as lst and then across lst as a some a_app.is_case_insensitive_equal (a) end then
 							-- Keep
 						Result.forth
 					else

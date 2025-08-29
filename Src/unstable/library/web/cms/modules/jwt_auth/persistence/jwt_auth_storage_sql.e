@@ -51,9 +51,9 @@ feature -- Access/token
 						Result.set_secret (l_secret)
 						if l_apps_string /= Void and then not l_apps_string.is_empty then
 							across
-								l_apps_string.split (',') as ic
+								l_apps_string.split (',') as v
 							loop
-								Result.set_application (ic.item)
+								Result.set_application (v)
 							end
 						end
 					else
@@ -97,9 +97,9 @@ feature -- Access/token
 						end
 						if attached sql_read_string (4) as s_app then
 							across
-								s_app.split (',') as ic
+								s_app.split (',') as v
 							loop
-								tok.set_application (ic.item)
+								tok.set_application (v)
 							end
 						end
 					end
@@ -130,12 +130,12 @@ feature -- Change/token
 			if attached a_token.applications as apps and then not apps.is_empty then
 				create s.make_empty
 				across
-					apps as ic
+					apps as v
 				loop
 					if not s.is_empty then
 						s.append_character (',')
 					end
-					s.append_string_general (ic.item)
+					s.append_string_general (v)
 				end
 			end
 			l_parameters.put (s, "apps")
@@ -217,10 +217,10 @@ feature -- Change/token
 			sql_finalize_query (sql_select_tokens)
 			if l_tokens /= Void and then not l_tokens.is_empty then
 				across
-					l_tokens as ic
+					l_tokens as v
 				loop
-					tok := ic.item
-					discard_user_token (ic.item.user, ic.item.token)
+					tok := v
+					discard_user_token (v.user, v.token)
 				end
 				if a_discarded_count /= Void then
 					a_discarded_count.replace (l_tokens.count)

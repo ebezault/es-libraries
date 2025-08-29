@@ -83,12 +83,12 @@ feature -- Request execution
 						if attached jwt_auth_api.user_tokens (l_user, l_app) as l_tokens and then not l_tokens.is_empty then
 							create arr.make (l_tokens.count)
 							across
-								l_tokens as ic
+								l_tokens as v
 							loop
 								create tb.make (2)
-								tb.force (ic.item.token, "token")
---								tb.force (ic.item.refresh_key, "refresh_key") -- Should be shared only on creation from the webapi!
-								tb.force (ic.item.applications_as_csv, "applications")
+								tb.force (v.token, "token")
+--								tb.force (v.refresh_key, "refresh_key") -- Should be shared only on creation from the webapi!
+								tb.force (v.applications_as_csv, "applications")
 								arr.extend (tb)
 							end
 						else
@@ -193,12 +193,13 @@ feature -- Request execution
 			if attached user_by_uid (a_uid) as l_user then
 				if attached api.user as u then
 					if
-						api.user_api.is_admin_user (u)
-					 	or api.has_permission ({JWT_AUTH_MODULE}.perm_use_magic_login) and then (u.same_as (l_user))
+						u.same_as (l_user) and then
+					 	api.user_has_permission (l_user, {JWT_AUTH_MODULE}.perm_use_magic_login)
+--					 	or api.user_api.is_admin_user (u)
 					then
 						if attached module.module.new_magic_login_link (u, {NATURAL_32} 5 * 60) as lnk then
 							rep := new_response (req, res)
-							rep.add_link ("jwt:magic_login", Void, lnk)
+							rep.add_link ("jwt:magic_login", Void, lnk.url)
 						else
 							rep := new_error_response ("Could not create new magic login link", req, res)
 						end
