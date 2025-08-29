@@ -30,7 +30,7 @@ feature -- Access
 			Result := table.count
 		end
 
-	item (key: READABLE_STRING_GENERAL): detachable ANY
+	item alias "[]" (key: READABLE_STRING_GENERAL): detachable ANY assign force
 			-- Item associated with `key', if present
 			-- otherwise default value of type `G'.
 		note
@@ -80,7 +80,7 @@ invariant
 	table_set: table /= Void
 
 note
-	copyright: "2011-2014, Jocelyn Fiat, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

@@ -187,7 +187,7 @@ feature {NONE} -- Implementation: routes
 			u: CMS_USER
 			l_subject, l_message: STRING_8
 			m: CMS_EMAIL
-			vals: STRING_TABLE [READABLE_STRING_8]
+			vals: CMS_VALUE_TABLE
 		do
 			create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, api)
 			if api.user_is_authenticated then
@@ -200,12 +200,13 @@ feature {NONE} -- Implementation: routes
 					end
 					if u = Void then
 						r.add_error_message ("Unknown user")
-						get_block_view_login ("login", r)
+						get_block_into_response ("sign_in_with_email", Void, r)
 					elseif attached u.email as l_u_email then
 						if attached new_magic_login_link (u, 300) as lnk then
 
 							l_subject := "Your temporary " + utf_8_encoded (api.setup.site_name) + " login magic link" -- + lnk.token
 							create vals.make (4)
+							vals ["username"] := p_username.value
 							vals ["site_url"] := api.absolute_url ("", Void)
 							vals ["site_name"] := html_encoded (api.setup.site_name)
 							vals ["lnk"] := lnk.url
@@ -237,13 +238,20 @@ feature {NONE} -- Implementation: routes
 								across
 									vals as v
 								loop
-									l_message.replace_substring_all ("{$"+ url_encoded (@v.key) +"/}", v)
+									if attached {READABLE_STRING_GENERAL} v as s then
+										l_message.replace_substring_all ("{$"+ url_encoded (@v.key) +"/}", html_encoded (s))
+									else
+										-- TODO
+--										l_message.replace_substring_all ("{$"+ url_encoded (@v.key) +"/}", v)
+									end
 								end
 							end
 
 							m := api.new_html_email (l_u_email, l_subject, l_message)
 							api.process_email (m)
-							r.set_main_content ("We sent a magic link to your inbox.")
+
+							get_block_into_response ("sign_in_with_email_notification", vals, r)
+--							r.set_main_content ("We sent a magic link to your inbox.")
 							-- TODO: add "Resend magic link"
 						else
 							r.add_error_message ("Error: unable to create the magic link!")
@@ -253,10 +261,10 @@ feature {NONE} -- Implementation: routes
 					end
 				else
 					r.add_error_message ("Missing username or email address!")
-					get_block_view_login ("login", r)
+					get_block_into_response ("sign_in_with_email", vals, r)
 				end
 			else
-				get_block_view_login ("login", r)
+				get_block_into_response ("sign_in_with_email", vals, r)
 			end
 			r.execute
 		end
@@ -330,7 +338,7 @@ feature -- Auth hook
 	get_block_view (a_block_id: READABLE_STRING_8; a_response: CMS_RESPONSE)
 		do
 			if a_block_id.is_case_insensitive_equal_general ("login") then
-				get_block_view_login (a_block_id, a_response)
+				get_block_into_response ("sign_in_with_email", Void, a_response)
 			end
 		end
 
@@ -371,9 +379,8 @@ feature -- Hook
 
 feature {NONE} -- Block views
 
-	get_block_view_login (a_block_id: READABLE_STRING_8; a_response: CMS_RESPONSE)
+	get_block_into_response (a_block_id: READABLE_STRING_8; vals: detachable CMS_VALUE_TABLE; a_response: CMS_RESPONSE)
 		local
-			vals: CMS_VALUE_TABLE
 			bk: CMS_CONTENT_BLOCK
 			f: CMS_FORM
 			b: STRING_8
@@ -381,18 +388,19 @@ feature {NONE} -- Block views
 			sub: WSF_FORM_SUBMIT_INPUT
 		do
 			if attached smarty_template_login_block (a_response.request, Current, a_block_id, a_response.api) as l_tpl_block then
-				create vals.make (1)
 					-- add the variable to the block
 				l_tpl_block.set_value (a_response.api.user, "user")
 				l_tpl_block.set_value (a_response.api.site_url, "site_url")
-				a_response.api.hooks.invoke_value_table_alter (vals, a_response)
-				across
-					vals as v
-				loop
-					l_tpl_block.set_value (v, @v.key)
+				if vals /= Void then
+					a_response.api.hooks.invoke_value_table_alter (vals, a_response)
+					across
+						vals as v
+					loop
+						l_tpl_block.set_value (v, @v.key)
+					end
 				end
 				a_response.add_block (l_tpl_block, "content")
-			else
+			elseif a_block_id.is_case_insensitive_equal ("sign_in_with_email") then
 				create f.make ("/" + login_location, "request-magic-link")
 				f.set_method_post
 				create tf.make ("username")
@@ -410,17 +418,17 @@ feature {NONE} -- Block views
 				debug ("cms")
 					a_response.add_warning_message ("Error with block [" + a_block_id + "]")
 				end
+			elseif a_block_id.is_case_insensitive_equal ("sign_in_with_email_notification") then
+
 			end
 		end
 
-	email_html_message (a_message_id: READABLE_STRING_8; a_response: CMS_RESPONSE; a_html_encoded_values: STRING_TABLE [READABLE_STRING_8]): detachable STRING_8
+	email_html_message (a_message_id: READABLE_STRING_8; a_response: CMS_RESPONSE; a_html_encoded_values: CMS_VALUE_TABLE): detachable STRING_8
 			-- html message related to `a_message_id'.
 		local
 			res: PATH
 			p: detachable PATH
 			tpl: CMS_SMARTY_TEMPLATE_BLOCK
-			exp: CMS_STRING_EXPANDER [READABLE_STRING_8]
-			tb_res: CMS_STRING_TABLE_RESOLVER [READABLE_STRING_8]
 		do
 			create res.make_from_string ("mail_templates")
 			res := res.extended (a_message_id).appended_with_extension ("html")
