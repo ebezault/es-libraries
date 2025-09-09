@@ -62,6 +62,9 @@ feature -- Request execution
 			-- Execute handler for `req' and respond in `res'.
 		local
 			rep: CMS_RESPONSE
+			l_redirection_location: READABLE_STRING_8
+			l_is_external: BOOLEAN
+			tok_loader: JWT_LOADER
 		do
 			if attached user_by_uid (a_uid) as l_user then
 				if
@@ -72,13 +75,39 @@ feature -- Request execution
 					attached jwt_auth_api.user_for_token (p_token.value) as l_token_user and then
 					l_token_user.same_as (l_user)
 				then
-					if attached {CMS_SESSION_API} api.module_api ({CMS_SESSION_AUTH_MODULE}) as l_session_api then
-						l_session_api.process_user_login (l_user, req, res)
+					create tok_loader
+					if
+						attached jwt_auth_api.token (p_token.value) as tok and then
+						attached {JWT} tok.jwt as jwt
+					then
+						if attached jwt.claimset.string_8_claim ("external_location") as loc then
+							l_redirection_location := loc
+							l_is_external := True
+						elseif attached jwt.claimset.string_8_claim ("location") as loc then
+							l_redirection_location := loc
+						end
 					end
+
+					if not l_is_external then
+						if attached {CMS_SESSION_API} api.module_api ({CMS_SESSION_AUTH_MODULE}) as l_session_api then
+							l_session_api.process_user_login (l_user, req, res)
+						end
+					end
+
 					jwt_auth_api.discard_user_token (l_user, p_token.value)
 					rep := new_generic_response (req, res)
 					rep.set_title ({STRING_32} "Magic login for user " + api.real_user_display_name (l_user))
-					if attached rep.destination_location as v then
+					if l_redirection_location /= Void then
+						if l_is_external then
+							if attached jwt_auth_api.new_token (l_user, Void) as tok then
+								rep.set_redirection (l_redirection_location + "?auth=magic-link&uid="+ l_user.id.out +"&username=" + url_encoded (l_user.name) + "&token=" + tok.token + "&refresh=" + tok.refresh_key)
+							else
+								rep.set_redirection (l_redirection_location)
+							end
+						else
+							rep.set_redirection (l_redirection_location)
+						end
+					elseif attached rep.destination_location as v then
 						rep.set_redirection (v)
 					else
 						rep.set_redirection (api.absolute_url ("/", Void))

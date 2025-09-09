@@ -131,7 +131,7 @@ feature -- Conversion
 			end
 		end
 
-	to_html (a_theme: CMS_THEME): STRING_8
+	to_html (a_theme: detachable CMS_THEME): STRING_8
 			-- <Precursor>
 		local
 			p: detachable PATH
@@ -218,6 +218,6 @@ feature -- Debug
 			Result.append ("%N}")
 		end
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

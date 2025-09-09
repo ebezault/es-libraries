@@ -65,12 +65,16 @@ feature -- Element change
 
 feature -- Conversion
 
-	to_html (a_theme: CMS_THEME): STRING_8
+	to_html (a_theme: detachable CMS_THEME): STRING_8
 		do
-			Result := a_theme.menu_html (menu, is_horizontal, html_options)
+			if a_theme /= Void then
+				Result := a_theme.menu_html (menu, is_horizontal, html_options)
+			else
+				Result := ""
+			end
 		end
 
 note
-	copyright: "2011-2015, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
