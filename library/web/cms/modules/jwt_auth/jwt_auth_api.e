@@ -41,10 +41,10 @@ feature -- Factory
 	new_token (a_user: CMS_USER; apps: detachable ITERABLE [READABLE_STRING_GENERAL]): detachable JWT_AUTH_TOKEN
 			-- New JWT token for user `a_user` and `apps` scopes.
 		do
-			Result := new_token_with_expiration (a_user, apps, 0)
+			Result := new_token_with_expiration (a_user, apps, 0, Void)
 		end
 
-	new_token_with_expiration (a_user: CMS_USER; apps: detachable ITERABLE [READABLE_STRING_GENERAL]; a_expiration_in_seconds: NATURAL_32): detachable JWT_AUTH_TOKEN
+	new_token_with_expiration (a_user: CMS_USER; apps: detachable ITERABLE [READABLE_STRING_GENERAL]; a_expiration_in_seconds: NATURAL_32; params: detachable JWT_AUTH_MAGIC_LINK_PARAMS): detachable JWT_AUTH_TOKEN
 			-- New JWT token for user `a_user` and `apps` scopes.
 			-- If `a_expiration_in_seconds` is positive, use it as the token expiration value.
 			-- (Note: if it is over the expiration value from the configuration, use the one from the configuration).
@@ -85,6 +85,13 @@ feature -- Factory
 			end
 
 			jws.claimset.set_claim ("uid", a_user.id.out)
+			if params /= Void and then attached params.location as loc then
+				if params.is_external then
+					jws.claimset.set_claim ("external_location", loc)
+				else
+					jws.claimset.set_claim ("location", loc)
+				end
+			end
 			create Result.make (a_user, jws.encoded_string (sec), new_secret_key (40, 2))
 			Result.set_secret (sec)
 			if apps /= Void then
@@ -123,7 +130,17 @@ feature -- Factory
 		local
 			url: READABLE_STRING_8
 		do
-			if attached {JWT_AUTH_TOKEN} new_token_with_expiration (a_user, <<"magic-login">>, a_expiration_in_seconds) as l_magic_token then
+			if attached {JWT_AUTH_TOKEN} new_token_with_expiration (a_user, <<"magic-login">>, a_expiration_in_seconds, Void) as l_magic_token then
+				url := cms_api.absolute_url ("/user/" + a_user.id.out + "/magic-login/" + url_encoded (l_magic_token.token), Void)
+				Result := [url, l_magic_token.token]
+			end
+		end
+
+	new_magic_login_link_with_params (a_user: CMS_USER; a_expiration_in_seconds: NATURAL_32; a_params: JWT_AUTH_MAGIC_LINK_PARAMS): detachable TUPLE [url: READABLE_STRING_8; token: READABLE_STRING_8]
+		local
+			url: READABLE_STRING_8
+		do
+			if attached {JWT_AUTH_TOKEN} new_token_with_expiration (a_user, <<"magic-login">>, a_expiration_in_seconds, a_params) as l_magic_token then
 				url := cms_api.absolute_url ("/user/" + a_user.id.out + "/magic-login/" + url_encoded (l_magic_token.token), Void)
 				Result := [url, l_magic_token.token]
 			end
@@ -178,6 +195,13 @@ feature -- Factory
 		end
 
 feature -- Access
+
+	token (a_token: READABLE_STRING_GENERAL): detachable JWT_AUTH_TOKEN
+		require
+			not_blank: not a_token.is_whitespace
+		do
+			Result := jwt_auth_storage.token (a_token)
+		end
 
 	user_for_token (a_token: READABLE_STRING_GENERAL): detachable CMS_USER
 			-- User for token `a_token`.
