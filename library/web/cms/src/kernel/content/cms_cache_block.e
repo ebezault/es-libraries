@@ -73,7 +73,7 @@ feature -- Element change
 
 feature -- Conversion
 
-	to_html (a_theme: CMS_THEME): STRING_8
+	to_html (a_theme: detachable CMS_THEME): STRING_8
 		do
 			debug
 				print ("REUSE CACHE for [" + name + "]!!!%N")
@@ -93,7 +93,7 @@ feature -- Conversion
 			end
 		end
 note
-	copyright: "2011-2019, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
