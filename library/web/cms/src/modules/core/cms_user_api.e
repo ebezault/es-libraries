@@ -357,9 +357,17 @@ feature -- Change User
 		require
 			has_id: a_user.has_id
 		do
+			if attached user_roles (a_user) as lst then
+				across
+					lst as ic
+				loop
+					unassign_role_from_user (ic.item, a_user)
+				end
+			end
 			reset_error
 			user_storage.delete_user (a_user)
 			error_handler.append (user_storage.error_handler)
+			cms_api.hooks.invoke_delete_user (a_user)
 		end
 
 feature -- Password helper
@@ -439,8 +447,11 @@ feature -- Status report
 						Result := True
 					else
 						Result := user_role_has_permission (authenticated_user_role, a_permission)
-						if not Result then
-							Result := across user_roles (a_user) as ic some user_role_has_permission (ic.item, a_permission) end
+						if
+							not Result and then
+							attached user_roles (a_user) as l_roles
+						then
+							Result := across l_roles as ic some user_role_has_permission (ic.item, a_permission) end
 						end
 					end
 				end
@@ -466,6 +477,11 @@ feature -- Status report
 				end
 			end
 			Result := l_roles
+		end
+
+	user_has_role (a_user: CMS_USER; a_role: CMS_USER_ROLE): BOOLEAN
+		do
+			Result := user_storage.user_has_role (a_user, a_role)
 		end
 
 feature -- User roles.		

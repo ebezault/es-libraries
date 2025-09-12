@@ -39,6 +39,20 @@ feature -- Hook: new user hook
 			end
 		end
 
+	invoke_delete_user (a_user: CMS_USER)
+			-- Invoke new_user hook for user `a_user'.
+		do
+			if attached subscribers ({CMS_HOOK_USER_MANAGEMENT}) as lst then
+				across
+					lst as ic
+				loop
+					if attached {CMS_HOOK_USER_MANAGEMENT} ic.item as h then
+						h.on_user_deleted (a_user)
+					end
+				end
+			end
+		end
+
 feature -- Hook: value alter
 
 	subscribe_to_value_table_alter_hook (h: CMS_HOOK_VALUE_TABLE_ALTER)
@@ -387,6 +401,6 @@ feature -- Hook: import
 
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

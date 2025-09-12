@@ -19,8 +19,14 @@ feature -- Hook
 		deferred
 		end
 
+	on_user_deleted (a_user: CMS_USER)
+		require
+			a_user.has_id
+		do
+		end
+
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
