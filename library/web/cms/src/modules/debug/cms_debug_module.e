@@ -16,6 +16,8 @@ inherit
 
 	CMS_HOOK_AUTO_REGISTER
 
+	CMS_WITH_WEBAPI
+
 	SHARED_EXECUTION_ENVIRONMENT
 		export
 			{NONE} all
@@ -37,11 +39,21 @@ feature -- Access
 
 	name: STRING = "debug"
 
+	associated_router: detachable WSF_ROUTER
+
+feature {NONE} -- Webapi
+
+	webapi: CMS_DEBUG_MODULE_WEBAPI
+		do
+			create Result.make (Current)
+		end
+
 feature -- Router
 
 	setup_router (a_router: WSF_ROUTER; a_api: CMS_API)
 			-- <Precursor>
 		do
+			associated_router := a_router
 			a_router.handle ("/debug/", create {WSF_URI_TEMPLATE_AGENT_HANDLER}.make (agent handle_debug (a_api, ?, ?)), Void)
 		end
 
@@ -121,6 +133,10 @@ feature -- Handler
 --					append_info_to ("User url", r.user_url (u), r, s)
 --				end
 
+				if attached associated_router as l_router then
+					append_router_info_to (l_router, r, s)
+				end
+
 				r.set_main_content (s)
 			else
 				create {NOT_FOUND_ERROR_CMS_RESPONSE} r.make (req, res, api)
@@ -138,8 +154,35 @@ feature -- Handler
 			t.append ("</li>")
 		end
 
+	append_router_info_to (a_router: WSF_ROUTER; r: CMS_RESPONSE; t: STRING_8)
+		local
+			ri: WSF_ROUTER_ITEM
+		do
+			t.append ("<h2>Router</h2>%N")
+			if attached {CMS_ROUTER} a_router as l_cms_router then
+
+			end
+			across
+				a_router as ic
+			loop
+				ri := ic.item
+				t.append ("<li>")
+				t.append (html_encoded (ri.debug_output))
+				t.append ("</li>%N")
+--				if attached then
+--					
+--				end
+--				across
+--					ri.request_methods as rmic
+--				loop
+--					
+--				end
+
+			end
+		end
+
 note
-	copyright: "2011-2017, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
