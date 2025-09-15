@@ -81,7 +81,7 @@ feature -- Input
 				Result := i
 			end
 			a_string.set_count (Result)
-			Result := Result - pos + 1
+			Result := Result - pos  -- CHECK WHY : + 1
 		ensure
 			nb_char_read_large_enough: Result >= 0
 			nb_char_read_small_enough: Result <= nb

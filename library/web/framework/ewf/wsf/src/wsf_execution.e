@@ -11,7 +11,7 @@ inherit
 		rename
 			request as wgi_request,
 			response as wgi_response,
-			make_from_execution as make_from_wgi_execution			
+			make_from_execution as make_from_wgi_execution
 		redefine
 			make,
 			clean,
@@ -112,6 +112,7 @@ feature -- Cleaning
 			-- Precursor
 		do
 			Precursor
+			request.clean
 			request.destroy
 		end
 
@@ -121,7 +122,7 @@ invariant
 	wsf_response_set: response /= Void
 
 note
-	copyright: "2011-2015, Jocelyn Fiat, Javier Velilla, Olivier Ligot, Colin Adams, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Olivier Ligot, Colin Adams, Alexander Kogtenkov, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
