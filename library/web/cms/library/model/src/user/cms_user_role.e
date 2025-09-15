@@ -30,7 +30,7 @@ feature {NONE} -- Initialization
 			initialize
 		end
 
-	make (a_name: like name)
+	make (a_name: READABLE_STRING_GENERAL)
 			-- Create current role with name `a_name'.
 		require
 			a_name_valid: not a_name.is_whitespace
