@@ -388,7 +388,6 @@ feature -- Access: Input
 		local
 			s: STRING
 			l_input: WGI_INPUT_STREAM
-			l_raw_data: detachable STRING_8
 			l_length, l_total, nb, l_step: INTEGER
 		do
 			l_total := input_data_read_length.to_integer_32
