@@ -166,6 +166,20 @@ feature -- Access: roles and permissions
 		deferred
 		end
 
+	user_has_role (a_user: CMS_USER; a_role: CMS_USER_ROLE): BOOLEAN
+		do
+			-- TODO: improve with dedicated SQL request
+			if attached user_roles_for (a_user) as lst then
+				across
+					lst as ic
+				until
+					Result
+				loop
+					Result := a_role.same_user_role (ic.item)
+				end
+			end
+		end
+
 	user_roles: LIST [CMS_USER_ROLE]
 			-- Possible list of user roles.
 		deferred
@@ -315,6 +329,6 @@ feature -- New Temp User
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

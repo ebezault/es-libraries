@@ -48,6 +48,18 @@ feature -- Factory
 			Result.header.put_header ("X-Dbg-Handler: " + generator)
 		end
 
+	new_fail_response (msg: detachable READABLE_STRING_GENERAL; req: WSF_REQUEST; res: WSF_RESPONSE): like new_response
+		do
+			Result := new_response (req, res)
+			Result.set_status_code ({HTTP_STATUS_CODE}.expectation_failed)
+			Result.add_string_field ("status", "fail")
+			if msg /= Void then
+				Result.add_string_field ("error", msg)
+			else
+				Result.add_string_field ("error", "True")
+			end
+		end
+
 	new_error_response (msg: detachable READABLE_STRING_GENERAL; req: WSF_REQUEST; res: WSF_RESPONSE): like new_response
 		do
 			Result := new_response (req, res)
@@ -62,7 +74,7 @@ feature -- Factory
 	new_not_implemented_error_response (m: detachable READABLE_STRING_GENERAL; req: WSF_REQUEST; res: WSF_RESPONSE): like new_response
 		do
 			if m = Void then
-				Result := new_error_response ("Not Imnplemented", req, res)
+				Result := new_error_response ("Not Implemented", req, res)
 			else
 				Result := new_error_response (m, req, res)
 			end

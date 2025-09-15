@@ -160,6 +160,8 @@ feature -- Error
 
 	do_delete (req: WSF_REQUEST; res: WSF_RESPONSE)
 			-- <Precursor>
+		local
+			r: CMS_RESPONSE
 		do
 			if attached api.user as l_user then
 				if attached {WSF_STRING} req.path_parameter ("id") as l_id then
@@ -167,8 +169,10 @@ feature -- Error
 						l_id.is_integer and then
 						attached api.user_api.user_by_id (l_id.integer_value) as u_user
 					then
-						api.user_api.delete_user(u_user)
-						res.send (create {CMS_REDIRECTION_RESPONSE_MESSAGE}.make (req.absolute_script_url ("")))
+						api.user_api.delete_user (u_user)
+						r := new_generic_response (req, res)
+						r.set_redirection (api.administration_location_absolute_url ("users", Void))
+						r.execute
 					else
 						do_error (req, res, l_id)
 					end
