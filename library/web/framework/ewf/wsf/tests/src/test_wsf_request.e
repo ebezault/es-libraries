@@ -256,7 +256,7 @@ feature -- Test routines
 		local
 			fn: FILE_NAME
 			f: RAW_FILE
-			s: STRING
+			s, l_exp_body: STRING
 			ctx: HTTP_CLIENT_REQUEST_CONTEXT
 		do
 			get_http_session
@@ -266,7 +266,10 @@ feature -- Test routines
 				s := "This is an uploaded file%NTesting purpose%N"
 				f.put_string (s)
 				f.close
-				test_post_request_with_filename ("post/file/01 #1", Void, fn.string, "post-file-01", "post-file-01")
+				create l_exp_body.make_from_string ("post-file-01")
+				l_exp_body.append ("%N")
+				l_exp_body.append (s)
+				test_post_request_with_filename ("post/file/01 #1", Void, fn.string, l_exp_body, "post-file-01")
 
 				create ctx.make
 				ctx.add_form_parameter ("foo", "bar")
