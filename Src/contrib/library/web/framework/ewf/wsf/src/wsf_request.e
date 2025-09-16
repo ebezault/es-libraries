@@ -162,6 +162,20 @@ feature {WSF_REQUEST_EXPORTER} -- Restricted Access
 
 feature -- Destroy
 
+	clean
+			-- Clean the request.
+		do
+				-- Ensure the form data was fully read
+				-- most of the time, the input data is fully read
+				-- but sometime handler accepting json content does not read the data
+				-- and this could cause trouble.
+			if is_input_data_fully_read then
+				do_nothing
+			else
+				read_remaining_input_data
+			end
+		end
+
 	destroy
 			-- Destroy the object when request is completed
 		do
@@ -278,6 +292,7 @@ feature -- Access: Input
 			l_input: WGI_INPUT_STREAM
 			n: INTEGER
 			buf_initial_size: INTEGER
+			l_total: INTEGER
 		do
 			if raw_input_data_recorded and then attached raw_input_data as d then
 				buf.append (d)
@@ -291,6 +306,7 @@ feature -- Access: Input
 						n = 0 or l_input.end_of_input
 					loop
 						l_input.append_to_string (buf, n)
+						l_total := l_total + l_input.last_appended_count
 						if l_input.last_appended_count < n then
 							n := 0
 						end
@@ -300,9 +316,11 @@ feature -- Access: Input
 					if n > 0 then
 						l_input.append_to_string (buf, n)
 						n := l_input.last_appended_count
+						l_total := l_total + n
 						check n = content_length_value.as_integer_32 end
 					end
 				end
+				input_data_read_length := l_total.to_natural_64
 				if raw_input_data_recorded then
 					set_raw_input_data (buf.substring (buf_initial_size + 1, buf.count))
 						-- Only the input data! And differente reference.
@@ -354,6 +372,7 @@ feature -- Access: Input
 						l_step := 0
 					end
 				end
+				input_data_read_length := l_total.to_natural_64
 				if attached {FILE} a_medium as f then
 					f.flush
 				end
@@ -361,6 +380,51 @@ feature -- Access: Input
 					set_raw_input_data (l_raw_data)
 				end
 			end
+		end
+
+	read_remaining_input_data
+			-- Read all remaining content from the input data, if not yet done.
+			-- the content is not recorded and will be lost.
+		local
+			s: STRING
+			l_input: WGI_INPUT_STREAM
+			l_length, l_total, nb, l_step: INTEGER
+		do
+			l_total := input_data_read_length.to_integer_32
+			l_length := content_length_value.to_integer_32
+			if l_length > l_total then
+				l_input := input
+				from
+					l_step := 8_192
+					create s.make (l_step.min (l_length))
+				until
+					l_step = 0 or l_input.end_of_input
+				loop
+					if l_total + l_step > l_length then
+						l_step := l_length - l_total
+					end
+					if l_step > 0 then
+						nb := l_input.read_to_string (s, 1, l_step)
+						l_total := l_total + nb
+						s.wipe_out
+						if nb < l_step then
+							l_step := 0
+						end
+					end
+				end
+				input_data_read_length := l_total.to_natural_64
+			end
+		ensure
+			is_input_data_fully_read
+		end
+
+	input_data_read_length: NATURAL_64
+			-- Size of the input data read during execution.
+
+	is_input_data_fully_read: BOOLEAN
+			-- Is all input data fully read?
+		do
+			Result := input_data_read_length = content_length_value
 		end
 
 feature -- Helper
