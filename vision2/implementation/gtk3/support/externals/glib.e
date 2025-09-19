@@ -25,7 +25,9 @@ feature -- Debugging purpose
 		external
 			"C inline"
 		alias
-			"printf((char*) $p)"
+			"[
+				printf("%s", (char*) $p);
+			]"		
 		ensure
 			instance_free: class
 		end
