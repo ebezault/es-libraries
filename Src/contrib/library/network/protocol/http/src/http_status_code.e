@@ -30,6 +30,24 @@ feature -- 2xx : Success
 	multistatus: INTEGER 			= 207	-- WebDAV RFC 4918
 	im_used: INTEGER 				= 226	-- RFC 4918
 
+	is_success_status (c: INTEGER): BOOLEAN
+			-- Is `c' a success status code?
+		do
+			inspect c
+			when
+				ok, created, accepted,
+				nonauthoritative_info,
+				no_content, reset_content, partial_content,
+				multistatus, im_used
+			then
+				Result := True
+			else
+				Result := False
+			end
+		ensure
+			instance_free: class
+		end
+
 feature -- 3xx : Redirection
 
 	multiple_choices: INTEGER		= 300
@@ -40,6 +58,28 @@ feature -- 3xx : Redirection
 	use_proxy: INTEGER 				= 305
 	switch_proxy: INTEGER 			= 306
 	temp_redirect: INTEGER 			= 307
+
+	is_redirection_status (c: INTEGER): BOOLEAN
+			-- Is `c' a redirection status code?
+		do
+			inspect c
+			when
+				multiple_choices,
+				moved_permanently,
+				found,
+				see_other,
+				not_modified,
+				use_proxy,
+				switch_proxy,
+				temp_redirect
+			then
+				Result := True
+			else
+				Result := False
+			end
+		ensure
+			instance_free: class
+		end
 
 feature -- 4xx : Client Error
 
@@ -62,6 +102,27 @@ feature -- 4xx : Client Error
 	request_range_not_satisfiable: INTEGER 	= 416
 	expectation_failed: INTEGER 			= 417
 	teapot: INTEGER							= 418
+	authentication_timeout: INTEGER 		= 419
+	enhance_your_calm: INTEGER 				= 420
+
+	is_client_error_status (c: INTEGER): BOOLEAN
+			-- Is `c' a client error status code?
+		do
+			inspect c
+			when
+				bad_request, unauthorized, payment_required, forbidden, not_found, method_not_allowed,
+				not_acceptable, proxy_auth_required, request_timeout, conflict, gone,
+				length_required, precondition_failed, request_entity_too_large, request_uri_too_long,
+				unsupported_media_type, request_range_not_satisfiable, expectation_failed, teapot,
+				authentication_timeout, enhance_your_calm
+			then
+				Result := True
+			else
+				Result := False
+			end
+		ensure
+			instance_free: class
+		end
 
 feature -- 4xx : Client Error : WebDAV errors
 
@@ -76,6 +137,30 @@ feature -- 4xx : Client Error : WebDAV errors
 	retry_with: INTEGER 					= 449
 	blocked_parental: INTEGER 				= 450
 	client_closed_request: INTEGER 			= 499
+
+	is_client_error_status_webdav (c: INTEGER): BOOLEAN
+			-- Is `c' a client error status code for WebDAV?
+		do
+			inspect c
+			when
+				too_many_connections,
+				unprocessable_entity,
+				locked,
+				failed_dependency,
+				unordered_collection,
+				upgrade_required,
+				no_response,
+				retry_with,
+				blocked_parental,
+				client_closed_request
+			then
+				Result := True
+			else
+				Result := False
+			end
+		ensure
+			instance_free: class
+		end
 
 feature -- 5xx : Server Error
 
@@ -92,6 +177,31 @@ feature -- 5xx : Server Error
 	not_extended: INTEGER 					= 510
 
 	user_access_denied: INTEGER 			= 530
+
+	is_server_error_status (c: INTEGER): BOOLEAN
+			-- Is `c' a server error status code?
+		do
+			inspect c
+			when
+				internal_server_error,
+				not_implemented,
+				bad_gateway,
+				service_unavailable,
+				gateway_timeout,
+				http_version_not_supported,
+				variant_also_negotiates,
+				insufficient_storage,
+				bandwidth_limit_exceeded,
+				not_extended,
+				user_access_denied
+			then
+				Result := True
+			else
+				Result := False
+			end
+		ensure
+			instance_free: class
+		end
 
 note
 	copyright: "2011-2012, Jocelyn Fiat, Eiffel Software and others"
