@@ -252,7 +252,7 @@ feature -- Hooks
 				l_cookie.set_path ("/")
 				l_cookie.set_max_age (-1)
 				res.add_cookie (l_cookie)
-				api.unset_current_user (req)
+				api.unset_current_user
 				create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, api)
 				r.set_status_code ({HTTP_CONSTANTS}.found)
 				r.set_redirection (req.absolute_script_url (""))

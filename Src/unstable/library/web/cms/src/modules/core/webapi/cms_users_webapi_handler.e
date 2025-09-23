@@ -49,9 +49,9 @@ feature -- Execution
 				create l_params.make (0, nb.to_natural_32)
 				create arr.make (nb)
 				across
-					api.user_api.recent_users (l_params) as ic
+					api.user_api.recent_users (l_params) as u
 				loop
-					l_user := ic.item
+					l_user := u
 					create tb.make_caseless (5)
 					tb.force (api.webapi_path ("user/" + l_user.id.out), "href")
 					tb.force (l_user.id.out, "uid")
@@ -131,12 +131,12 @@ feature -- Execution
 						if attached fd.errors as lst then
 							create err.make_empty
 							across
-								lst as ic
+								lst as v
 							loop
-								if attached ic.item.field as l_field then
+								if attached v.field as l_field then
 									err.append_string_general (l_field.name + ": ")
 								end
-								if attached ic.item.message as msg then
+								if attached v.message as msg then
 									err.append_string_general (msg)
 								end
 							end
@@ -170,6 +170,6 @@ feature -- Execution
 
 
 note
-	copyright: "2011-2022, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

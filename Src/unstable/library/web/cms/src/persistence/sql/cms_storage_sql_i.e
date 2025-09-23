@@ -63,6 +63,7 @@ feature -- Operation
 			l_sql_params: STRING_TABLE [READABLE_STRING_8]
 			i,j,n: INTEGER
 			s: READABLE_STRING_8
+			k: READABLE_STRING_GENERAL
 		do
 			create l_sql_params.make_caseless (0)
 			from
@@ -100,18 +101,19 @@ feature -- Operation
 				end
 			else
 				across
-					a_params as ic
+					a_params as p
 				loop
-					if l_sql_params.has (ic.key) then
-						l_sql_params.remove (ic.key)
+					k := @p.key
+					if l_sql_params.has (k) then
+						l_sql_params.remove (k)
 					else
-						error_handler.add_custom_error (-1, "useless value", {STRING_32} "value for unexpected parameter [" + ic.key.to_string_32 + "]")
+						error_handler.add_custom_error (-1, "useless value", {STRING_32} "value for unexpected parameter [" + k.to_string_32 + "]")
 					end
 				end
 				across
-					l_sql_params as ic
+					l_sql_params as p
 				loop
-					error_handler.add_custom_error (-1, "invalid query", "missing value for sql parameter [" + ic.item + "]")
+					error_handler.add_custom_error (-1, "invalid query", "missing value for sql parameter [" + p + "]")
 				end
 			end
 		end
@@ -477,11 +479,9 @@ feature -- Parameters helpers
 	sql_append_parameters (d: ITERABLE [TUPLE [name: READABLE_STRING_GENERAL; value: detachable ANY]]; a_params: STRING_TABLE [detachable ANY])
 		do
 			across
-				d as ic
+				d as l_item
 			loop
-				if attached ic.item as l_item then
-					a_params.put (l_item.value, l_item.name)
-				end
+				a_params.put (l_item.value, l_item.name)
 			end
 		end
 
@@ -565,10 +565,10 @@ feature {NONE} -- Implementation
 				if l_removals /= Void then
 					j := 0
 					across
-						l_removals as ic
+						l_removals as tu
 					loop
-						Result.remove_substring (ic.item.start_index - j - a_start_index + 1, ic.item.end_index - j - a_start_index + 1)
-						j := j + ic.item.end_index - ic.item.start_index + 1
+						Result.remove_substring (tu.start_index - j - a_start_index + 1, tu.end_index - j - a_start_index + 1)
+						j := j + tu.end_index - tu.start_index + 1
 					end
 --					a_offset.replace (a_offset.item  j)
 				end
@@ -576,6 +576,6 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

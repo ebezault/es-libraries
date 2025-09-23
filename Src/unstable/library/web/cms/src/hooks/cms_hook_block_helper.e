@@ -33,9 +33,9 @@ feature {NONE} -- Factory
 			Result := smarty_template_block (a_module, a_block_id, a_cms_api)
 			if Result /= Void then
 				across
-					a_values as ic
+					a_values as v
 				loop
-					Result.set_value (ic.item, ic.key)
+					Result.set_value (v, @v.key)
 				end
 			end
 		end
@@ -60,6 +60,6 @@ feature {NONE} -- Factory: obsolete
 		end
 
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

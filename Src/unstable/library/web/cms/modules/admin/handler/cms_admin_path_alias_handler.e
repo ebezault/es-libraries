@@ -42,6 +42,7 @@ feature -- Execution
 			l_alias: detachable READABLE_STRING_8
 			s: STRING
 			b: BOOLEAN
+			k: READABLE_STRING_GENERAL
 		do
 			if api.has_permission ("admin path_alias") then
 				create {GENERIC_VIEW_CMS_RESPONSE} l_response.make (req, res, api)
@@ -53,28 +54,29 @@ feature -- Execution
 					create l_sources.make (tb.count)
 					l_sources.compare_objects
 					across
-						tb as ic
+						tb as v
 					loop
-						b := l_sources.has (ic.item)
+						b := l_sources.has (v)
+						k := @v.key
 						if b then
 							s.append ("<li class=%"warning%">")
 						else
 							s.append ("<li>")
-							l_sources.force (ic.item)
+							l_sources.force (v)
 						end
-						if ic.key.is_valid_as_string_8 then
-							l_alias := ic.key.to_string_8
-							s.append (l_response.link (ic.key, l_alias, Void))
+						if k.is_valid_as_string_8 then
+							l_alias := k.to_string_8
+							s.append (l_response.link (k, l_alias, Void))
 						else
 							l_alias := Void
-							s.append (l_response.html_encoded (ic.key))
+							s.append (l_response.html_encoded (k))
 						end
 						s.append (" =&gt; ")
-						s.append (l_response.link (ic.item, ic.item, Void))
+						s.append (l_response.link (v, v, Void))
 						if b then
 							s.append (" <span class=%"warning%">(archived)</span>")
 							if l_alias /= Void then
-								s.append ("<form action=%"%" method=%"POST%"><input type=%"hidden%" name=%"path_alias%" value=%"" + l_alias + "%"/><input type=%"hidden%" name=%"source%" value=%"" + ic.item + "%"/><input type=%"submit%" name=%"op%" value=%"unset%"/></form>")
+								s.append ("<form action=%"%" method=%"POST%"><input type=%"hidden%" name=%"path_alias%" value=%"" + l_alias + "%"/><input type=%"hidden%" name=%"source%" value=%"" + v + "%"/><input type=%"submit%" name=%"op%" value=%"unset%"/></form>")
 							end
 						end
 						s.append ("</li>")

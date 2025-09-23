@@ -108,14 +108,12 @@ feature -- Execution
 
 	append_router_info_to (a_router: WSF_ROUTER; r: JSON_WEBAPI_RESPONSE)
 		local
-			ri: WSF_ROUTER_ITEM
 			jarr: JSON_ARRAY
 		do
 			create jarr.make_empty
 			across
-				a_router as ic
+				a_router as ri
 			loop
-				ri := ic.item
 				jarr.extend (create {JSON_STRING}.make_from_string_general (ri.debug_output))
 			end
 			r.resource.put (jarr, "routes")

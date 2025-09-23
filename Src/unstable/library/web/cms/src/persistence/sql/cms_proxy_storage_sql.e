@@ -77,7 +77,11 @@ feature -- Operation
 				has_error and then
 				attached api as l_cms_api
 			then
-				l_cms_api.log_error ("database", generator + "." + l_cms_api.html_encoded (error_handler.as_string_representation), l_cms_api.self_link)
+				if attached {CMS_API_FOR_REQUEST} l_cms_api as l_cms_api_for_execution then
+					l_cms_api.log_error ("database", generator + "." + l_cms_api.html_encoded (error_handler.as_string_representation), l_cms_api_for_execution.self_link)
+				else
+					l_cms_api.log_error ("database", generator + "." + l_cms_api.html_encoded (error_handler.as_string_representation), Void)
+				end
 			end
 		end
 
@@ -145,6 +149,6 @@ feature -- Conversion
 		end
 
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

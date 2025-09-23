@@ -50,9 +50,9 @@ feature -- Basic operations
 				associated_permissions := lst
 			end
 			across
-				a_perms as ic
+				a_perms as p
 			loop
-				lst.extend (ic.item)
+				lst.extend (p)
 			end
 		end
 

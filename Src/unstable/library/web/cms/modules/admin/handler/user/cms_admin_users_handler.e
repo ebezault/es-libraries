@@ -60,7 +60,6 @@ feature -- HTTP Methods
 		local
 			l_response: CMS_RESPONSE
 			s,ms: STRING
-			u: CMS_USER
 			l_page_helper: CMS_PAGINATION_GENERATOR
 			s_pager: STRING
 			l_total_user_count: INTEGER
@@ -143,9 +142,8 @@ feature -- HTTP Methods
 					s.append ("<ul class=%"cms-users%">%N")
 					create ago.make
 					across
-						lst as ic
+						lst as u
 					loop
-						u := ic.item
 						s.append ("<li class=%"user%">")
 						s.append ("<span class=%"identifier%"><a href=%"")
 						s.append (req.absolute_script_url (api.administration_path ("/user/" + u.id.out)))
@@ -166,9 +164,9 @@ feature -- HTTP Methods
 						s.append (" <span class=%"roles%">")
 						if attached user_api.user_roles (u) as l_roles and then not l_roles.is_empty then
 							across
-								l_roles as ic_roles
+								l_roles as r
 							loop
-								s.append (html_encoded (ic_roles.item.name))
+								s.append (html_encoded (r.name))
 								s.append (" ")
 							end
 						end

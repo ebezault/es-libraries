@@ -414,7 +414,7 @@ feature -- Change: roles
 
 			l_existing_roles := user_roles_for (a_user)
 			across
-				l_existing_roles as ic
+				l_existing_roles as r
 			until
 				error_handler.has_error
 			loop
@@ -424,7 +424,7 @@ feature -- Change: roles
 				until
 					l_has_role or l_roles.after
 				loop
-					if l_roles.item.id = ic.item.id then
+					if l_roles.item.id = r.id then
 						l_has_role := True
 						l_roles.remove -- Already stored.
 					else
@@ -433,16 +433,16 @@ feature -- Change: roles
 				end
 				if l_has_role then
 						-- Existing role has to be removed!
-					unassign_role_from_user (ic.item, a_user)
+					unassign_role_from_user (r, a_user)
 				end
 			end
 			across
-				l_roles as ic
+				l_roles as r
 			until
 				error_handler.has_error
 			loop
 					-- New role.
-				assign_role_to_user (ic.item, a_user)
+				assign_role_to_user (r, a_user)
 			end
 
 			if not error_handler.has_error then
@@ -537,8 +537,8 @@ feature -- Access: roles and permissions
 			end
 			sql_finalize_query (select_user_roles_by_user_id)
 			if not has_error then
-				across Result as ic loop
-					fill_user_role (ic.item)
+				across Result as r loop
+					fill_user_role (r)
 				end
 			end
 		end
@@ -564,8 +564,8 @@ feature -- Access: roles and permissions
 			end
 			sql_finalize_query (select_user_roles)
 			if not has_error then
-				across Result as ic loop
-					fill_user_role (ic.item)
+				across Result as r loop
+					fill_user_role (r)
 				end
 			end
 		end
@@ -576,9 +576,9 @@ feature -- Access: roles and permissions
 		do
 			if attached role_permissions_by_id (a_role.id) as l_permissions then
 				across
-					l_permissions as p_ic
+					l_permissions as perm
 				loop
-					a_role.add_permission (p_ic.item)
+					a_role.add_permission (perm)
 				end
 			end
 		end
@@ -668,18 +668,18 @@ feature -- Change: roles and permissions
 					end
 
 					a_user_role.permissions.compare_objects
-					across l_permissions as ic
+					across l_permissions as perm
 					loop
-						if not a_user_role.permissions.has (ic.item) then
-							unset_permission_for_role_id (ic.item, a_user_role.id)
+						if not a_user_role.permissions.has (perm) then
+							unset_permission_for_role_id (perm, a_user_role.id)
 						end
 					end
 
 					across
-						a_user_role.permissions as ic
+						a_user_role.permissions as perm
 					loop
-						p := ic.item
-						l_found := across l_permissions as p_ic some p.is_case_insensitive_equal_general (p_ic.item) end
+						p := perm
+						l_found := across l_permissions as i some p.is_case_insensitive_equal_general (i) end
 						if l_found then
 								-- Already there, skip							
 						else
@@ -692,9 +692,9 @@ feature -- Change: roles and permissions
 						-- if any in the storage.
 					if l_existing_role /= Void then
 						l_permissions := l_existing_role.permissions
-						across l_permissions as ic
+						across l_permissions as perm
 						loop
-							unset_permission_for_role_id (ic.item, a_user_role.id)
+							unset_permission_for_role_id (perm, a_user_role.id)
 						end
 					end
 				end
@@ -706,9 +706,9 @@ feature -- Change: roles and permissions
 				if not error_handler.has_error then
 					a_user_role.set_id (last_inserted_user_role_id)
 					across
-						a_user_role.permissions as ic
+						a_user_role.permissions as perm
 					loop
-						set_permission_for_role_id (ic.item, a_user_role.id)
+						set_permission_for_role_id (perm, a_user_role.id)
 					end
 				end
 			end

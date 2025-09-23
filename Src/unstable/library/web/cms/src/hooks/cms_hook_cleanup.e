@@ -13,12 +13,12 @@ inherit
 
 feature -- Hook	
 
-	cleanup (ctx: CMS_HOOK_CLEANUP_CONTEXT; a_response: CMS_RESPONSE)
+	cleanup (ctx: CMS_HOOK_CLEANUP_CONTEXT; a_response: detachable CMS_RESPONSE)
 			-- Cleanup
 		deferred
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

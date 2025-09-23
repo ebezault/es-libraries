@@ -92,9 +92,9 @@ feature -- Change
 	sort
 		do
 			across
-				items as ic
+				items as i
 			loop
-				ic.item.sort
+				i.sort
 			end
 		end
 
@@ -111,6 +111,6 @@ feature {NONE} -- Implementation
 	items: STRING_TABLE [CMS_MENU]
 
 ;note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

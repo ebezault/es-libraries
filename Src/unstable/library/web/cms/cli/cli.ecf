@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-23-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-23-0 http://www.eiffel.com/developers/xml/configuration-1-23-0.xsd" name="cms_cli" uuid="944731A8-D39C-4730-BE73-7CB0DD0EE0FA" library_target="cms_cli">
+	<target name="cms_cli">
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="cms" location="..\cms.ecf"/>
+		<library name="cms_model" location="..\library\model\cms_model.ecf" readonly="false"/>
+		<library name="cms_app_env" location="..\library\app_env\app_env.ecf" readonly="false"/>
+		<cluster name="src" location=".\src\"/>
+	</target>
+</system>

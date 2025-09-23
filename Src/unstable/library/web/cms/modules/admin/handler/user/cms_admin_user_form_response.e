@@ -182,8 +182,8 @@ feature -- Form
 					across
 						fd as c
 					loop
-						b.append ("<li>" +  html_encoded (c.key) + "=")
-						if attached c.item as v then
+						b.append ("<li>" +  html_encoded (@c.key) + "=")
+						if attached c as v then
 							b.append (html_encoded (v.string_representation))
 						end
 						b.append ("</li>")
@@ -205,8 +205,8 @@ feature -- Form
 					across
 						fd as c
 					loop
-						b.append ("<li>" +  html_encoded (c.key) + "=")
-						if attached c.item as v then
+						b.append ("<li>" +  html_encoded (@c.key) + "=")
+						if attached c as v then
 							b.append (html_encoded (v.string_representation))
 						end
 						b.append ("</li>")
@@ -226,8 +226,8 @@ feature -- Form
 					across
 						fd as c
 					loop
-						b.append ("<li>" +  html_encoded (c.key) + "=")
-						if attached c.item as v then
+						b.append ("<li>" +  html_encoded (@c.key) + "=")
+						if attached c as v then
 							b.append (html_encoded (v.string_representation))
 						end
 						b.append ("</li>")
@@ -385,10 +385,10 @@ feature -- Form
 					l_user_roles := Void
 				end
 
-				across api.user_api.effective_roles as ic loop
-					create cb.make_with_value ("cms_roles", ic.item.id.out)
-					cb.set_checked (l_user_roles /= Void and then across l_user_roles as r_ic some r_ic.item.same_user_role (ic.item) end)
-					cb.set_title (ic.item.name)
+				across api.user_api.effective_roles as r loop
+					create cb.make_with_value ("cms_roles", r.id.out)
+					cb.set_checked (l_user_roles /= Void and then across l_user_roles as ur some ur.same_user_role (r) end)
+					cb.set_title (r.name)
 					fs.extend (cb)
 				end
 
@@ -426,7 +426,6 @@ feature -- Form
 		local
 			l_uroles: LIST [CMS_USER_ROLE]
 			l_new_roles: detachable ARRAYED_LIST [CMS_USER_ROLE]
-			r: detachable CMS_USER_ROLE
 			rid: INTEGER
 		do
 			if attached a_form_data.string_item ("op") as f_op then
@@ -439,47 +438,42 @@ feature -- Form
 
 						if attached {WSF_STRING} a_form_data.item ("cms_roles") as p_role_id then
 							rid := p_role_id.integer_value
-							r := api.user_api.user_role_by_id (rid)
-							if r /= Void then
+							if attached api.user_api.user_role_by_id (rid) as r then
 								create l_new_roles.make (0)
 								l_new_roles.force (r)
 							end
 						elseif attached {WSF_MULTIPLE_STRING} a_form_data.item ("cms_roles") as p_roles_ids then
 							create l_new_roles.make (p_roles_ids.values.count)
 							across
-								p_roles_ids as ic
+								p_roles_ids as v
 							loop
-								rid := ic.item.integer_value
-								r := api.user_api.user_role_by_id (rid)
-								if r /= Void then
+								rid := v.integer_value
+								if attached api.user_api.user_role_by_id (rid) as r then
 									l_new_roles.force (r)
 								end
 							end
 						end
 						if l_new_roles = Void or else l_new_roles.is_empty then
 							across
-								l_uroles as ic
+								l_uroles as r
 							loop
-								r := ic.item
 								api.user_api.unassign_role_from_user (r, a_user)
 							end
 						else
 							across
-								l_new_roles as ic
+								l_new_roles as r
 							loop
-								r := ic.item
 								if l_uroles.has (r) then
 										-- Already assigned to that role.
 								else
-									api.user_api.assign_role_to_user (ic.item, a_user)
+									api.user_api.assign_role_to_user (r, a_user)
 								end
 							end
 								-- Remove other roles for `a_user'.
 							l_new_roles.compare_objects
 							across
-								l_uroles as ic
+								l_uroles as r
 							loop
-								r := ic.item
 								if not l_new_roles.has (r) then
 									api.user_api.unassign_role_from_user (r, a_user)
 								end

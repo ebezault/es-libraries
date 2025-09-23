@@ -58,12 +58,12 @@ feature -- Execution
 						create s.make_empty
 						if attached i_item.request_methods as methds and then not methds.is_empty then
 							across
-								methds as ic
+								methds as m
 							loop
 								if not s.is_empty then
 									s.extend (',')
 								end
-								s.append (ic.item)
+								s.append (m)
 							end
 							jo.put_string (s, "request_methods")
 						else

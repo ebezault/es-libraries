@@ -295,12 +295,12 @@ feature -- Hooks
 					if a_response.has_permission (perm_view_mails) then
 						if attached a_form.fields_by_name ("user-id") as l_uid_fields then
 							across
-								l_uid_fields as ic
+								l_uid_fields as fd
 							until
 								l_uid /= 0
 							loop
 								if
-									attached {WSF_FORM_INPUT} ic.item as f and then
+									attached {WSF_FORM_INPUT} fd as f and then
 									attached f.default_value as v
 								then
 									l_uid := v.to_integer_64

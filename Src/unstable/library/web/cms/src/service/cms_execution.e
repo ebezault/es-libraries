@@ -48,7 +48,7 @@ feature {NONE} -- Initialization
 			l_setup := initial_cms_setup
 			setup_storage (l_setup)
 			setup_modules (l_setup)
-			create api.make (l_setup, request, response)
+			create {CMS_API_FOR_REQUEST} api.make (l_setup, request, response)
 			if api.has_error then
 				response.put_error ("ROC: Error during API initialization!")
 				response.put_error (api.utf_8_encoded (api.string_representation_of_errors))
@@ -93,7 +93,7 @@ feature {NONE} -- Initialization
 		do
 			modules := api.enabled_modules
 		ensure
-			only_enabled_modules: across modules as ic all ic.item.is_enabled end
+			only_enabled_modules: across modules as m all m.is_enabled end
 		end
 
 feature -- Factory
@@ -156,9 +156,9 @@ feature -- Settings: router
 
 				-- Include routes from modules.
 			across
-				modules as ic
+				modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 				if l_module.is_initialized then
 					l_module.setup_router (l_router, l_api)
 				end
@@ -172,7 +172,7 @@ feature -- Settings: router
 			l_api: like api
 			l_router: like router
 			l_module: CMS_MODULE
-			f, l_filter, l_last_filter: WSF_FILTER
+			l_filter, l_last_filter: WSF_FILTER
 		do
 			l_api := api
 			l_router := router
@@ -196,9 +196,9 @@ feature -- Settings: router
 
 				-- Include routes from modules.
 			across
-				modules as ic
+				modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 				if
 					l_module.is_initialized and then
 					attached {CMS_WITH_WEBAPI} l_module as l_webapi and then
@@ -207,9 +207,8 @@ feature -- Settings: router
 					wapi.setup_router (l_router, l_api)
 					if attached wapi.filters (l_api) as l_filters then
 						across
-							l_filters as f_ic
+							l_filters as f
 						loop
-							f := f_ic.item
 							l_filter.set_next (f)
 							f.set_next (l_last_filter)
 							l_filter := f
@@ -225,7 +224,7 @@ feature -- Settings: router
 			l_api: like api
 			l_router: like router
 			l_module: CMS_MODULE
-			f, l_filter, l_last_filter: WSF_FILTER
+			l_filter, l_last_filter: WSF_FILTER
 		do
 			l_api := api
 			l_router := router
@@ -252,9 +251,9 @@ feature -- Settings: router
 
 				-- Include routes from modules.
 			across
-				modules as ic
+				modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 				if
 					l_module.is_initialized
 				then
@@ -265,9 +264,8 @@ feature -- Settings: router
 						adm.setup_router (l_router, l_api)
 						if attached adm.filters (l_api) as l_filters then
 							across
-								l_filters as f_ic
+								l_filters as f
 							loop
-								f := f_ic.item
 								l_filter.set_next (f)
 								f.set_next (l_last_filter)
 								l_filter := f
@@ -435,7 +433,7 @@ feature -- Filters
 	setup_filter
 			-- Setup `filter'.
 		local
-			f, l_filter, l_last_filter: detachable WSF_FILTER
+			l_filter, l_last_filter: detachable WSF_FILTER
 			l_module: CMS_MODULE
 			l_api: like api
 		do
@@ -457,15 +455,14 @@ feature -- Filters
 
 				-- Include filters from modules
 			across
-				modules as ic
+				modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 				if
 					l_module.is_enabled and then
 					attached l_module.filters (l_api) as l_m_filters
 				then
-					across l_m_filters as f_ic loop
-						f := f_ic.item
+					across l_m_filters as f loop
 						l_filter.set_next (f)
 						f.set_next (l_last_filter)
 --						f.set_next (l_filter)

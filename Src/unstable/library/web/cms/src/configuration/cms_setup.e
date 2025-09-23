@@ -165,9 +165,9 @@ feature {CMS_API} -- API Access
 
 				-- Includes other modules.
 			across
-				modules as ic
+				modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 				update_module_status_from_configuration (l_module)
 				if not l_module.is_enabled then
 					if
@@ -181,9 +181,9 @@ feature {CMS_API} -- API Access
 				end
 			end
 			across
-				l_enabled_modules as ic
+				l_enabled_modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 				update_module_status_within (l_module, l_enabled_modules)
 				if not l_module.is_enabled then -- Check from storage!
 					if l_modules_to_remove = Void then
@@ -194,13 +194,13 @@ feature {CMS_API} -- API Access
 			end
 			if l_modules_to_remove /= Void then
 				across
-					l_modules_to_remove as ic
+					l_modules_to_remove as m
 				loop
-					l_enabled_modules.remove (ic.item)
+					l_enabled_modules.remove (m)
 				end
 			end
 		ensure
-			only_enabled_modules: across api.enabled_modules as ic all ic.item.is_enabled end
+			only_enabled_modules: across api.enabled_modules as m all m.is_enabled end
 		end
 
 feature {CMS_MODULE, CMS_API, CMS_SETUP_ACCESS} -- Restricted access
@@ -219,13 +219,13 @@ feature {NONE} -- Implementation: update
 		do
 			if attached a_module.dependencies as deps then
 				across
-					deps as ic
+					deps as d
 				until
 					not a_module.is_enabled
 				loop
-					if ic.item.is_required then
+					if d.is_required then
 						if
-							attached a_collection.item (ic.item.module_type) as mod and then
+							attached a_collection.item (d.module_type) as mod and then
 							mod.is_enabled
 						then
 							update_module_status_within (mod, a_collection)
@@ -426,9 +426,9 @@ feature -- Query
 			if attached keys ("environment") as lst then
 				create Result.make (0)
 				across
-					lst as ic
+					lst as v
 				loop
-					Result [ic.item] := environment_item (ic.item)
+					Result [v] := environment_item (v)
 				end
 			end
 		end
@@ -520,13 +520,13 @@ feature -- Access: directory
 			end
 			create s.make (10)
 			across
-				storage_drivers as ic
+				storage_drivers as d
 			loop
 				if s.count > 1 then
 					s.append_character (',')
 				end
 				s.append_character (' ')
-				s.append_string_general (ic.key)
+				s.append_string_general (@d.key)
 			end
 			Result["Storage.availables"] := s
 		end
@@ -663,6 +663,6 @@ feature -- Element change
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

@@ -49,8 +49,8 @@ feature -- Export
 						-- path_aliases export.
 					a_export_ctx.log ("Exporting path_aliases")
 					create jo.make_empty
-					across cms_api.storage.path_aliases as ic loop
-						jo.put_string (ic.item, ic.key)
+					across cms_api.storage.path_aliases as a loop
+						jo.put_string (a, @a.key)
 					end
 					create f.make_with_path (p.extended ("path_aliases.json"))
 					f.create_read_write
@@ -62,14 +62,14 @@ feature -- Export
 						a_export_ctx.log ("Exporting custom_values")
 						create ja.make_empty
 						across
-							lst as ic
+							lst as cval
 						loop
 							create j.make_empty
-							if attached ic.item.type as l_type then
+							if attached cval.type as l_type then
 								j.put_string (l_type, "type")
 							end
-							j.put_string (ic.item.name, "name")
-							if attached ic.item.type as l_value then
+							j.put_string (cval.name, "name")
+							if attached cval.type as l_value then
 								j.put_string (l_value, "value")
 							end
 							ja.extend (j)
@@ -84,19 +84,19 @@ feature -- Export
 					a_export_ctx.log ("Exporting user roles")
 
 					create jobj.make_empty
-					across user_api.roles as ic loop
+					across user_api.roles as r loop
 						create j.make_empty
-						j.put_string (ic.item.name, "name")
-						if attached ic.item.permissions as l_perms then
+						j.put_string (r.name, "name")
+						if attached r.permissions as l_perms then
 							create ja.make (l_perms.count)
 							across
-								l_perms as perms_ic
+								l_perms as perm
 							loop
-								ja.extend (create {JSON_STRING}.make_from_string (perms_ic.item))
+								ja.extend (create {JSON_STRING}.make_from_string (perm))
 							end
 							j.put (ja, "permissions")
 						end
-						jobj.put (j, ic.item.id.out)
+						jobj.put (j, r.id.out)
 					end
 					create f.make_with_path (p.extended ("user_roles.json"))
 					f.create_read_write
@@ -107,8 +107,8 @@ feature -- Export
 					a_export_ctx.log ("Exporting users")
 
 					create jobj.make_empty
-					across user_api.recent_users (create {CMS_DATA_QUERY_PARAMETERS}.make (0, user_api.users_count.as_natural_32)) as ic loop
-						u := ic.item
+					across user_api.recent_users (create {CMS_DATA_QUERY_PARAMETERS}.make (0, user_api.users_count.as_natural_32)) as l_user loop
+						u := l_user
 						create j.make_empty
 						j.put_string (u.name, "name")
 						if attached u.profile_name as pn then
@@ -123,9 +123,9 @@ feature -- Export
 						if attached u.roles as l_roles then
 							create ja.make (l_roles.count)
 							across
-								l_roles as roles_ic
+								l_roles as r
 							loop
-								ja.extend (create {JSON_STRING}.make_from_string_32 ({STRING_32} " %"" + roles_ic.item.name + {STRING_32} "%" #" + roles_ic.item.id.out))
+								ja.extend (create {JSON_STRING}.make_from_string_32 ({STRING_32} " %"" + r.name + {STRING_32} "%" #" + r.id.out))
 							end
 							j.put (ja, "roles")
 						end
@@ -140,6 +140,6 @@ feature -- Export
 		end
 
 note
-	copyright: "2011-2017, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

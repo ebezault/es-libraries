@@ -58,20 +58,22 @@ feature -- Fields / json
 			if attached api.json_value_from_string (a_json) as jv then
 				if attached {JSON_OBJECT} jv as jo then
 					across
-						jo as ic
+						jo as v
 					loop
-						resource.put (ic.item, ic.key)
+						resource.put (v, @v.key)
 					end
 				end
 			end
 		end
 
-feature -- Fields		
+feature -- Fields / extra		
 
---	add_field (a_name: READABLE_STRING_GENERAL; a_value: detachable ANY)
---		do
---			resource.put (new_resource_item (a_value), a_name)
---		end
+	add_json_field (a_name: READABLE_STRING_GENERAL; a_json_value: detachable JSON_VALUE)
+		do
+			resource.put (a_json_value, a_name)
+		end
+
+feature -- Fields
 
 	add_string_field (a_name: READABLE_STRING_GENERAL; a_value: READABLE_STRING_GENERAL)
 		do
@@ -237,6 +239,6 @@ feature {NONE} -- Implementation factory
 invariant
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

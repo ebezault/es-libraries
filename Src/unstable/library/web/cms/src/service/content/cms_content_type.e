@@ -46,11 +46,11 @@ feature -- Access
 			-- Format named `a_name', if available.
 		do
 			across
-				available_formats as ic
+				available_formats as ft
 			until
 				Result /= Void
 			loop
-				Result := ic.item
+				Result := ft
 				if not a_name.is_case_insensitive_equal (Result.name) then
 					Result := Void
 				end
@@ -93,6 +93,6 @@ feature -- Element change
 		end
 
 note
-	copyright: "2011-2017, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

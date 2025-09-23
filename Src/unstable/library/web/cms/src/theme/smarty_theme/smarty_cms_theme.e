@@ -48,9 +48,9 @@ feature -- Access
 					i := 1
 					create l_regions.make_filled ("", i, i + tb.count - 1)
 					across
-						tb as ic
+						tb as v
 					loop
-						l_regions.force (utf_8_encoded (ic.key), i) -- NOTE: UTF-8 encoded !
+						l_regions.force (utf_8_encoded (@v.key), i) -- NOTE: UTF-8 encoded !
 						i := i + 1
 					end
 				else
@@ -80,9 +80,9 @@ feature -- Conversion
 			page.register_variable (page, "page")
 			page.register_variable (page.regions, "regions")
 			across
-				page.regions as ic
+				page.regions as reg
 			loop
-				page.register_variable (ic.item, {STRING_32} "region_" + ic.key.to_string_32)
+				page.register_variable (reg, {STRING_32} "region_" + @reg.key.to_string_32)
 			end
 		end
 
@@ -128,7 +128,7 @@ feature {NONE} -- Internal
 invariant
 	attached internal_page_template as inv_p implies inv_p.theme = Current
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

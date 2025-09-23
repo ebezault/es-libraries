@@ -64,9 +64,9 @@ feature -- Execution
 				then
 					create s.make_empty
 					across
-						tb as ic
+						tb as v
 					loop
-						if attached api.setup.modules.item_by_name (ic.item.string_representation) as l_module then
+						if attached api.setup.modules.item_by_name (v.string_representation) as l_module then
 							if api.is_module_installed (l_module) then
 								api.uninstall_module (l_module)
 								if api.is_module_installed (l_module) then
@@ -88,9 +88,9 @@ feature -- Execution
 				then
 					create s.make_empty
 					across
-						tb as ic
+						tb as val
 					loop
-						if attached api.setup.modules.item_by_name (ic.item.string_representation) as l_module then
+						if attached api.setup.modules.item_by_name (val.string_representation) as l_module then
 							if api.is_module_installed (l_module) then
 								if attached api.installed_module_version (l_module) as v and then not v.same_string (l_module.version) then
 									api.update_module (l_module, v)
@@ -198,7 +198,6 @@ feature -- Execution
 
 	installed_modules_collection_web_form (a_response: CMS_RESPONSE): CMS_FORM
 		local
-			mod: CMS_MODULE
 			f_cb: WSF_FORM_CHECKBOX_INPUT
 			w_tb: WSF_WIDGET_TABLE
 			w_row: WSF_WIDGET_TABLE_ROW
@@ -226,9 +225,8 @@ feature -- Execution
 
 			create l_mods_to_install.make (0)
 			across
-				api.setup.modules as ic
+				api.setup.modules as mod
 			loop
-				mod := ic.item
 				if not api.is_module_installed (mod) then
 					l_mods_to_install.extend (mod)
 				else
@@ -295,7 +293,6 @@ feature -- Execution
 
 	modules_to_install_collection_web_form (a_response: CMS_RESPONSE): CMS_FORM
 		local
-			mod: CMS_MODULE
 			f_cb: WSF_FORM_CHECKBOX_INPUT
 			w_tb: WSF_WIDGET_TABLE
 			w_row: WSF_WIDGET_TABLE_ROW
@@ -308,9 +305,8 @@ feature -- Execution
 			create Result.make (a_response.request_url (Void), "modules_collection")
 			create l_mods_to_install.make (0)
 			across
-				api.setup.modules as ic
+				api.setup.modules as mod
 			loop
-				mod := ic.item
 				if not api.is_module_installed (mod) then
 					l_mods_to_install.extend (mod)
 				end
@@ -331,9 +327,8 @@ feature -- Execution
 				w_row.add_item (w_item)
 				w_tb.add_head_row (w_row)
 				across
-					l_mods_to_install as ic
+					l_mods_to_install as mod
 				loop
-					mod := ic.item
 					create w_row.make (3)
 					create f_cb.make ("module_installation[" + mod.name + "]")
 					f_cb.set_text_value (mod.name)
@@ -376,10 +371,10 @@ feature -- Execution
 				l_mods := api.setup.modules
 				create l_new_enabled_modules.make (tb.count)
 				across
-					tb as ic
+					tb as v
 				loop
 					if
-						attached {WSF_STRING} ic.item as l_mod_name and then
+						attached {WSF_STRING} v as l_mod_name and then
 						attached l_mods.item_by_name (l_mod_name.value) as m
 					then
 						if not m.is_enabled then
@@ -390,13 +385,13 @@ feature -- Execution
 						end
 						l_new_enabled_modules.force (m)
 					else
-						fd.report_error ("Can not find associated module " + ic.item.as_string.url_encoded_value)
+						fd.report_error ("Can not find associated module " + v.as_string.url_encoded_value)
 					end
 				end
 				across
-					l_mods as ic
+					l_mods as m
 				loop
-					l_module := ic.item
+					l_module := m
 					if not l_new_enabled_modules.has (l_module) then
 						if l_module.is_enabled then
 							api.disable_module (l_module)
@@ -418,10 +413,10 @@ feature -- Execution
 			if attached {WSF_TABLE} fd.table_item ("module_installation") as tb and then not tb.is_empty then
 				l_mods := api.setup.modules
 				across
-					tb as ic
+					tb as v
 				loop
 					if
-						attached {WSF_STRING} ic.item as l_mod_name and then
+						attached {WSF_STRING} v as l_mod_name and then
 						attached l_mods.item_by_name (l_mod_name.value) as m
 					then
 						api.install_module (m)
@@ -432,7 +427,7 @@ feature -- Execution
 						end
 						api.reset_error
 					else
-						fd.report_error ("Can not find associated module " + ic.item.as_string.url_encoded_value)
+						fd.report_error ("Can not find associated module " + v.as_string.url_encoded_value)
 					end
 				end
 			else
@@ -447,10 +442,10 @@ feature -- Execution
 			if attached {WSF_TABLE} fd.table_item ("module_uninstallation") as tb and then not tb.is_empty then
 				l_mods := api.setup.modules
 				across
-					tb as ic
+					tb as v
 				loop
 					if
-						attached {WSF_STRING} ic.item as l_mod_name and then
+						attached {WSF_STRING} v as l_mod_name and then
 						attached l_mods.item_by_name (l_mod_name.value) as m
 					then
 						api.uninstall_module (m)
@@ -458,7 +453,7 @@ feature -- Execution
 							fd.report_error ("Un-Installation failed for module " + m.name)
 						end
 					else
-						fd.report_error ("Can not find associated module" + ic.item.as_string.url_encoded_value)
+						fd.report_error ("Can not find associated module" + v.as_string.url_encoded_value)
 					end
 				end
 			else

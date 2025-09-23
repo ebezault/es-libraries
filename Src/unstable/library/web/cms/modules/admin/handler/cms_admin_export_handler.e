@@ -78,9 +78,9 @@ feature -- Execution
 						l_response.add_notice_message ("All data exported (if allowed)!")
 						create s.make_empty
 						across
-							l_exportation.logs as ic
+							l_exportation.logs as log
 						loop
-							s.append (ic.item)
+							s.append (log)
 							s.append ("<br/>")
 							s.append_character ('%N')
 						end

@@ -99,19 +99,19 @@ feature -- Read
 				create d.make_with_path (a_loc)
 				if d.exists then
 					across
-						d.entries as ic
+						d.entries as l_path
 					loop
-						if ic.item.is_current_symbol or ic.item.is_parent_symbol then
+						if l_path.is_current_symbol or l_path.is_parent_symbol then
 								-- Ignore
 						else
-							p := a_loc.extended_path (ic.item)
+							p := a_loc.extended_path (l_path)
 							create f.make_with_path (p)
 							if f.is_directory then
 								if is_recursive and then attached files_from_location (p, is_recursive) as lst then
 									across
-										lst as lst_ic
+										lst as i_p
 									loop
-										Result.force (lst_ic.item)
+										Result.force (i_p)
 									end
 								end
 							elseif f.exists then
@@ -267,6 +267,6 @@ feature -- Create
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

@@ -202,14 +202,11 @@ feature -- Helper conversions to and from string
 
 	list_to_csv_string (a_strings: ITERABLE [READABLE_STRING_GENERAL]): STRING_32
 			-- `a_strings` as comma separated value string.
-		local
-			s: READABLE_STRING_GENERAL
 		do
 			create Result.make (0)
 			across
-				a_strings as ic
+				a_strings as s
 			loop
-				s := ic.item
 				if not Result.is_empty then
 					Result.append_character (',')
 				end
@@ -262,6 +259,6 @@ feature -- Helper conversions to and from string
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

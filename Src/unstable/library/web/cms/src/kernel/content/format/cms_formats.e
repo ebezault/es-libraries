@@ -25,12 +25,12 @@ feature -- Access
 		do
 			if a_name /= Void then
 				across
-					items as c
+					items as i
 				until
 					Result /= Void
 				loop
-					if a_name.is_case_insensitive_equal (c.item.name) then
-						Result := c.item
+					if a_name.is_case_insensitive_equal (i.name) then
+						Result := i
 					end
 				end
 			end
@@ -115,7 +115,7 @@ invariant
 	items /= Void
 
 note
-	copyright: "2011-2019, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

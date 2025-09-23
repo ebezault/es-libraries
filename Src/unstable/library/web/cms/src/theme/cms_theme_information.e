@@ -18,9 +18,9 @@ feature {NONE} -- Initialization
 			create items.make_caseless (1)
 			create regions.make (5)
 			across
-				(<<"top","header", "highlighted","help", "content", "footer", "first_sidebar", "second_sidebar", "bottom">>) as ic
+				(<<"top","header", "highlighted","help", "content", "footer", "first_sidebar", "second_sidebar", "bottom">>) as r
 			loop
-				regions.force (ic.item, ic.item)
+				regions.force (r, r)
 			end
 		end
 
@@ -123,7 +123,7 @@ invariant
 	engine_set: not engine.is_empty
 
 note
-	copyright: "2011-2014, Jocelyn Fiat, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

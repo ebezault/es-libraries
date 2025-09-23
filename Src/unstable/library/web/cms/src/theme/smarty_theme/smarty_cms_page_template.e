@@ -39,9 +39,9 @@ feature -- Access
 			variables.accommodate (page.variables.count)
 
 			across
-				page.variables as ic
+				page.variables as v
 			loop
-				variables.force (ic.item, ic.key)
+				variables.force (v, @v.key)
 			end
 
 				-- FIXME: review variables !
@@ -61,7 +61,7 @@ feature -- Access
 			across
 				theme.regions as r
 			loop
-				variables.force (page.region (r.item), "region_" + r.item)
+				variables.force (page.region (r), "region_" + r)
 			end
 		end
 
@@ -103,9 +103,9 @@ feature -- Access
 
 			if tpl /= Void then
 				across
-					variables as ic
+					variables as v
 				loop
-					tpl.add_value (ic.item, ic.key)
+					tpl.add_value (v, @v.key)
 				end
 
 				debug ("cms")
@@ -131,7 +131,7 @@ feature -- Registration
 		end
 
 note
-	copyright: "2011-2022, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

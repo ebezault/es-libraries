@@ -173,10 +173,10 @@ feature -- Form
 			if l_save_role then
 				debug ("cms")
 					across
-						fd as c
+						fd as d
 					loop
-						b.append ("<li>" + html_encoded (c.key) + "=")
-						if attached c.item as v then
+						b.append ("<li>" + html_encoded (@d.key) + "=")
+						if attached d as v then
 							b.append (html_encoded (v.string_representation))
 						end
 						b.append ("</li>")
@@ -188,10 +188,10 @@ feature -- Form
 				if l_update_role then
 					debug ("cms")
 						across
-							fd as c
+							fd as d
 						loop
-							b.append ("<li>" + html_encoded (c.key) + "=")
-							if attached c.item as v then
+							b.append ("<li>" + html_encoded (@d.key) + "=")
+							if attached d as v then
 								b.append (html_encoded (v.string_representation))
 							end
 							b.append ("</li>")
@@ -225,12 +225,12 @@ feature -- Form
 					if attached {WSF_TABLE} fd.item ("new_cms_permissions[]") as l_perm then
 						a_role.permissions.compare_objects
 						across
-							l_perm.values as ic
+							l_perm.values as val
 						loop
-							if attached {WSF_STRING} ic.item as p then
+							if attached {WSF_STRING} val as p then
 								if not p.value.is_valid_as_string_8 then
 									fd.report_invalid_field ("new_cms_permissions[]", "Permission " + html_encoded (p.value) + " should not have any unicode character!")
-								elseif across a_role.permissions as p_ic some p_ic.item.is_case_insensitive_equal_general (p.value) end then
+								elseif across a_role.permissions as perm some perm.is_case_insensitive_equal_general (p.value) end then
 									fd.report_invalid_field ("new_cms_permissions[]", "Permission " + html_encoded (p.value) + " already exists!")
 								end
 							end
@@ -337,15 +337,15 @@ feature -- Form
 
 					create l_module_names.make (l_permissions_by_module.count)
 					across
-						l_permissions_by_module as mod_ic
+						l_permissions_by_module as perm
 					loop
-						l_module_names.force (mod_ic.key)
+						l_module_names.force (@perm.key)
 					end
 					string_sorter.sort (l_module_names)
 					across
-						l_module_names as mod_ic
+						l_module_names as mn
 					loop
-						l_mod_name := mod_ic.item
+						l_mod_name := mn
 						if
 							attached l_permissions_by_module.item (l_mod_name) as l_permissions and then
 							not l_permissions.is_empty
@@ -358,10 +358,10 @@ feature -- Form
 
 							fs.extend (lab)
 							string_sorter.sort (l_permissions)
-							across l_permissions as ic loop
-								create cb.make_with_value ("cms_permissions", ic.item.to_string_32)
-								cb.set_checked (across l_role_permissions as rp_ic some rp_ic.item.is_case_insensitive_equal (ic.item) end)
-								cb.set_title (ic.item.to_string_32)
+							across l_permissions as perm loop
+								create cb.make_with_value ("cms_permissions", perm.to_string_32)
+								cb.set_checked (across l_role_permissions as r_perm some r_perm.is_case_insensitive_equal (perm) end)
+								cb.set_title (perm.to_string_32)
 								fs.extend (cb)
 							end
 						end
@@ -416,9 +416,9 @@ feature -- Form
 							a_role.permissions.wipe_out
 								-- Enable checked permissions.
 							across
-								u_permissions as ic
+								u_permissions as perm
 							loop
-								l_perm := ic.item.value
+								l_perm := perm.value
 								if not l_perm.is_whitespace then
 									a_role.add_permission (api.utf_8_encoded (l_perm)) -- TODO: utf-8 or require valid string 8?
 								end
@@ -429,9 +429,9 @@ feature -- Form
 						if attached {WSF_TABLE} a_form_data.item ("new_cms_permissions[]") as l_cms_perms then
 								-- Add new permissions as checked.
 							across
-								l_cms_perms.values as ic
+								l_cms_perms.values as val
 							loop
-								if attached {WSF_STRING} ic.item as p then
+								if attached {WSF_STRING} val as p then
 									l_perm := p.value
 									if not l_perm.is_whitespace then
 										a_role.add_permission (api.utf_8_encoded (l_perm))

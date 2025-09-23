@@ -167,15 +167,15 @@ feature -- Url
 					elseif attached {ITERABLE [TUPLE [key, value: READABLE_STRING_GENERAL]]} l_query as lst then
 						create q.make_empty
 						across
-							lst as c
+							lst as tu
 						loop
 							if q.is_empty then
 							else
 								q.append_character ('&')
 							end
-							q.append (url_encoded (c.item.key))
+							q.append (url_encoded (tu.key))
 							q.append_character ('=')
-							q.append (url_encoded (c.item.value))
+							q.append (url_encoded (tu.value))
 						end
 					end
 				end
@@ -257,14 +257,14 @@ feature -- Url
 		do
 			create Result.make_empty
 			across
-				a_parts as ic
+				a_parts as p
 			loop
 				if not Result.is_empty then
 					if Result [Result.count] /= '/' then
 						Result.append_character ('/')
 					end
 				end
-				Result.append (ic.item)
+				Result.append (p)
 			end
 		end
 

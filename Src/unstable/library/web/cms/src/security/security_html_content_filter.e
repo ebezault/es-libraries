@@ -41,9 +41,9 @@ feature -- Access
 		do
 			create Result.make_from_string ("Forbidden HTML tags: ")
 			across
-				forbidden_html_tags as c
+				forbidden_html_tags as t
 			loop
-				Result.append ("<" + c.item + "> ")
+				Result.append ("<" + t + "> ")
 			end
 		end
 
@@ -51,9 +51,9 @@ feature -- Access
 		do
 			create Result.make_from_string ("Forbidden HTML tags: ")
 			across
-				forbidden_html_tags as c
+				forbidden_html_tags as t
 			loop
-				Result.append ("&lt;" + c.item + "&gt; ")
+				Result.append ("&lt;" + t + "&gt; ")
 			end
 		end
 
@@ -150,7 +150,7 @@ feature -- Conversion
 				elseif attached {READABLE_STRING_32} l_tagname as l_tagname_s32 then
 					l_tagname := l_tagname_s32.as_lower
 				end
-				Result := across forbidden_html_tags as c some l_tagname.same_string (c.item) end
+				Result := across forbidden_html_tags as t some l_tagname.same_string (t) end
 			else
 				Result := True
 			end
@@ -272,6 +272,6 @@ feature -- Conversion
 		end
 
 note
-	copyright: "2011-2018, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

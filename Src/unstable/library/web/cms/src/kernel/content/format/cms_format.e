@@ -47,12 +47,12 @@ feature -- Access
 			-- Filter named `a_name' if any.
 		do
 			across
-				filters as ic
+				filters as f
 			until
 				Result /= Void
 			loop
-				if a_name.is_case_insensitive_equal (ic.item.name) then
-					Result := ic.item
+				if a_name.is_case_insensitive_equal (f.name) then
+					Result := f
 				end
 			end
 		end
@@ -63,11 +63,11 @@ feature -- Status report
 			-- Has filter named `f_name`?
 		do
 			across
-				filters as ic
+				filters as f
 			until
 				Result
 			loop
-				Result := f_name.is_case_insensitive_equal (ic.item.name)
+				Result := f_name.is_case_insensitive_equal (f.name)
 			end
 		end
 
@@ -83,10 +83,10 @@ feature -- Status report
 			end
 			Result.append_character (' ')
 			across
-				filters as ic
+				filters as f
 			loop
 				Result.append_character ('+')
-				Result.append (ic.item.name)
+				Result.append (f.name)
 			end
 		end
 
@@ -102,12 +102,12 @@ feature -- Element change
 			end
 		end
 
-	import_filters_from_format (f: CONTENT_FORMAT)
+	import_filters_from_format (ft: CONTENT_FORMAT)
 		do
 			across
-				f.filters as ic
+				ft.filters as f
 			loop
-				add_filter (ic.item)
+				add_filter (f)
 			end
 		end
 
@@ -143,6 +143,6 @@ feature -- Element change
 
 
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

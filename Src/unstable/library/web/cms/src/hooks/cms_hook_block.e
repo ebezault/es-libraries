@@ -54,19 +54,19 @@ feature -- Blocks
 			p := a_cms_api.cache_location.extended ("_blocks")
 			if a_block_id_list /= Void and attached block_list as l_ids then
 				across
-					a_block_id_list as ic
+					a_block_id_list as l_item
 				loop
-					l_id := ic.item
+					l_id := l_item
 					if not l_id.is_whitespace and l_id[1] = '?' then
 						l_id := l_id.substring (2, l_id.count)
 					end
 					l_found := False
 					across
-						l_ids as ids_ic
+						l_ids as l_ids_item
 					until
 						l_found
 					loop
-						s := ids_ic.item
+						s := l_ids_item
 						if not s.is_whitespace and then s[1] = '?' then
 							s := s.substring (2, s.count)
 						end
@@ -85,6 +85,6 @@ feature -- Blocks
 		end
 
 note
-	copyright: "2011-2019, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

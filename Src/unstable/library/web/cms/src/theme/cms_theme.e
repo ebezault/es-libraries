@@ -46,7 +46,7 @@ feature -- Status report
 	has_region (a_region_name: READABLE_STRING_GENERAL): BOOLEAN
 			-- Current theme has region `a_region_name' declared?
 		do
-			Result := across regions as ic some a_region_name.is_case_insensitive_equal (ic.item) end
+			Result := across regions as reg some a_region_name.is_case_insensitive_equal (reg) end
 		end
 
 feature -- Element change
@@ -97,10 +97,10 @@ feature -- Conversion
 			create cl.make_from_string ("menu")
 			if a_options /= Void and then attached a_options.css_classes as lst then
 				across
-					lst as ic
+					lst as v
 				loop
 					cl.append_character (' ')
-					cl.append (ic.item)
+					cl.append (v)
 				end
 			end
 			create Result.make_from_string ("<div id=%"")
@@ -114,9 +114,9 @@ feature -- Conversion
 				Result.append ("<ul class=%"vertical%" >%N")
 			end
 			across
-				a_menu as c
+				a_menu as v
 			loop
-				append_cms_link_to (c.item, Result)
+				append_cms_link_to (v, Result)
 			end
 			Result.append ("</ul>%N")
 			Result.append ("</div>")
@@ -189,7 +189,7 @@ feature {NONE} -- Implementation
 					across
 						l_children as c
 					loop
-						append_cms_link_to (c.item, s)
+						append_cms_link_to (c, s)
 					end
 					s.append ("</ul>")
 				end
@@ -198,7 +198,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "2011-2022, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

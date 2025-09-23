@@ -51,10 +51,10 @@ feature -- Execution
 						i := l_offset
 						s.append ("<div id=%"messages%">")
 						across
-							l_mails as ic
+							l_mails as m
 						loop
 							i := i + 1
-							if attached {CMS_EMAIL} ic.item as e then
+							if attached {CMS_EMAIL} m as e then
 								append_cms_email_info_to (i, e, s)
 							end
 						end
@@ -105,9 +105,9 @@ feature -- Execution
 			end
 
 			across
-				e.to_addresses as ic
+				e.to_addresses as add
 			loop
-				if ic.item.has_substring (api.setup.site_notification_email) then
+				if add.has_substring (api.setup.site_notification_email) then
 					is_notif := True
 				else
 					is_notif := False
@@ -117,28 +117,28 @@ feature -- Execution
 					a_html.append (" notification")
 				end
 				a_html.append ("%"><strong>to:</strong> ")
-				a_html.append (html_encoded (ic.item))
+				a_html.append (html_encoded (add))
 				a_html.append ("</span>")
 				a_html.append ("<br/>")
 			end
 			if attached e.cc_addresses as l_cc_addresses then
 				across
-					l_cc_addresses as ic
+					l_cc_addresses as add
 				loop
 					is_notif := False
 					a_html.append (" <span class=%"address%"><strong>cc:</strong> ")
-					a_html.append (html_encoded (ic.item))
+					a_html.append (html_encoded (add))
 					a_html.append ("</span>")
 					a_html.append ("<br/>")
 				end
 			end
 			if attached e.bcc_addresses as l_bcc_addresses then
 				across
-					l_bcc_addresses as ic
+					l_bcc_addresses as add
 				loop
 					is_notif := False
 					a_html.append (" <span class=%"address%"><strong>bcc:</strong> ")
-					a_html.append (html_encoded (ic.item))
+					a_html.append (html_encoded (add))
 					a_html.append ("</span>")
 					a_html.append ("<br/>")
 				end

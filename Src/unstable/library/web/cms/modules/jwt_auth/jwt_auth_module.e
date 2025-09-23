@@ -344,7 +344,7 @@ feature -- Auth hook
 
 feature -- Hook
 
-	cleanup (ctx: CMS_HOOK_CLEANUP_CONTEXT; a_response: CMS_RESPONSE)
+	cleanup (ctx: CMS_HOOK_CLEANUP_CONTEXT; a_response: detachable CMS_RESPONSE)
 			-- Process cron event
 		local
 			dt: DATE_TIME
