@@ -54,7 +54,7 @@ feature -- Access
 			across
 				head_lines as h
 			loop
-				Result.append (h.item)
+				Result.append (h)
 				Result.append_character ('%N')
 			end
 		end
@@ -215,7 +215,7 @@ feature -- Element change
 		end
 
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

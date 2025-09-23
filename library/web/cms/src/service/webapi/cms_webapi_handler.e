@@ -105,12 +105,12 @@ feature -- Factory
 			m.append_string_general ("Permissions: ")
 			n := m.count
 			across
-				perms as ic
+				perms as p
 			loop
 				if m.count > n then
 					m.append (",")
 				end
-				m.append_string_general (ic.item)
+				m.append_string_general (p)
 			end
 			Result := new_access_denied_error_response (m, req, res)
 		end

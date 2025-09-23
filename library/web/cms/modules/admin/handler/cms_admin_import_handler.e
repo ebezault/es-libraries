@@ -64,10 +64,10 @@ feature -- Execution
 			then
 				s.append ("<div>Sub directories:<ul>")
 				across
-					l_dirs as ic
+					l_dirs as d
 				loop
 					s.append ("<li>")
-					s.append (utf_8_encoded (ic.item))
+					s.append (utf_8_encoded (d))
 					s.append ("</li>")
 				end
 				s.append ("</ul>%N")
@@ -99,9 +99,9 @@ feature -- Execution
 								api.hooks.invoke_import_from (Void, l_importation, l_response)
 								create s.make_empty
 								across
-									l_importation.logs as ic
+									l_importation.logs as log
 								loop
-									s.append (ic.item)
+									s.append (log)
 									s.append ("<br/>")
 									s.append_character ('%N')
 								end

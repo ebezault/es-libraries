@@ -75,10 +75,10 @@ feature -- Execution
 						if attached fd.table_item ("cleanup-params") as f_tb then
 							create tb.make (f_tb.count)
 							across
-								f_tb as ic
+								f_tb as p
 							loop
-								if attached {WSF_VALUE} ic.item as v then
-									tb[ic.key] := v.string_representation
+								if attached {WSF_VALUE} p as v then
+									tb[@p.key] := v.string_representation
 								end
 							end
 						end
@@ -87,9 +87,9 @@ feature -- Execution
 						l_response.add_notice_message ("Process cleanup operation (if allowed)!")
 						create s.make_empty
 						across
-							ctx.logs as ic
+							ctx.logs as log
 						loop
-							s.append (ic.item)
+							s.append (log)
 							s.append ("<br/>")
 							s.append_character ('%N')
 						end

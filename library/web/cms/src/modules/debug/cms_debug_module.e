@@ -155,17 +155,14 @@ feature -- Handler
 		end
 
 	append_router_info_to (a_router: WSF_ROUTER; r: CMS_RESPONSE; t: STRING_8)
-		local
-			ri: WSF_ROUTER_ITEM
 		do
 			t.append ("<h2>Router</h2>%N")
 			if attached {CMS_ROUTER} a_router as l_cms_router then
 
 			end
 			across
-				a_router as ic
+				a_router as ri
 			loop
-				ri := ic.item
 				t.append ("<li>")
 				t.append (html_encoded (ri.debug_output))
 				t.append ("</li>%N")
@@ -173,7 +170,7 @@ feature -- Handler
 --					
 --				end
 --				across
---					ri.request_methods as rmic
+--					ri.request_methods as m
 --				loop
 --					
 --				end

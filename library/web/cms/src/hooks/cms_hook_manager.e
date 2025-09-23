@@ -50,11 +50,9 @@ feature -- Hook: new user hook
 		do
 			if attached subscribers (a_hook_type) as lst then
 				across
-					lst as ic
+					lst as h
 				loop
-					if attached ic.item as h then
-						proc (h)
-					end
+					proc (h)
 				end
 			end
 		end
@@ -67,7 +65,7 @@ invariant
 	all_subscribers /= Void
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
 

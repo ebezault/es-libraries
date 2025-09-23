@@ -289,7 +289,7 @@ feature -- Hooks
 				l_cookie.set_max_age (0) --| Remove cookie
 				l_cookie.set_expiration_date (create {DATE_TIME}.make_from_epoch (0))
 				res.add_cookie (l_cookie)
-				api.unset_current_user (req)
+				api.unset_current_user
 			else
 				debug ("refactor_fixme")
 					fixme (generator + ": missing else implementation in handle_logout!")

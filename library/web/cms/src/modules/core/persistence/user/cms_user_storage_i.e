@@ -57,8 +57,8 @@ feature -- Access
 			-- Users with profile_name `a_profile_name', if any.
 		deferred
 		ensure
-			same_profile_name: Result /= Void implies across Result as c all
-					(attached c.item.profile_name as r_profile_name and then a_profile_name.same_string (r_profile_name))
+			same_profile_name: Result /= Void implies across Result as u all
+					(attached u.profile_name as r_profile_name and then a_profile_name.same_string (r_profile_name))
 				end
 		end
 
@@ -171,11 +171,11 @@ feature -- Access: roles and permissions
 			-- TODO: improve with dedicated SQL request
 			if attached user_roles_for (a_user) as lst then
 				across
-					lst as ic
+					lst as r
 				until
 					Result
 				loop
-					Result := a_role.same_user_role (ic.item)
+					Result := a_role.same_user_role (r)
 				end
 			end
 		end

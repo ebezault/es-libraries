@@ -61,8 +61,6 @@ feature -- HTTP Methods
 		local
 			l_response: CMS_RESPONSE
 			s: STRING
-			l_role: CMS_USER_ROLE
-			l_perm: READABLE_STRING_8
 			l_count: INTEGER
 			user_api: CMS_USER_API
 			l_full: BOOLEAN
@@ -95,14 +93,13 @@ feature -- HTTP Methods
 					if l_full then
 						s.append ("<table class=%"cms-roles%"><tr><th>Permissions</th>")
 						across
-							lst as ic
+							lst as r
 						loop
-							l_role := ic.item
 							s.append ("<th class=%"cms_role%">")
 							s.append ("<a href=%"")
-							s.append (req.absolute_script_url (api.administration_path ("/role/") + l_role.id.out))
+							s.append (req.absolute_script_url (api.administration_path ("/role/") + r.id.out))
 							s.append ("%">")
-							s.append (html_encoded (l_role.name))
+							s.append (html_encoded (r.name))
 							s.append ("</a>")
 							s.append ("</th>%N")
 						end
@@ -110,16 +107,16 @@ feature -- HTTP Methods
 						if attached user_api.role_permissions as l_role_permissions then
 							create l_mods.make (l_role_permissions.count)
 							across
-								l_role_permissions as m_ic
+								l_role_permissions as p
 							loop
-								l_modname := m_ic.key
+								l_modname := @p.key
 								l_mods.force (l_modname)
 							end
 							string_sorter.sort (l_mods)
 							across
-								l_mods as m_ic
+								l_mods as m
 							loop
-								l_modname := m_ic.item
+								l_modname := m
 								l_perms := l_role_permissions.item (l_modname)
 								s.append ("<tr><th colspan=%"" + (1 + lst.count).out + "%">")
 								if l_modname.is_whitespace then
@@ -130,19 +127,17 @@ feature -- HTTP Methods
 								s.append ("</th></tr>")
 								if l_perms /= Void then
 									across
-										l_perms as p_ic
+										l_perms as l_perm
 									loop
-										l_perm := p_ic.item
 										if not l_perm.is_whitespace then
 											s.append ("<tr><td class=%"cms_role_permission%">")
 											s.append (html_encoded (l_perm))
 											s.append ("</td>")
 											across
-												lst as ic
+												lst as r
 											loop
-												l_role := ic.item
 												s.append ("<td>")
-												if l_role.has_permission (l_perm) then
+												if r.has_permission (l_perm) then
 													s.append ("X")
 												end
 												s.append ("</td>")
@@ -157,14 +152,13 @@ feature -- HTTP Methods
 					else
 						s.append ("<ul class=%"cms-roles%">%N")
 						across
-							lst as ic
+							lst as r
 						loop
-							l_role := ic.item
 							s.append ("<li class=%"cms_role%">")
 							s.append ("<a href=%"")
-							s.append (req.absolute_script_url (api.administration_path ("/role/") + l_role.id.out))
+							s.append (req.absolute_script_url (api.administration_path ("/role/") + r.id.out))
 							s.append ("%">")
-							s.append (html_encoded (l_role.name))
+							s.append (html_encoded (r.name))
 							s.append ("</a>")
 							s.append ("</li>%N")
 						end

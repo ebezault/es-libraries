@@ -57,17 +57,17 @@ feature -- Conversion
 		do
 			if attached before_widgets as lst then
 				across
-					lst as ic
+					lst as w
 				loop
-					ic.item.append_to_html (a_theme, a_html)
+					w.append_to_html (a_theme, a_html)
 				end
 			end
 			Precursor (a_theme, a_html)
 			if attached after_widgets as lst then
 				across
-					lst as ic
+					lst as w
 				loop
-					ic.item.append_to_html (a_theme, a_html)
+					w.append_to_html (a_theme, a_html)
 				end
 			end
 		end
@@ -137,6 +137,6 @@ feature -- Helpers
 		end
 
 note
-	copyright: "2011-2017, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

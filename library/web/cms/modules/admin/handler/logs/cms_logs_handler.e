@@ -103,9 +103,9 @@ feature -- HTTP Methods
 				create b.make (100)
 				b.append ("<ul class=%"logs%">%N")
 				across
-					l_logs as ic
+					l_logs as log
 				loop
-					l_log := ic.item
+					l_log := log
 					l_date := l_log.date.date
 					if l_prev_date = Void or else not l_date.is_equal (l_prev_date) then
 						b.append ("<li class=%"section%">" + l_date.out + "</li>")

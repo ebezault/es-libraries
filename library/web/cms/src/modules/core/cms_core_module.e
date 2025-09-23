@@ -120,9 +120,9 @@ feature {CMS_API} -- Module management
 			l_authenticated_role.add_permission ("delete own page")
 			l_authenticated_role.add_permission ("trash own page")
 			across
-				a_api.formats as ic
+				a_api.formats as ft
 			loop
-				l_authenticated_role.add_permission (use_format_permission_name (ic.item))
+				l_authenticated_role.add_permission (use_format_permission_name (ft))
 			end
 			a_api.user_api.save_user_role (l_authenticated_role)
 		end
@@ -151,9 +151,9 @@ feature -- Security
 			Result.force (perm_view_users)
 			if attached cms_api as l_cms_api then
 				across
-					l_cms_api.formats as ic
+					l_cms_api.formats as ft
 				loop
-					Result.force (use_format_permission_name (ic.item))
+					Result.force (use_format_permission_name (ft))
 				end
 			end
 		end
@@ -188,6 +188,7 @@ feature -- Hook
 		local
 			fset: WSF_FORM_FIELD_SET
 			tf: WSF_FORM_TEXT_INPUT
+			k: READABLE_STRING_GENERAL
 		do
 			if
 				attached a_form.id as fid and then
@@ -202,11 +203,12 @@ feature -- Hook
 						create fset.make
 						fset.set_legend ("User-Profile")
 						across
-							l_profile as ic
+							l_profile as v
 						loop
-							if not ic.key.starts_with (".") then
-								create tf.make_with_text (ic.key.to_string_8, ic.item) -- TODO: the key should be basic string 8, check if this is true.
-								tf.set_label (html_encoded (ic.key.to_string_32))
+							k := @v.key
+							if not k.starts_with (".") then
+								create tf.make_with_text (k.to_string_8, v) -- TODO: the key should be basic string 8, check if this is true.
+								tf.set_label (html_encoded (k.to_string_32))
 								a_form.extend (tf)
 							end
 						end
@@ -219,7 +221,7 @@ feature -- Hook
 		end
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

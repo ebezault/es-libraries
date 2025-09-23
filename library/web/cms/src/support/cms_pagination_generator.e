@@ -258,14 +258,11 @@ feature -- Convertion
 	append_to_html (a_response: CMS_RESPONSE; a_output: STRING)
 			-- Append html pager to `a_output' in the context of `a_response'.
 			-- note: First, [Prev], [Next], Last.
-		local
-			lnk: CMS_LOCAL_LINK
 		do
 			a_output.append ("<ul class=%"pagination%">%N")
 			across
-				pagination_links as ic
+				pagination_links as lnk
 			loop
-				lnk := ic.item
 				if not lnk.is_forbidden then
 					if lnk.is_active then
 						a_output.append ("<li class=%"active%">")
@@ -284,6 +281,6 @@ feature -- Convertion
 		end
 
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

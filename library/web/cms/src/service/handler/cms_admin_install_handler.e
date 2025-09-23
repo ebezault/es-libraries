@@ -71,10 +71,10 @@ feature -- HTTP Methods
 				s.append ("<h2>Informations</h2>")
 				s.append ("<ul>")
 				across
-					api.setup.system_info as ic
+					api.setup.system_info as si
 				loop
-					s.append ("<li><strong>"+ html_encoded (ic.key) +":</strong> ")
-					s.append (html_encoded (ic.item))
+					s.append ("<li><strong>"+ html_encoded (@si.key) +":</strong> ")
+					s.append (html_encoded (si))
 					s.append ("</li>")
 				end
 				s.append ("<li><strong>Storage:</strong> ")
@@ -91,9 +91,9 @@ feature -- HTTP Methods
 				s.append ("<h2>Modules</h2><ul>")
 				create lst.make (1)
 				across
-					api.setup.modules as ic
+					api.setup.modules as m
 				loop
-					l_module := ic.item
+					l_module := m
 					if api.is_module_installed (l_module) then
 						s.append ("<li>")
 						s.append (l_module.name)
@@ -112,9 +112,9 @@ feature -- HTTP Methods
 				end
 
 				across
-					lst as ic
+					lst as m
 				loop
-					l_module := ic.item
+					l_module := m
 					s.append ("<li>")
 					s.append (l_module.name)
 					if l_module.is_enabled then

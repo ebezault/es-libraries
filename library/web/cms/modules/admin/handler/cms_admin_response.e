@@ -28,9 +28,9 @@ feature -- Process
 			if attached menu_system.management_menu.item_by_location (api.administration_path_location ("")) as l_admin_lnk then
 				if attached l_admin_lnk.children as l_children then
 					across
-						l_children as ic
+						l_children as ch
 					loop
-						lnk := ic.item
+						lnk := ch
 						if attached {CMS_LOCAL_LINK} lnk as loc_lnk then
 							l_admin_links.force (["core", loc_lnk.permission_arguments, lnk, lnk.help])
 							if
@@ -38,9 +38,9 @@ feature -- Process
 								not l_sub_children.is_empty
 							then
 								across
-									l_sub_children as sub_ic
+									l_sub_children as sub
 								loop
-									lnk := sub_ic.item
+									lnk := sub
 									if attached {CMS_LOCAL_LINK} lnk as loc_sub_lnk then
 										l_admin_links.force ([loc_lnk.title, loc_sub_lnk.permission_arguments, loc_sub_lnk, loc_sub_lnk.help])
 									else
@@ -57,41 +57,41 @@ feature -- Process
 
 			create categories.make_caseless (3)
 			across
-				l_admin_links as ic
+				l_admin_links as ln
 			loop
-				l_package := ic.item.package
+				l_package := ln.package
 				lst := categories.item (l_package)
 				if lst = Void then
 					create lst.make (1)
 					categories.force (lst, l_package)
 				end
-				lst.force ([ic.item.permissions, ic.item.link, ic.item.help])
+				lst.force ([ln.permissions, ln.link, ln.help])
 			end
 
 			create b.make_empty
 			set_title (translation ("Admin Page", Void))
 			fixme ("Check how to make it configurable")
 			across
-				categories as cats_ic
+				categories as cat
 			loop
-				lst := cats_ic.item
+				lst := cat
 				b.append ("<h3>")
-				b.append ("<a name=%""+ url_encoded (cats_ic.key) +"%"></a>")
-				b.append (html_encoded (cats_ic.key))
+				b.append ("<a name=%""+ url_encoded (@cat.key) +"%"></a>")
+				b.append (html_encoded (@cat.key))
 				b.append ("</h3>")
 				b.append ("<ul>")
 				across
-					lst as ic
+					lst as c
 				loop
 					if
-						not attached ic.item.permissions as l_permissions
+						not attached c.permissions as l_permissions
 						or else has_permissions (l_permissions)
 					then
 						b.append ("<li>")
-						if attached ic.item.link as i_lnk then
+						if attached c.link as i_lnk then
 							b.append (link (i_lnk.title, i_lnk.location, Void))
 						end
-						if attached ic.item.help as l_help then
+						if attached c.help as l_help then
 							b.append ("<div class=%"description%">")
 							b.append (html_encoded (l_help))
 							b.append ("</div>")

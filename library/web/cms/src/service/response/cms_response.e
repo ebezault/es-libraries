@@ -85,7 +85,7 @@ feature -- Head customization
 				create {ARRAYED_LIST [like additional_page_head_lines.item]} lst.make (1)
 				additional_page_head_lines := lst
 			end
-			if a_allow_duplication or else across lst as c all not c.item.same_string (s) end then
+			if a_allow_duplication or else across lst as v all not v.same_string (s) end then
 				lst.extend (s)
 			end
 		end
@@ -373,9 +373,9 @@ feature -- Block management
 					create Result.make (lst.count)
 				end
 				across
-					lst as ic
+					lst as v
 				loop
-					Result.force (create {CMS_BLOCK_EXPRESSION_CONDITION}.make (ic.item))
+					Result.force (create {CMS_BLOCK_EXPRESSION_CONDITION}.make (v))
 				end
 			end
 		end
@@ -393,7 +393,7 @@ feature -- Block management
 			-- If no preference, return `dft'.
 		do
 			if attached block_conditions (a_block_id) as l_conditions then
-				Result := across l_conditions as ic some ic.item.satisfied_for_response (Current) end
+				Result := across l_conditions as cond some cond.satisfied_for_response (Current) end
 			else
 				Result := dft
 			end
@@ -433,11 +433,11 @@ feature -- Block management
 			p := api.cache_location.extended ("_blocks")
 			if a_block_id_list /= Void then
 				across
-					a_block_id_list as ic
+					a_block_id_list as bk
 				loop
 						-- FIXME: find a smarter way to avoid conflict between block id, and other cache id.
 						-- however, this is only about "Cache" so not that critical if deleted by mistake.
-					pb := p.extended (ic.item).appended_with_extension ("html")
+					pb := p.extended (bk).appended_with_extension ("html")
 					create l_cache.make (pb)
 					if l_cache.exists then
 						l_cache.delete
@@ -473,10 +473,10 @@ feature {CMS_HOOK_CORE_MANAGER} -- Block management: internal
 			then
 				create Result.make (tb.count)
 				across
-					tb as ic
+					tb as l_item
 				loop
-					k := ic.key
-					v := ic.item
+					k := @l_item.key
+					v := l_item
 					if v.is_valid_as_string_8 then
 						l_block_id := v.to_string_8
 						if k.is_valid_as_string_8 then
@@ -557,9 +557,9 @@ feature {NONE} -- Blocks
 				attached a_alias_table.item (b.name) as l_aliases
 			then
 				across
-					l_aliases as ic
+					l_aliases as a
 				loop
-					add_block (create {CMS_ALIAS_BLOCK}.make_with_block (ic.item, b), a_default_region)
+					add_block (create {CMS_ALIAS_BLOCK}.make_with_block (a, b), a_default_region)
 				end
 			end
 		end
@@ -595,11 +595,11 @@ feature -- Blocks
 			l_found: BOOLEAN
 		do
 			across
-				regions as reg_ic
+				regions as reg
 			until
 				l_found
 			loop
-				l_region := reg_ic.item
+				l_region := reg
 				l_found := l_region.blocks.has (b)
 				if l_found then
 					l_region.remove (b)
@@ -618,13 +618,13 @@ feature -- Blocks
 			get_module_blocks
 
 			across
-				regions as reg_ic
+				regions as reg
 			loop
-				l_region := reg_ic.item
+				l_region := reg
 				across
-					l_region.blocks as ic
+					l_region.blocks as bk
 				loop
-					update_block (ic.item)
+					update_block (bk)
 				end
 				l_region.sort
 			end
@@ -860,7 +860,7 @@ feature -- Message
 				across
 					errs as err
 				loop
-					if attached err.item as e then
+					if attached err as e then
 						if attached e.field as l_field then
 							if attached e.message as e_msg then
 								add_error_message (e_msg) --"Field [" + l_field.name + "] is invalid. " + e_msg)
@@ -989,13 +989,13 @@ feature -- Generation
 			create l_menu_list_prepared.make (0)
 			get_blocks
 			across
-				regions as reg_ic
+				regions as reg
 			loop
-				l_region := reg_ic.item
+				l_region := reg
 				across
-					l_region.blocks as ic
+					l_region.blocks as bk
 				loop
-					if attached {CMS_MENU_BLOCK} ic.item as l_menu_block then
+					if attached {CMS_MENU_BLOCK} bk as l_menu_block then
 						l_menu_list_prepared.force (l_menu_block.menu)
 						prepare_links (l_menu_block.menu)
 						if l_menu_block.menu.is_empty then
@@ -1008,9 +1008,9 @@ feature -- Generation
 				end
 				if l_empty_blocks /= Void then
 					across
-						l_empty_blocks as ic
+						l_empty_blocks as bk
 					loop
-						l_region.remove (ic.item)
+						l_region.remove (bk)
 					end
 					l_empty_blocks := Void
 				end
@@ -1018,53 +1018,53 @@ feature -- Generation
 
 				-- Prepare menu not in a block.
 			across
-				menu_system as ic
+				menu_system as m
 			loop
-				if not l_menu_list_prepared.has (ic.item) then
-					l_menu_list_prepared.force (ic.item)
-					prepare_links (ic.item)
+				if not l_menu_list_prepared.has (m) then
+					l_menu_list_prepared.force (m)
+					prepare_links (m)
 				end
 			end
 			l_menu_list_prepared.wipe_out -- Clear for memory purpose.
 
 				-- Values Associated with current Execution object.
 			across
-				values as ic
+				values as val
 			loop
-				page.register_variable (ic.item, ic.key)
+				page.register_variable (val, @val.key)
 			end
 
 				-- Block rendering
 			across
-				regions as reg_ic
+				regions as reg
 			loop
-				l_region := reg_ic.item
+				l_region := reg
 					-- region blocks Already sorted.
 				across
-					l_region.blocks as ic
+					l_region.blocks as bk
 				loop
-					if attached {CMS_SMARTY_TEMPLATE_BLOCK} ic.item as l_tpl_block then
+					if attached {CMS_SMARTY_TEMPLATE_BLOCK} bk as l_tpl_block then
 							-- Apply page variables to smarty block.
 							-- FIXME: maybe add notion of values at the CMS_BLOCK level
 							--        or consider a CMS_BLOCK_WITH_VALUES ...
 						across
-							page.variables as var_ic
+							page.variables as var
 						loop
-							if not l_tpl_block.values.has (var_ic.key) then
+							if not l_tpl_block.values.has (@var.key) then
 									-- Do not overwrite if has key.
-								l_tpl_block.set_value (var_ic.item, var_ic.key)
+								l_tpl_block.set_value (var, @var.key)
 							end
 						end
 					end
-					l_block_html := theme.block_html (ic.item)
-					if attached {CMS_CACHE_BLOCK} ic.item then
+					l_block_html := theme.block_html (bk)
+					if attached {CMS_CACHE_BLOCK} bk then
 							-- Already block from cache
 						do_nothing
-					elseif attached block_cache (ic.item.name) as l_block_cache_info then
+					elseif attached block_cache (bk.name) as l_block_cache_info then
 							-- Cache-able block, then update/create the related cache.
 						l_block_cache_info.cache_block.set_cache_content (l_block_html)
 					end
-					page.add_to_region (l_block_html, reg_ic.item.name)
+					page.add_to_region (l_block_html, reg.name)
 				end
 			end
 
@@ -1073,7 +1073,7 @@ feature -- Generation
 				across
 					l_head_lines as hl
 				loop
-					page.head_lines.force (hl.item)
+					page.head_lines.force (hl)
 				end
 			end
 		end
@@ -1095,9 +1095,9 @@ feature -- Generation
 
 				-- Fill with CMS builtin variables.
 			across
-				builtin_variables as ic
+				builtin_variables as var
 			loop
-				page.register_variable (ic.item, ic.key)
+				page.register_variable (var, @var.key)
 			end
 
 				-- Variables
@@ -1146,7 +1146,6 @@ feature -- Generation
 			-- Update the active status recursively on `a_comp'.
 		local
 			to_remove: ARRAYED_LIST [CMS_LINK]
-			ln: CMS_LINK
 			l_comp_link: detachable CMS_LOCAL_LINK
 		do
 			if attached {CMS_LOCAL_LINK} a_comp as lnk then
@@ -1156,9 +1155,8 @@ feature -- Generation
 			if attached a_comp.items as l_items then
 				create to_remove.make (0)
 				across
-					l_items as ic
+					l_items as ln
 				loop
-					ln := ic.item
 					if attached {CMS_LOCAL_LINK} ln as l_local then
 						get_local_link_active_status (l_local)
 					end
@@ -1179,9 +1177,9 @@ feature -- Generation
 					end
 				end
 				across
-					to_remove as ic
+					to_remove as v
 				loop
-					a_comp.remove (ic.item)
+					a_comp.remove (v)
 				end
 			end
 			if l_comp_link /= Void and then l_comp_link.is_active then

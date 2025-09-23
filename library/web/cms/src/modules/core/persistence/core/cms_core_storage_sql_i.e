@@ -451,24 +451,24 @@ feature -- Emails
 			lst := m.to_addresses
 			if lst /= Void and then not lst.is_empty then
 				create arr.make (lst.count)
-				across lst as ic loop
-					arr.extend (create {JSON_STRING}.make_from_string_general (ic.item))
+				across lst as v loop
+					arr.extend (create {JSON_STRING}.make_from_string_general (v))
 				end
 				Result.put (arr, "to_addresses")
 			end
 			lst := m.cc_addresses
 			if lst /= Void and then not lst.is_empty then
 				create arr.make (lst.count)
-				across lst as ic loop
-					arr.extend (create {JSON_STRING}.make_from_string_general (ic.item))
+				across lst as v loop
+					arr.extend (create {JSON_STRING}.make_from_string_general (v))
 				end
 				Result.put (arr, "cc_addresses")
 			end
 			lst := m.bcc_addresses
 			if lst /= Void and then not lst.is_empty then
 				create arr.make (lst.count)
-				across lst as ic loop
-					arr.extend (create {JSON_STRING}.make_from_string_general (ic.item))
+				across lst as v loop
+					arr.extend (create {JSON_STRING}.make_from_string_general (v))
 				end
 				Result.put (arr, "bcc_addresses")
 			end
@@ -476,8 +476,8 @@ feature -- Emails
 			lst := m.additional_header_lines
 			if lst /= Void and then not lst.is_empty then
 				create arr.make (lst.count)
-				across lst as ic loop
-					arr.extend (create {JSON_STRING}.make_from_string_general (ic.item))
+				across lst as v loop
+					arr.extend (create {JSON_STRING}.make_from_string_general (v))
 				end
 				Result.put (arr, "additional_header_lines")
 			end
@@ -521,8 +521,8 @@ feature -- Emails
 				jarr := jo.array_item ("to_addresses")
 				if jarr /= Void then
 					create l_addresses.make (jarr.count)
-					across jarr as ic loop
-						if attached {JSON_STRING} ic.item as l_js_addr then
+					across jarr as v loop
+						if attached {JSON_STRING} v as l_js_addr then
 							l_to_address := {UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (l_js_addr.unescaped_string_32)
 							l_addresses.force (l_to_address)
 						end
@@ -534,10 +534,10 @@ feature -- Emails
 					create Result.make (l_from, l_to_address, l_subject, l_content)
 					if l_addresses /= Void then
 						across
-							l_addresses as ic
+							l_addresses as a
 						loop
-							if not Result.to_addresses.has (ic.item) then
-								Result.to_addresses.force (ic.item)
+							if not Result.to_addresses.has (a) then
+								Result.to_addresses.force (a)
 							end
 						end
 					end
@@ -555,16 +555,16 @@ feature -- Emails
 
 					jarr := jo.array_item ("cc_addresses")
 					if jarr /= Void then
-						across jarr as ic loop
-							if attached {JSON_STRING} ic.item as l_js_addr then
+						across jarr as v loop
+							if attached {JSON_STRING} v as l_js_addr then
 								Result.add_cc_address ({UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (l_js_addr.unescaped_string_32))
 							end
 						end
 					end
 					jarr := jo.array_item ("bcc_addresses")
 					if jarr /= Void then
-						across jarr as ic loop
-							if attached {JSON_STRING} ic.item as l_js_addr then
+						across jarr as v loop
+							if attached {JSON_STRING} v as l_js_addr then
 								Result.add_bcc_address ({UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (l_js_addr.unescaped_string_32))
 							end
 						end
@@ -572,8 +572,8 @@ feature -- Emails
 
 					jarr := jo.array_item ("additional_header_lines")
 					if jarr /= Void then
-						across jarr as ic loop
-							if attached {JSON_STRING} ic.item as l_js_line then
+						across jarr as v loop
+							if attached {JSON_STRING} v as l_js_line then
 								Result.add_header_line ({UTF_CONVERTER}.utf_32_string_to_utf_8_string_8 (l_js_line.unescaped_string_32))
 							end
 						end

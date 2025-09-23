@@ -71,9 +71,9 @@ feature -- Conversion
 			create tpl.make_from_text (source)
 
 			across
-				values as ic
+				values as v
 			loop
-				tpl.add_value (ic.item, ic.key)
+				tpl.add_value (v, @v.key)
 			end
 
 			create l_table_inspector.register (({detachable STRING_TABLE [STRING_8]}).name)
@@ -96,6 +96,6 @@ feature -- Conversion
 		end
 
 note
-	copyright: "2011-2021, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

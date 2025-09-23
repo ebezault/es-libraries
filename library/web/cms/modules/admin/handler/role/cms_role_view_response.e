@@ -81,8 +81,8 @@ feature -- Execution
 				not a_role.permissions.is_empty
 			then
 				s.append ("<ul class=%"cms-permissions%">%N")
-				across a_role.permissions as ic loop
-					s.append ("<li class=%"cms-permission%">"+ ic.item + "</li>%N")
+				across a_role.permissions as perm loop
+					s.append ("<li class=%"cms-permission%">"+ perm + "</li>%N")
 				end
 				s.append ("</ul>%N")
 

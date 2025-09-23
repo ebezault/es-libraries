@@ -40,7 +40,7 @@ feature -- Import
 				-- User roles			
 			if
 				a_import_id_list = Void
-				or else across a_import_id_list as ic some ic.item.same_string ("user_roles") end
+				or else across a_import_id_list as v some v.same_string ("user_roles") end
 			then
 				if
 					a_response.has_permissions (<<"import core">>)
@@ -49,9 +49,9 @@ feature -- Import
 						-- From "core" location
 					if attached json_object_from_location (a_import_ctx.location.extended ("core").extended ("user_roles.json")) as j_user_roles then
 						across
-							j_user_roles as j_ic
+							j_user_roles as jr
 						loop
-							if attached {JSON_OBJECT} j_ic.item as j_user_role then
+							if attached {JSON_OBJECT} jr as j_user_role then
 								import_json_user_role (j_user_role, a_import_ctx)
 							end
 						end
@@ -62,7 +62,7 @@ feature -- Import
 				-- Users
 			if
 				a_import_id_list = Void
-				or else across a_import_id_list as ic some ic.item.same_string ("users") end
+				or else across a_import_id_list as v some v.same_string ("users") end
 			then
 				if
 					a_response.has_permissions (<<"import core">>)
@@ -72,9 +72,9 @@ feature -- Import
 						-- From "core" location
 					if attached json_object_from_location (a_import_ctx.location.extended ("core").extended ("users.json")) as j_users then
 						across
-							j_users as j_ic
+							j_users as ju
 						loop
-							if attached {JSON_OBJECT} j_ic.item as j_user then
+							if attached {JSON_OBJECT} ju as j_user then
 								import_json_user (j_user, a_import_ctx)
 							end
 						end
@@ -89,12 +89,12 @@ feature -- Import
 					if d.exists and then d.is_readable then
 						a_import_ctx.log ("Importing users ..")
 						across
-							d.entries as ic
+							d.entries as e
 						loop
-							if attached ic.item.extension as ext and then ext.same_string_general ("json") then
-								l_id := ic.item.name
+							if attached e.extension as ext and then ext.same_string_general ("json") then
+								l_id := e.name
 								l_id.remove_tail (ext.count + 1)
-								if attached json_object_from_location (p.extended_path (ic.item)) as j_user then
+								if attached json_object_from_location (p.extended_path (e)) as j_user then
 									import_json_user (j_user, a_import_ctx)
 								end
 							end
@@ -106,7 +106,7 @@ feature -- Import
 				-- User roles			
 			if
 				a_import_id_list = Void
-				or else across a_import_id_list as ic some ic.item.same_string ("files") end
+				or else across a_import_id_list as v some v.same_string ("files") end
 			then
 				if
 					a_response.has_permissions (<<"import files">>)
@@ -116,9 +116,9 @@ feature -- Import
 					p := a_import_ctx.location.extended ("files")
 					if attached files_from_location (p, True) as l_files then
 						across
-							l_files as ic
+							l_files as f
 						loop
-							import_file (ic.item, p, a_import_ctx)
+							import_file (f, p, a_import_ctx)
 						end
 					end
 				end
@@ -206,9 +206,9 @@ feature -- Import
 				create Result.make (l_name)
 				if attached {JSON_ARRAY} j.item ("permissions") as j_permissions then
 					across
-						j_permissions as ic
+						j_permissions as jp
 					loop
-						if attached {JSON_STRING} ic.item as j_permission then
+						if attached {JSON_STRING} jp as j_permission then
 							Result.add_permission (j_permission.unescaped_string_8)
 						end
 					end
@@ -248,9 +248,9 @@ feature -- Import
 				if attached {JSON_ARRAY} j.item ("roles") as j_roles then
 					create l_roles.make (j_roles.count)
 					across
-						j_roles as ic
+						j_roles as jr
 					loop
-						if attached {JSON_STRING} ic.item as j_role then
+						if attached {JSON_STRING} jr as j_role then
 							if attached user_api.user_role_by_name (j_role.unescaped_string_32) as ur then
 								l_roles.extend (ur)
 							end
@@ -262,6 +262,6 @@ feature -- Import
 		end
 
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

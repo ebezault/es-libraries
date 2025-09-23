@@ -147,13 +147,13 @@ feature -- View/edit Format
 			fset.extend (ftb)
 			if f /= Void then
 				across
-					f.filters as f_ic
+					f.filters as fi
 				loop
 					i := i + 1
-					l_name := f_ic.item.name
-					l_all_filters.force (f_ic.item, l_name)
+					l_name := fi.name
+					l_all_filters.force (fi, l_name)
 					create cb.make_with_value ("filters[" + l_name + "]", l_name.to_string_32)
-					cb.set_title (f_ic.item.title.to_string_32)
+					cb.set_title (fi.title.to_string_32)
 					cb.set_checked (True)
 
 					create hf.make_with_text ("filter_weight[" + l_name + "]", i.out)
@@ -166,25 +166,26 @@ feature -- View/edit Format
 					ftb_row.add_widget (cb)
 --					ftb_row.add_widget (nf)
 					ftb_row.add_widget (hf)
-					ftb_row.add_widget (create {WSF_WIDGET_RAW_TEXT}.make_with_text (f_ic.item.description))
+					ftb_row.add_widget (create {WSF_WIDGET_RAW_TEXT}.make_with_text (fi.description))
 				end
 			end
 			fset.extend_html_text ("<strong>Available filters</strong>:")
 			create ftb.make
 			fset.extend (ftb)
 			across
-				api.content_filters as f_ic
+				api.content_filters as fi
 			loop
-				l_name := f_ic.item.name
+				l_name := fi.name
 				if l_all_filters.has (l_name) then
+
 				else
 					create cb.make_with_value ("filters[" + l_name + "]", l_name.to_string_32)
-					cb.set_title (f_ic.item.title.to_string_32)
+					cb.set_title (fi.title.to_string_32)
 					create ftb_row.make (2)
 					ftb.add_row (ftb_row)
 					ftb_row.add_widget (cb)
-					ftb_row.add_widget (create {WSF_WIDGET_RAW_TEXT}.make_with_text (f_ic.item.description))
-					l_all_filters.force (f_ic.item, f_ic.item.name)
+					ftb_row.add_widget (create {WSF_WIDGET_RAW_TEXT}.make_with_text (fi.description))
+					l_all_filters.force (fi, fi.name)
 				end
 			end
 
@@ -192,12 +193,12 @@ feature -- View/edit Format
 			fset.set_legend ("Content types")
 			Result.extend (fset)
 			across
-				api.content_types as ct_ic
+				api.content_types as ct
 			loop
-				l_name := ct_ic.item.name
+				l_name := ct.name
 				create cb.make_with_value ("content_types[]", l_name.to_string_32)
 				cb.set_title (l_name.to_string_32)
-				if f /= Void and then ct_ic.item.has_format (f.name) then
+				if f /= Void and then ct.has_format (f.name) then
 					cb.set_checked (True)
 				end
 				fset.extend (cb)
@@ -296,52 +297,52 @@ feature -- View/edit Format
 						create lst_to_remove.make (0)
 						create lst_to_add.make (0)
 						across
-							f.filters as ic
+							f.filters as fi
 						loop
-							if attached tb_filters.value (ic.item.name) then
+							if attached tb_filters.value (fi.name) then
 									-- Keep
 							else
-								lst_to_remove.extend (ic.item.name)
+								lst_to_remove.extend (fi.name)
 							end
 						end
 						across
-							tb_filters.values as ic
+							tb_filters.values as val
 						loop
-							if attached {WSF_STRING} ic.item as l_string then
+							if attached {WSF_STRING} val as l_string then
 								if f.filter (l_string.value) = Void then
 									lst_to_add.extend (l_string.value)
 								end
 							end
 						end
 						across
-							lst_to_add as ic
+							lst_to_add as fi
 						loop
---							if attached f.filter (ic.item) then
+--							if attached f.filter (fi) then
 --									-- already there
-							if attached api.content_filters.item (ic.item) as l_filter then
-								check has_not_filter: f.filter (ic.item) = Void end
+							if attached api.content_filters.item (fi) as l_filter then
+								check has_not_filter: f.filter (fi) = Void end
 								f.add_filter (l_filter)
 							end
 						end
 						across
-							lst_to_remove as ic
+							lst_to_remove as fi
 						loop
-							f.remove_filter_by_name (ic.item)
+							f.remove_filter_by_name (fi)
 						end
 					end
 					if
 						attached fd.table_item ("content_types") as tb_content_types
 					then
 						across
-							api.content_types as ic
+							api.content_types as ct
 						loop
-							ic.item.remove_format (f)
+							ct.remove_format (f)
 						end
 						across
-							tb_content_types as ic
+							tb_content_types as v
 						loop
 							if
-								attached {WSF_STRING} ic.item as s_ct and then
+								attached {WSF_STRING} v as s_ct and then
 								attached api.content_type (s_ct.value) as ct and then
 								not ct.has_format (f.name)
 							then
@@ -395,7 +396,6 @@ feature -- All formats
 		local
 			l_response: CMS_RESPONSE
 			s: STRING
-			f: CMS_FORMAT
 			l_count: INTEGER
 			l_is_first: BOOLEAN
 		do
@@ -408,41 +408,40 @@ feature -- All formats
 
 			s.append ("<ul class=%"cms-formats%">%N")
 			across
-				api.formats as ic
+				api.formats as ft
 			loop
-				f := ic.item
 				s.append ("<li class=%"cms_format%">")
 				s.append ("<a href=%"")
-				s.append (req.absolute_script_url (api.administration_path ("/formats/") + api.url_encoded (f.name)))
+				s.append (req.absolute_script_url (api.administration_path ("/formats/") + api.url_encoded (ft.name)))
 				s.append ("%">")
-				s.append (html_encoded (f.name))
+				s.append (html_encoded (ft.name))
 				s.append ("</a>")
 				s.append ("<dl>")
 				s.append ("<dt>filters</dt><dd>")
 				l_is_first := True
 				across
-					f.filters as f_ic
+					ft.filters as fi
 				loop
 				 	if l_is_first then
 				 		l_is_first := False
 				 	else
 				 		s.append (" + ")
 				 	end
-					s.append (html_encoded (f_ic.item.name))
+					s.append (html_encoded (fi.name))
 				end
 				s.append ("</dd>")
 				s.append ("<dt>Content types</dt><dd>")
 				l_is_first := True
 				across
-					api.content_types as ct_ic
+					api.content_types as ct
 				loop
-					if ct_ic.item.has_format (f.name) then
+					if ct.has_format (ft.name) then
 					 	if l_is_first then
 					 		l_is_first := False
 					 	else
 					 		s.append (", ")
 					 	end
-						s.append (html_encoded (ct_ic.item.name))
+						s.append (html_encoded (ct.name))
 					end
 				end
 				s.append ("</dd>")

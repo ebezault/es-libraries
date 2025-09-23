@@ -95,10 +95,10 @@ feature -- Execution
 		do
 			s.append ("<ul>")
 			across
-				api.setup.system_info as ic
+				api.setup.system_info as v
 			loop
-				s.append ("<li><strong>"+ html_encoded (ic.key) +":</strong> ")
-				s.append (html_encoded (ic.item))
+				s.append ("<li><strong>"+ html_encoded (@v.key) +":</strong> ")
+				s.append (html_encoded (v))
 				s.append ("</li>")
 			end
 			s.append ("<li><strong>Storage:</strong> ")
@@ -122,8 +122,6 @@ feature -- Execution
 		end
 
 	append_request_info_to (req: WSF_REQUEST; s: STRING)
-		local
-			ws: WSF_STRING
 		do
 			s.append ("<h3>Request</h3>%N")
 			s.append ("<ul>")
@@ -138,9 +136,8 @@ feature -- Execution
 				s.append ("<h3>Request variables</h3>%N")
 				s.append ("<ul>")
 				across
-					req.meta_variables as ic
+					req.meta_variables as ws
 				loop
-					ws := ic.item
 					s.append ("<li><strong>"+ html_encoded (ws.name) +":</strong> ")
 					s.append (html_encoded (ws.value))
 					s.append ("</li>")
@@ -159,10 +156,10 @@ feature -- Execution
 			if attached api.setup.environment_items as l_site_envs then
 				s.append ("<ul>")
 				across
-					l_site_envs as ic
+					l_site_envs as env
 				loop
-					s.append ("<li><strong>"+ html_encoded (ic.key) +":</strong> ")
-					if attached ic.item as v then
+					s.append ("<li><strong>"+ html_encoded (@env.key) +":</strong> ")
+					if attached env as v then
 						s.append (html_encoded (v))
 					else
 						s.append ("")
@@ -175,10 +172,10 @@ feature -- Execution
 			if attached execution_environment.starting_environment as l_proc_envs then
 				s.append ("<ul>")
 				across
-					l_proc_envs as ic
+					l_proc_envs as env
 				loop
-					s.append ("<li><strong>"+ html_encoded (ic.key) +":</strong> ")
-					s.append (html_encoded (ic.item))
+					s.append ("<li><strong>"+ html_encoded (@env.key) +":</strong> ")
+					s.append (html_encoded (env))
 					s.append ("</li>")
 				end
 				s.append ("</ul>")

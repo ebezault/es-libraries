@@ -107,16 +107,16 @@ feature -- Execution
 			then
 				s.append ("<h4>Role(s):</h4>")
 				s.append ("<ul class=%"user-roles%">")
-				across l_roles as ic loop
-					l_role := ic.item
+				across l_roles as r loop
+					l_role := r
 					s.append ("<li>")
 					s.append (link (l_role.name, api.administration_path_location ("role/" + l_role.id.out), Void))
 					s.append ("</li>")
 					if request.query_parameter ("debug") /= Void then
 						s.append ("<h5>Permissions:</h5>")
 						s.append ("<ul class=%"cms-permissions%">%N")
-						across l_role.permissions as perms_ic loop
-							s.append ("<li class=%"cms-permission%">" + perms_ic.item + "</li>%N")
+						across l_role.permissions as perm loop
+							s.append ("<li class=%"cms-permission%">" + perm + "</li>%N")
 						end
 						s.append ("</ul>%N")
 					end

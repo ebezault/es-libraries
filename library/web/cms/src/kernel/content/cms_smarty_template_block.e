@@ -153,9 +153,9 @@ feature -- Conversion
 				create tpl.make_from_file (n)
 
 				across
-					values as ic
+					values as v
 				loop
-					tpl.add_value (ic.item, ic.key)
+					tpl.add_value (v, @v.key)
 				end
 
 

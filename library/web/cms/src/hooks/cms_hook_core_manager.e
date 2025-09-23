@@ -30,9 +30,9 @@ feature -- Hook: new user hook
 		do
 			if attached subscribers ({CMS_HOOK_USER_MANAGEMENT}) as lst then
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_USER_MANAGEMENT} ic.item as h then
+					if attached {CMS_HOOK_USER_MANAGEMENT} hk as h then
 						h.new_user (a_user)
 					end
 				end
@@ -44,9 +44,9 @@ feature -- Hook: new user hook
 		do
 			if attached subscribers ({CMS_HOOK_USER_MANAGEMENT}) as lst then
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_USER_MANAGEMENT} ic.item as h then
+					if attached {CMS_HOOK_USER_MANAGEMENT} hk as h then
 						h.on_user_deleted (a_user)
 					end
 				end
@@ -66,9 +66,9 @@ feature -- Hook: value alter
 		do
 			if attached subscribers ({CMS_HOOK_VALUE_TABLE_ALTER}) as lst then
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_VALUE_TABLE_ALTER} ic.item as h then
+					if attached {CMS_HOOK_VALUE_TABLE_ALTER} hk as h then
 						h.value_table_alter (a_table, a_response)
 					end
 				end
@@ -88,9 +88,9 @@ feature -- Hook: response
 		do
 			if attached subscribers ({CMS_HOOK_RESPONSE_ALTER}) as lst then
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_RESPONSE_ALTER} ic.item as h then
+					if attached {CMS_HOOK_RESPONSE_ALTER} hk as h then
 						h.response_alter (a_response)
 					end
 				end
@@ -110,9 +110,9 @@ feature -- Hook: webapi response
 		do
 			if attached subscribers ({CMS_HOOK_WEBAPI_RESPONSE_ALTER}) as lst then
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_WEBAPI_RESPONSE_ALTER} ic.item as h then
+					if attached {CMS_HOOK_WEBAPI_RESPONSE_ALTER} hk as h then
 						h.webapi_response_alter (a_response)
 					end
 				end
@@ -132,9 +132,9 @@ feature -- Hook: menu_system_alter
 		do
 			if attached subscribers ({CMS_HOOK_MENU_SYSTEM_ALTER}) as lst then
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_MENU_SYSTEM_ALTER} ic.item as h then
+					if attached {CMS_HOOK_MENU_SYSTEM_ALTER} hk as h then
 						h.menu_system_alter (a_menu_system, a_response)
 					end
 				end
@@ -154,9 +154,9 @@ feature -- Hook: menu_alter
 		do
 			if attached subscribers ({CMS_HOOK_MENU_ALTER}) as lst then
 				across
-					lst as c
+					lst as hk
 				loop
-					if attached {CMS_HOOK_MENU_ALTER} c.item as h then
+					if attached {CMS_HOOK_MENU_ALTER} hk as h then
 						h.menu_alter (a_menu, a_response)
 					end
 				end
@@ -177,9 +177,9 @@ feature -- Hook: form_alter
 		do
 			if attached subscribers ({CMS_HOOK_FORM_ALTER}) as lst then
 				across
-					lst as c
+					lst as hk
 				loop
-					if attached {CMS_HOOK_FORM_ALTER} c.item as h then
+					if attached {CMS_HOOK_FORM_ALTER} hk as h then
 						h.form_alter (a_form, a_form_data, a_response)
 					end
 				end
@@ -197,7 +197,7 @@ feature -- Hook: block
 	invoke_block (a_response: CMS_RESPONSE)
 			-- Invoke block hook for response `a_response' in order to get block from modules.
 		local
-			bl, l_alias: READABLE_STRING_8
+			bl: READABLE_STRING_8
 			bl_optional: BOOLEAN
 			l_alias_table: detachable STRING_TABLE [LIST [READABLE_STRING_8]] --| block_id => [alias_ids..]
 			l_origin_block: detachable CMS_BLOCK
@@ -206,16 +206,16 @@ feature -- Hook: block
 				l_alias_table := a_response.block_alias_table
 
 				across
-					lst as c
+					lst as hk
 				loop
 					if
-						attached {CMS_HOOK_BLOCK} c.item as h and then
+						attached {CMS_HOOK_BLOCK} hk as h and then
 						attached h.block_identifiers (a_response) as l_names
 					then
 						across
-							l_names as blst
+							l_names as n
 						loop
-							bl := blst.item
+							bl := n
 							bl_optional := bl.count > 0 and bl[1] = '?'
 							if bl_optional then
 								bl := bl.substring (2, bl.count)
@@ -240,9 +240,8 @@ feature -- Hook: block
 								attached l_alias_table.item (bl) as l_aliases
 							then
 								across
-									l_aliases as aliases_ic
+									l_aliases as l_alias
 								loop
-									l_alias := aliases_ic.item
 									l_origin_block := a_response.blocks.item (bl)
 									if l_origin_block = Void then
 										h.get_block_view (bl, a_response)
@@ -285,9 +284,9 @@ feature -- Hook: cache
 			if not retried then
 				if attached subscribers ({CMS_HOOK_CACHE}) as lst then
 					across
-						lst as c
+						lst as hk
 					loop
-						if attached {CMS_HOOK_CACHE} c.item as h then
+						if attached {CMS_HOOK_CACHE} hk as h then
 							safe_call_clear_cache_on_hook (h, a_cache_id_list, a_response)
 						end
 					end
@@ -329,14 +328,14 @@ feature -- Hook: cleanup
 			subscribe_to_hook (h, {CMS_HOOK_CLEANUP})
 		end
 
-	invoke_cleanup (ctx: CMS_HOOK_CLEANUP_CONTEXT; a_response: CMS_RESPONSE)
+	invoke_cleanup (ctx: CMS_HOOK_CLEANUP_CONTEXT; a_response: detachable CMS_RESPONSE)
 			-- Invoke response cleanup hook for response `a_response'.		
 		do
 			if attached subscribers ({CMS_HOOK_CLEANUP}) as lst then
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_CLEANUP} ic.item as h then
+					if attached {CMS_HOOK_CLEANUP} hk as h then
 						h.cleanup (ctx, a_response)
 					end
 				end
@@ -362,9 +361,9 @@ feature -- Hook: export
 					d.recursive_create_dir
 				end
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_EXPORT} ic.item as h then
+					if attached {CMS_HOOK_EXPORT} hk as h then
 						h.export_to (a_export_id_list, a_export_parameters, a_response)
 					end
 				end
@@ -390,9 +389,9 @@ feature -- Hook: import
 					d.recursive_create_dir
 				end
 				across
-					lst as ic
+					lst as hk
 				loop
-					if attached {CMS_HOOK_IMPORT} ic.item as h then
+					if attached {CMS_HOOK_IMPORT} hk as h then
 						h.import_from (a_import_id_list, a_import_ctx, a_response)
 					end
 				end

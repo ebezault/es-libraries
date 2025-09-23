@@ -24,12 +24,9 @@ create
 
 feature {NONE} -- Initialize
 
-	make (a_setup: CMS_SETUP; req: WSF_REQUEST; resp: WSF_RESPONSE)
+	make (a_setup: CMS_SETUP)
 			-- Create the API service with a setup `a_setup'
-			-- and request `req', response `resp`.
 		do
-			request := req
-			response := resp
 			setup := a_setup
 			create error_handler.make
 			if a_setup.is_environment_log then
@@ -91,9 +88,9 @@ feature {NONE} -- Initialize
 
 				-- Initialize enabled modules.
 			across
-				l_enabled_modules as ic
+				l_enabled_modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 					-- FIXME: should we initialize first, and then install
 					-- or the reverse, or merge installation and initialization
 					-- and leave the responsability to the module to know
@@ -117,9 +114,9 @@ feature {NONE} -- Initialize
 			end
 			if l_uninstalled_mods /= Void then
 				across
-					l_uninstalled_mods as ic
+					l_uninstalled_mods as m
 				loop
-					l_enabled_modules.remove (ic.item)
+					l_enabled_modules.remove (m)
 				end
 			end
 
@@ -138,7 +135,7 @@ feature {NONE} -- Initialize
 			if attached setup.site_url as l_site_url and then not l_site_url.is_empty then
 				create l_url.make_from_string (l_site_url)
 			else
-				l_url := request.absolute_script_url ("/")
+				l_url := site_url_suggestion
 			end
 			check is_not_empty: not l_url.is_empty end
 			if l_url [l_url.count] /= '/' then
@@ -257,10 +254,10 @@ feature {CMS_API_ACCESS} -- CMS Formats management
 				if attached {JSON_OBJECT} json_value_from_string (v_formats.to_string_8) as j_formats then
 						-- { "plain_text": { "title": "Plain text", "filters": "plain_text+foobar+toto"}, ...}
 					across
-						j_formats as ic
+						j_formats as v
 					loop
-						if attached {JSON_OBJECT} ic.item as j_format then
-							l_name := ic.key.unescaped_string_8
+						if attached {JSON_OBJECT} v as j_format then
+							l_name := @v.key.unescaped_string_8
 							if attached {JSON_STRING} j_format.item ("title") as j_title then
 								l_title := j_title.unescaped_string_8
 							else
@@ -276,9 +273,9 @@ feature {CMS_API_ACCESS} -- CMS Formats management
 							if attached {JSON_STRING} j_format.item ("types") as j_types then
 								s := j_types.unescaped_string_32
 								across
-									s.split ('+') as s_ic
+									s.split ('+') as sp
 								loop
-									if attached content_type (s_ic.item) as ct then
+									if attached content_type (sp) as ct then
 										ct.extend_format (f)
 									end
 								end
@@ -292,37 +289,33 @@ feature {CMS_API_ACCESS} -- CMS Formats management
 	save_formats
 			-- Save `formats`.
 		local
-			f: CMS_FORMAT
 			j,ji: JSON_OBJECT
 			s: STRING_32
-			ct: CMS_CONTENT_TYPE
 		do
 				-- { "plain_text": { "title": "Plain text", "filters": "plain_text+foobar+toto"}, ...}
 			create j.make_empty
 			across
-				formats as ic
+				formats as ft
 			loop
-				f := ic.item
 				create ji.make
-				ji.put_string (f.title, "title")
+				ji.put_string (ft.title, "title")
 
 				create s.make_empty
 				across
-					f.filters as f_ic
+					ft.filters as f
 				loop
 					if not s.is_empty then
 						s.append ("+")
 					end
-					s.append_string_general (f_ic.item.name)
+					s.append_string_general (f.name)
 				end
 				ji.put_string (s, "filters")
 
 				create s.make_empty
 				across
-					content_types as ct_ic
+					content_types as ct
 				loop
-					ct := ct_ic.item
-					if ct.has_format (f.name) then
+					if ct.has_format (ft.name) then
 						if not s.is_empty then
 							s.append ("+")
 						end
@@ -331,7 +324,7 @@ feature {CMS_API_ACCESS} -- CMS Formats management
 				end
 				ji.put_string (s, "types")
 
-				j.put (ji, f.name)
+				j.put (ji, ft.name)
 			end
 			storage.set_custom_value ("cms.formats", j.representation, "api-formats")
 		end
@@ -354,9 +347,9 @@ feature {CMS_ACCESS} -- Module management
 		do
 			create l_tmp_err_handler.make_with_id ("cms_api.install_all_modules")
 			across
-				setup.modules as ic
+				setup.modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 					-- FIXME: should we initialize first, and then install
 					-- or the reverse, or merge installation and initialization
 					-- and leave the responsability to the module to know
@@ -765,11 +758,19 @@ feature -- Settings
 			end
 		end
 
+	switch_to_cli_mode
+		do
+			if not is_cli_mode then
+				mode := mode_cli
+			end
+		end
+
 	mode: NATURAL_8
 
 	mode_site: NATURAL_8 = 0
 	mode_administration: NATURAL_8 = 1
 	mode_webapi: NATURAL_8 = 2
+	mode_cli: NATURAL_8 = 3
 
 	is_site_mode: BOOLEAN
 		do
@@ -788,39 +789,16 @@ feature -- Settings
 			Result := mode = mode_webapi
 		end
 
+	is_cli_mode: BOOLEAN
+			-- Is CLI mode?
+		do
+			Result := mode = mode_cli
+		end
+
 	is_debug: BOOLEAN
 			-- Is debug mode enabled?
 		do
 			Result := setup.is_debug
-		end
-
-feature {NONE} -- Access: request
-
-	request: WSF_REQUEST
-			-- Associated http request.
-			--| note: here for the sole purpose of CMS_API.
-
-	response: WSF_RESPONSE
-			-- Associated http response.
-			--| note: here for the sole purpose of CMS_API, mainly to report error.
-
-feature -- Access: request
-
-	self_link: CMS_LOCAL_LINK
-		local
-			s: READABLE_STRING_8
-			loc: READABLE_STRING_8
-		do
-			s := request.percent_encoded_path_info
-			if not s.is_empty and then s[1] = '/' then
-				loc := s.substring (2, s.count)
-			else
-				loc := s
-			end
-			if attached request.query_string as q and then not q.is_whitespace then
-				loc := loc + "?" + q
-			end
-			Result := local_link (Void, loc)
 		end
 
 feature -- Content
@@ -838,11 +816,11 @@ feature -- Content
 			-- Content type named `a_named' if any.
 		do
 			across
-				content_types as ic
+				content_types as v
 			until
 				Result /= Void
 			loop
-				Result := ic.item
+				Result := v
 				if not a_name.is_case_insensitive_equal (Result.name) then
 					Result := Void
 				end
@@ -870,11 +848,11 @@ feature -- Content type webform
 			-- Web form manager for content type named `a_content_type_name' if any.
 		do
 			across
-				content_type_webform_managers as ic
+				content_type_webform_managers as v
 			until
 				Result /= Void
 			loop
-				Result := ic.item
+				Result := v
 				if not a_content_type_name.is_case_insensitive_equal (Result.name) then
 					Result := Void
 				end
@@ -943,9 +921,9 @@ feature -- Filters and Formats
 			create Result.make (a_name, a_title)
 			if a_filter_names /= Void then
 				across
-					a_filter_names as ic
+					a_filter_names as n
 				loop
-					if attached content_filters.item (ic.item) as f then
+					if attached content_filters.item (n) as f then
 						Result.add_filter (f)
 					end
 				end
@@ -971,9 +949,9 @@ feature -- Template / Smarty
 			if attached file_content (a_loc) as txt then
 				create Result.make (txt)
 				across
-					builtin_variables as ic
+					builtin_variables as var
 				loop
-					Result.set_value (ic.item, ic.key)
+					Result.set_value (var, @var.key)
 				end
 			end
 		end
@@ -1030,31 +1008,7 @@ feature -- Logging
 				m.append (" [" + url_encoded (a_link.title) + "]("+ a_link.location +")")
 			end
 
-			inspect a_level
-			when {CMS_LOG}.level_emergency then
-				response.put_error (m)
-				logger.put_alert (m, Void)
-			when {CMS_LOG}.level_alert then
-				response.put_error (m)
-				logger.put_alert (m, Void)
-			when {CMS_LOG}.level_critical then
-				response.put_error (m)
-				logger.put_critical (m, Void)
-			when {CMS_LOG}.level_error then
-				response.put_error (m)
-				logger.put_error (m, Void)
-			when {CMS_LOG}.level_warning then
-				logger.put_warning (m, Void)
-			when {CMS_LOG}.level_notice then
-				logger.put_information (m, Void)
-			when {CMS_LOG}.level_info then
-				logger.put_information (m, Void)
-			when {CMS_LOG}.level_debug then
-				response.put_error (m)
-				logger.put_debug (m, Void)
-			else
-				logger.put_debug (m, Void)
-			end
+			output_log (m, a_level)
 		end
 
 	log_error (a_category: READABLE_STRING_8; a_message: READABLE_STRING_8; a_link: detachable CMS_LINK)
@@ -1065,6 +1019,32 @@ feature -- Logging
 	log_debug (a_category: READABLE_STRING_8; a_message: READABLE_STRING_8; a_link: detachable CMS_LINK)
 		do
 			log (a_category, a_message, {CMS_LOG}.level_debug, a_link)
+		end
+
+feature {NONE} -- Logging / implementation
+
+	output_log (m: STRING_8; a_level: INTEGER)
+		do
+			inspect a_level
+			when {CMS_LOG}.level_emergency then
+				logger.put_alert (m, Void)
+			when {CMS_LOG}.level_alert then
+				logger.put_alert (m, Void)
+			when {CMS_LOG}.level_critical then
+				logger.put_critical (m, Void)
+			when {CMS_LOG}.level_error then
+				logger.put_error (m, Void)
+			when {CMS_LOG}.level_warning then
+				logger.put_warning (m, Void)
+			when {CMS_LOG}.level_notice then
+				logger.put_information (m, Void)
+			when {CMS_LOG}.level_info then
+				logger.put_information (m, Void)
+			when {CMS_LOG}.level_debug then
+				logger.put_debug (m, Void)
+			else
+				logger.put_debug (m, Void)
+			end
 		end
 
 feature -- Internationalization (i18n)
@@ -1288,9 +1268,9 @@ feature -- Emails
 			-- Process collection of email `lst'.
 		do
 			across
-				lst as ic
+				lst as e
 			loop
-				process_email (ic.item)
+				process_email (e)
 			end
 		end
 
@@ -1349,11 +1329,11 @@ feature -- Permissions system
 			-- Does `a_user' has any of the permissions `a_permission_list' ?
 		do
 			across
-				a_permission_list as ic
+				a_permission_list as p
 			until
 				Result
 			loop
-				Result := user_has_permission (a_user, ic.item)
+				Result := user_has_permission (a_user, p)
 			end
 		end
 
@@ -1425,11 +1405,11 @@ feature -- Query: module
 			-- Enabled module named `a_name', if any.
 		do
 			across
-				setup.modules as ic
+				setup.modules as m
 			until
 				Result /= Void
 			loop
-				Result := ic.item
+				Result := m
 				if
 					not Result.is_enabled
 					or else not Result.name.is_case_insensitive_equal_general (a_name)
@@ -1466,9 +1446,9 @@ feature {CMS_EXECUTION} -- Hooks
 			l_hooks := hooks
 			setup_core_hooks (l_hooks)
 			across
-				enabled_modules as ic
+				enabled_modules as m
 			loop
-				l_module := ic.item
+				l_module := m
 				if is_administration_mode then
 					if attached {CMS_WITH_MODULE_ADMINISTRATION} l_module as adm then
 						l_module := adm.module_administration
@@ -1515,15 +1495,29 @@ feature -- Access: API
 
 	response_api: CMS_RESPONSE_API
 			-- API to send predefined cms responses.
-		local
-			l_api: like internal_response_api
 		do
-			l_api := internal_response_api
-			if l_api = Void then
-				create l_api.make (Current)
-				internal_response_api := l_api
+			check not_executed: False then
+				-- Should not be executed.
+				-- Check command line execution
 			end
-			Result := l_api
+		end
+
+feature {NONE} -- Access: request
+
+	site_url_suggestion: STRING_8
+			-- Site_url from environment (request or cli)
+		do
+			check not_executed: False then
+				-- TO BE REDEFINE ...
+			end
+		end
+
+	time_stamp: INTEGER_64
+			-- Execution time stamp (UTC)	 (unix time stamp)		
+		do
+			check not_executed: False then
+				Result := -1
+			end
 		end
 
 feature -- Hooks
@@ -1636,9 +1630,6 @@ feature {NONE}-- Implementation
 
 	internal_user_api: detachable like user_api
 			-- Cached value for `user_api`.
-
-	internal_response_api: detachable like response_api
-			-- Cached value for `response_api`.
 
 feature -- Environment/ theme
 
@@ -1948,7 +1939,7 @@ feature -- Access: active user
 		note
 			EIS: "eiffel:?class=CMS_BASIC_AUTH_FILTER&feature=execute"
 		do
-			Result := current_user (request)
+			Result := current_user
 		end
 
 	set_inactive_user (a_user: CMS_USER)
@@ -1968,14 +1959,14 @@ feature -- Access: active user
 			current_inactive_user := Void
 			if a_user.is_active then
 					-- in case existing code do not check for `is_active`.
-				set_current_user (request, a_user)
+				set_current_user (a_user)
 			end
 		end
 
 	unset_user
 			-- Unset `user'.
 		do
-			unset_current_user (request)
+			unset_current_user
 		end
 
 	record_user_login (a_user: CMS_USER)
@@ -2012,53 +2003,49 @@ feature -- Request utilities
 		require
 			a_name_valid: a_name /= Void and then not a_name.is_empty
 		do
-			Result := request.execution_variable (a_name)
+--TODO			Result := request.execution_variable (a_name)
 		end
 
 	set_execution_variable (a_name: READABLE_STRING_GENERAL; a_value: detachable ANY)
 		do
-			request.set_execution_variable (a_name, a_value)
+--TODO			request.set_execution_variable (a_name, a_value)
 		ensure
 			param_set: execution_variable (a_name) = a_value
 		end
 
 	unset_execution_variable (a_name: READABLE_STRING_GENERAL)
 		do
-			request.unset_execution_variable (a_name)
+--TODO			request.unset_execution_variable (a_name)
 		ensure
 			param_unset: execution_variable (a_name) = Void
 		end
-
 
 feature {CMS_API_ACCESS, CMS_RESPONSE, CMS_MODULE} -- Request utilities
 
 	current_inactive_user: detachable CMS_USER
 
-	current_user (req: WSF_REQUEST): detachable CMS_USER
+	current_user: detachable CMS_USER
 			-- Current user or Void in case of Guest user.
 		do
-			check req = request end
 			if attached {CMS_USER} execution_variable (cms_execution_variable_name_for_user) as l_user then
 				Result := l_user
 			end
 		end
 
-	set_current_user (req: WSF_REQUEST; a_user: CMS_USER)
+	set_current_user (a_user: CMS_USER)
 			-- Set `a_user' as `current_user'.
 		do
-			check req = request end
 			set_execution_variable (cms_execution_variable_name_for_user, a_user)
 		ensure
-			user_set: current_user (req) ~ a_user
+			user_set: current_user ~ a_user
 		end
 
-	unset_current_user (req: WSF_REQUEST)
+	unset_current_user
 			-- Unset current user.
 		do
-			check req = request end
-			req.unset_execution_variable (cms_execution_variable_name_for_user)
+			unset_execution_variable (cms_execution_variable_name_for_user)
 		ensure
-			user_unset: current_user (req) = Void
+			user_unset: current_user = Void
 		end
 
 feature {NONE} -- Implementation: current user
@@ -2080,7 +2067,7 @@ feature {NONE} -- Implementation: current user
 			s32: STRING_32
 		do
 			create s32.make (19 + a_name.count)
-			s32.append_integer_64 (request.request_time_stamp) -- About 10 characters
+			s32.append_integer_64 (time_stamp) -- About 10 characters
 			s32.append (once {STRING_32} "_roccms_.") -- 9 characters
 			s32.append_string_general (a_name) -- a_name.count characters.
 			Result := s32

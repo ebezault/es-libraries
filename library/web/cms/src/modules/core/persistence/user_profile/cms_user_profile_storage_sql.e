@@ -144,7 +144,7 @@ feature -- Change
 		local
 			l_parameters: STRING_TABLE [detachable ANY]
 			p: detachable CMS_USER_PROFILE
-			l_item: like user_profile_item
+			k: READABLE_STRING_GENERAL
 			l_is_new: BOOLEAN
 			l_has_diff: BOOLEAN
 		do
@@ -154,25 +154,25 @@ feature -- Change
 
 			reset_error
 			across
-				a_profile as ic
+				a_profile as l_item
 			until
 				has_error
 			loop
-				l_item := ic.item
+				k := @l_item.key
 						-- No previous profile, or no item with same name, or same value
 				l_has_diff := True
 				if p = Void then
 					l_is_new := True
-				elseif p.has_key (ic.key) then
+				elseif p.has_key (k) then
 					l_is_new := False
-					l_has_diff := attached p.item (ic.key) as l_prev_item and then
+					l_has_diff := attached p.item (k) as l_prev_item and then
 									not l_prev_item.same_string (l_item)
 				else
 					l_is_new := True
 				end
 				if l_has_diff then
 					l_parameters.put (a_user.id, "uid")
-					l_parameters.put (ic.key, "key")
+					l_parameters.put (k, "key")
 					l_parameters.put (l_item, "value")
 
 					if l_is_new then
@@ -209,7 +209,7 @@ feature {NONE} -- Queries
 
 
 note
-	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
 

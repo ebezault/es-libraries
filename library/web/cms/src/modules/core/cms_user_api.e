@@ -359,9 +359,9 @@ feature -- Change User
 		do
 			if attached user_roles (a_user) as lst then
 				across
-					lst as ic
+					lst as r
 				loop
-					unassign_role_from_user (ic.item, a_user)
+					unassign_role_from_user (r, a_user)
 				end
 			end
 			reset_error
@@ -420,11 +420,11 @@ feature -- Status report
 			-- note: can be used to check if credentials are valid.
 		do
 			across
-				credential_validations as ic
+				credential_validations as v
 			until
 				Result /= Void
 			loop
-				Result := ic.item.user_with_credential (a_user_identifier, a_password)
+				Result := v.user_with_credential (a_user_identifier, a_password)
 			end
 		end
 
@@ -451,7 +451,7 @@ feature -- Status report
 							not Result and then
 							attached user_roles (a_user) as l_roles
 						then
-							Result := across l_roles as ic some user_role_has_permission (ic.item, a_permission) end
+							Result := across l_roles as r some user_role_has_permission (r, a_permission) end
 						end
 					end
 				end
@@ -530,11 +530,11 @@ feature -- User roles.
 
 			l_used_permissions := user_storage.role_permissions
 			across
-				cms_api.enabled_modules as ic
+				cms_api.enabled_modules as m
 			loop
-				lst := ic.item.permissions
+				lst := m.permissions
 				if
-					attached {CMS_WITH_MODULE_ADMINISTRATION} ic.item as adm and then
+					attached {CMS_WITH_MODULE_ADMINISTRATION} m as adm and then
 					attached adm.module_administration.permissions as adm_permissions and then
 					not adm_permissions.is_empty
 				then
@@ -542,24 +542,24 @@ feature -- User roles.
 					l_full_lst.compare_objects
 						-- l_full_lst.append (lst)
 					across
-						lst as lst_ic
+						lst as s
 					loop
-						if not l_full_lst.has (lst_ic.item) then
-							l_full_lst.extend (lst_ic.item)
+						if not l_full_lst.has (s) then
+							l_full_lst.extend (s)
 						end
 					end
 						-- l_full_lst.append (adm_permissions)
 					across
-						adm_permissions as lst_ic
+						adm_permissions as p
 					loop
-						if not l_full_lst.has (lst_ic.item) then
-							l_full_lst.extend (lst_ic.item)
+						if not l_full_lst.has (p) then
+							l_full_lst.extend (p)
 						end
 					end
 					lst := l_full_lst
 				end
 				if
-					attached {CMS_WITH_WEBAPI} ic.item as wapi and then
+					attached {CMS_WITH_WEBAPI} m as wapi and then
 					attached wapi.module_webapi.permissions as wapi_permissions and then
 					not wapi_permissions.is_empty
 				then
@@ -567,32 +567,32 @@ feature -- User roles.
 					l_full_lst.compare_objects
 						-- l_full_lst.append (lst)
 					across
-						lst as lst_ic
+						lst as s
 					loop
-						if not l_full_lst.has (lst_ic.item) then
-							l_full_lst.extend (lst_ic.item)
+						if not l_full_lst.has (s) then
+							l_full_lst.extend (s)
 						end
 					end
 						-- l_full_lst.append (wapi_permissions)
 					across
-						wapi_permissions as lst_ic
+						wapi_permissions as p
 					loop
-						if not l_full_lst.has (lst_ic.item) then
-							l_full_lst.extend (lst_ic.item)
+						if not l_full_lst.has (p) then
+							l_full_lst.extend (p)
 						end
 					end
 					lst := l_full_lst
 				end
-				Result.force (lst, ic.item.name)
+				Result.force (lst, m.name)
 				across
-					lst as p_ic
+					lst as s
 				loop
 					from
 						l_used_permissions.start
 					until
 						l_used_permissions.after
 					loop
-						if l_used_permissions.item.is_case_insensitive_equal (p_ic.item) then
+						if l_used_permissions.item.is_case_insensitive_equal (s) then
 							l_used_permissions.remove
 							l_used_permissions.finish
 						end
@@ -621,9 +621,9 @@ feature -- User roles.
 			l_roles := user_storage.user_roles
 			create {ARRAYED_LIST [CMS_USER_ROLE]} Result.make (l_roles.count)
 			across
-				l_roles as ic
+				l_roles as v
 			loop
-				r := ic.item
+				r := v
 				if r.same_user_role (anonymous_user_role) or r.same_user_role (authenticated_user_role) then
 					-- Ignore
 				else

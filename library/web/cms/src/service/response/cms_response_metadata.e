@@ -24,12 +24,12 @@ feature -- Access
 	item (k: READABLE_STRING_GENERAL): detachable READABLE_STRING_32
 		do
 			across
-				items as ic
+				items as i
 			until
 				Result /= Void
 			loop
-				if k.is_case_insensitive_equal (ic.item.key) then
-					Result := ic.item.value
+				if k.is_case_insensitive_equal (i.key) then
+					Result := i.value
 				end
 			end
 		end
@@ -37,13 +37,13 @@ feature -- Access
 	multiple_items (k: READABLE_STRING_GENERAL): detachable LIST [READABLE_STRING_32]
 		do
 			across
-				items as ic
+				items as i
 			loop
-				if k.is_case_insensitive_equal (ic.item.key) then
+				if k.is_case_insensitive_equal (i.key) then
 					if Result = Void then
 						create {ARRAYED_LIST [READABLE_STRING_32]} Result.make (1)
 					end
-					Result.force (ic.item.value)
+					Result.force (i.value)
 				end
 			end
 		end
@@ -69,22 +69,22 @@ feature -- Status report
 	has_keys (lst: ITERABLE [READABLE_STRING_GENERAL]): BOOLEAN
 		do
 			across
-				items as ic
+				items as i
 			until
 				Result
 			loop
-				Result := across lst as k_ic some ic.item.key.is_case_insensitive_equal (k_ic.item) end
+				Result := across lst as v some i.key.is_case_insensitive_equal (v) end
 			end
 		end
 
 	has_key (k: READABLE_STRING_GENERAL): BOOLEAN
 		do
 			across
-				items as ic
+				items as i
 			until
 				Result
 			loop
-				Result := ic.item.key.is_case_insensitive_equal (k)
+				Result := i.key.is_case_insensitive_equal (k)
 			end
 		end
 
@@ -153,15 +153,18 @@ feature -- Element change
 		end
 
 	merge (md: CMS_RESPONSE_METADATA)
+		local
+			k: READABLE_STRING_GENERAL
 		do
 			across
-				md as ic
+				md as val
 			loop
 					-- handle multiple values...
-				if is_multiple_value_metadata (ic.item.key) then
-					add (ic.item.value, ic.item.key)
+				k := val.key
+				if is_multiple_value_metadata (k) then
+					add (val.value, k)
 				else
-					force (ic.item.value, ic.item.key)
+					force (val.value, k)
 				end
 			end
 		end
@@ -189,6 +192,6 @@ feature {NONE} -- Implementation
 	items: ARRAYED_LIST [TUPLE [value: READABLE_STRING_32; key: READABLE_STRING_GENERAL]]
 
 ;note
-	copyright: "2011-2018, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

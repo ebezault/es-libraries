@@ -30,11 +30,11 @@ feature -- Access
 			l_type: TYPE [detachable CMS_MODULE]
 		do
 			across
-				modules as ic
+				modules as m
 			until
 				Result /= Void
 			loop
-				Result := ic.item
+				Result := m
 				l_type := Result.generating_type
 				if a_type ~ l_type then
 						-- Found
@@ -55,11 +55,11 @@ feature -- Access
 			--| usage: if attached {FOO_MODULE} item_by_name ("foo") as mod then ...			
 		do
 			across
-				modules as ic
+				modules as m
 			until
 				Result /= Void
 			loop
-				Result := ic.item
+				Result := m
 				if not a_name.is_case_insensitive_equal (Result.name) then
 					Result := Void
 				end
@@ -91,11 +91,11 @@ feature -- Status report
 		do
 			l_type := a_module.generating_type
 			across
-				modules as ic
+				modules as m
 			until
 				Result
 			loop
-				Result := ic.item = a_module or else ic.item.generating_type = l_type
+				Result := m = a_module or else m.generating_type = l_type
 			end
 		end
 
@@ -127,6 +127,6 @@ feature {NONE} -- Implementation
 			-- List of available modules.
 
 ;note
-	copyright: "2011-2017, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
