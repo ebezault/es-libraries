@@ -156,6 +156,7 @@ feature -- Url
 			q: detachable STRING_8
 			f: detachable READABLE_STRING_8
 			l_abs: BOOLEAN
+			i: INTEGER
 		do
 			l_abs := False
 
@@ -184,7 +185,8 @@ feature -- Url
 				end
 			end
 			if l_abs then
-				if a_path.substring_index ("://", 1) = 0 then
+				i := a_path.substring_index ("://", 1)
+				if i = 0 or i > 5 then -- no, or not from http:// or https://
 					create Result.make_from_string (site_url)
 					if a_path.is_empty then
 					elseif Result.ends_with ("/") then
