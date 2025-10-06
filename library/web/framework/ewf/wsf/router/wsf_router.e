@@ -62,6 +62,19 @@ feature {NONE} -- Initialization
 	mappings: ARRAYED_LIST [WSF_ROUTER_ITEM]
 			-- Existing mappings
 
+feature -- Access
+
+	default_handler: detachable PROCEDURE [WSF_REQUEST, WSF_RESPONSE]
+			-- Is set, default handler when no mapping is dispatched
+
+feature -- Element changes
+
+	set_default_handler (h: like default_handler)
+			-- Set `h` to `default_handler`.
+		do
+			default_handler := h
+		end
+
 feature -- Mapping
 
 	map (a_mapping: WSF_ROUTER_MAPPING; rqst_methods: detachable WSF_REQUEST_METHODS)
