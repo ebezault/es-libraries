@@ -11,6 +11,8 @@ deferred class
 inherit
 	REFACTORING_HELPER
 
+	SHARED_EXECUTION_ENVIRONMENT
+
 feature {NONE} -- Initialization	
 
 	initialize
@@ -138,6 +140,8 @@ feature {NONE} -- Initialization
 				create administration_base_path.make_from_string (default_administration_base_path)
 			end
 			administration_theme_name := text_item_or_default ("administration.theme", theme_name) -- TODO: Default to builtin theme?
+
+			apply_environment_items
 		end
 
 feature -- Access
@@ -418,6 +422,62 @@ feature -- Settings
 			theme_location := theme_location_for (theme_name)
 		end
 
+	apply_environment_items
+			-- Apply `environment_items` to the execution environment.
+		local
+			exec: like execution_environment
+			l_value, l_key: READABLE_STRING_GENERAL
+			chgs: STRING_TABLE [detachable READABLE_STRING_GENERAL]
+		do
+			if attached environment_items as l_items and then l_items.count > 0 then
+				exec := execution_environment
+				create chgs.make (l_items.count)
+				across
+					l_items as v
+				loop
+					l_value := v
+					l_key := @v.key
+					if l_value = Void then
+						l_value := ""
+					end
+					if attached exec.item (l_key) as l_old_value then
+						chgs [l_key] := l_old_value
+					else
+						chgs [l_key] := Void
+					end
+					exec.put (l_value, l_key)
+				end
+				if not chgs.is_empty then
+					environment_items_to_revert := chgs
+				end
+			end
+		end
+
+	revert_environment_items
+			-- Revert the action of `apply_environment_items` to restore the execution environment as it was.
+		local
+			exec: like execution_environment
+			l_value, l_key: READABLE_STRING_GENERAL
+		do
+			if attached environment_items_to_revert as chgs then
+				exec := execution_environment
+				across
+					chgs as v
+				loop
+					l_value := v
+					l_key := @v.key
+					if l_value = Void then
+						l_value := ""
+					end
+					exec.put (l_value, l_key)
+				end
+			end
+		end
+
+feature {NONE} -- Environment handling		
+
+	environment_items_to_revert: detachable STRING_TABLE [detachable READABLE_STRING_GENERAL]
+
 feature -- Query
 
 	environment_items: detachable STRING_TABLE [detachable READABLE_STRING_32]
@@ -428,7 +488,11 @@ feature -- Query
 				across
 					lst as v
 				loop
-					Result [v] := environment_item (v)
+					if v.count > 0 and then v[1] /= '#' then
+						Result [v] := environment_item (v)
+					else
+							-- Ignore empty or commented lines
+					end
 				end
 			end
 		end
