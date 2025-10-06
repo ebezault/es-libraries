@@ -20,7 +20,8 @@ inherit
 			filter_execute,
 			initialize,
 			initialize_filter,
-			initialize_router
+			initialize_router,
+			clean
 		end
 
 	WSF_NO_PROXY_POLICY
@@ -94,6 +95,15 @@ feature {NONE} -- Initialization
 			modules := api.enabled_modules
 		ensure
 			only_enabled_modules: across modules as m all m.is_enabled end
+		end
+
+feature -- Cleaning
+
+	clean
+			-- Precursor
+		do
+			setup.revert_environment_items
+			Precursor
 		end
 
 feature -- Factory
