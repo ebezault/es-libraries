@@ -46,9 +46,15 @@ feature -- Status report
 
 feature -- Element change
 
-	add_self (a_href: READABLE_STRING_8)
+	add_self (a_href: detachable READABLE_STRING_8)
+		local
+			h: READABLE_STRING_8
 		do
-			add_link ("self", Void, a_href)
+			h := a_href
+			if h = Void then
+				h := request.percent_encoded_path_info
+			end
+			add_link ("self", Void, h)
 		end
 
 feature -- Fields / json
