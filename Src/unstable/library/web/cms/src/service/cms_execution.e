@@ -222,24 +222,10 @@ feature -- Settings: router
 				l_router.set_default_handler (agent (req: WSF_REQUEST; res: WSF_RESPONSE; a_router: WSF_ROUTER)
 						local
 							rd: CMS_DEFAULT_ROUTER_WEBAPI_RESPONSE
---							r: JSON_WEBAPI_RESPONSE
---							rr: WSF_DEFAULT_ROUTER_RESPONSE
 						do
 							create rd.make_with_router (req, res, api, a_router)
---							rd.set_suggestion_only_method (False)
 							rd.execute
---							create r.make (req, res, api)
---							r.add_boolean_field ("error", True)
---							r.add_string_field ("status", "failure")
---							r.add_string_field ("message", "Not Found")
---							r.add_self (Void)
---							r.set_status_code ({HTTP_STATUS_CODE}.not_found)
---							r.execute
 
---							create rr.make_with_router (req, a_router)
---							rr.set_documentation_included (True)
---							rr.set_suggestion_only_method (True)
---							res.send (rr)
 						end(?,?, l_router)
 					)
 			end
