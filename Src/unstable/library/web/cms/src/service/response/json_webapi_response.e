@@ -143,6 +143,27 @@ feature -- Links
 			lnks.put (lnk, rel)
 		end
 
+	add_link_with_description (rel: READABLE_STRING_GENERAL; a_attname: detachable READABLE_STRING_8 ; a_att_href: READABLE_STRING_8; a_desc: READABLE_STRING_8)
+		local
+			lnks: JSON_OBJECT
+			lnk: JSON_OBJECT
+		do
+			if attached {JSON_OBJECT} resource.item ("_links") as j_links then
+				lnks := j_links
+			else
+				create lnks.make_with_capacity (1)
+				resource.put (lnks, "_links")
+			end
+			create lnk.make_with_capacity (2)
+			if a_attname /= Void then
+				lnk.put_string (a_attname, "name")
+			end
+			lnk.put_string (a_desc, "description")
+
+			lnk.put_string (api.absolute_url (a_att_href, Void), "href")
+			lnks.put (lnk, rel)
+		end
+
 	add_templated_link (rel: READABLE_STRING_GENERAL; a_attname: detachable READABLE_STRING_8; a_att_href: READABLE_STRING_8)
 		local
 			lnks: JSON_OBJECT

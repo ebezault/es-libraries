@@ -57,6 +57,10 @@ feature -- Element change
 		deferred
 		end
 
+	add_link_with_description (rel: READABLE_STRING_GENERAL; a_attname: detachable READABLE_STRING_8 ; a_att_href: READABLE_STRING_8; a_desc: READABLE_STRING_8)
+		deferred
+		end
+
 	add_templated_link (rel: READABLE_STRING_GENERAL; a_attname: detachable READABLE_STRING_8; a_att_href: READABLE_STRING_8)
 		deferred
 		end

@@ -14,6 +14,8 @@ inherit
 
 	SHARED_EXECUTION_ENVIRONMENT
 
+	WSF_SELF_DOCUMENTED_HANDLER
+
 create
 	make
 
@@ -117,6 +119,21 @@ feature -- Execution
 				jarr.extend (create {JSON_STRING}.make_from_string_general (ri.debug_output))
 			end
 			r.resource.put (jarr, "routes")
+		end
+
+
+feature -- Documentation
+
+	mapping_documentation (m: WSF_ROUTER_MAPPING; a_request_methods: detachable WSF_REQUEST_METHODS): WSF_ROUTER_MAPPING_DOCUMENTATION
+			-- Documentation associated with Current handler, in the context of the mapping `m` and methods `a_request_methods`.
+		do
+			create Result.make (m)
+--			Result.set_is_hidden (True)
+			if m.associated_resource.ends_with ("/router/") then
+				Result.add_description ("/debug/router/ : display available routes")
+			else
+				Result.add_description ("/debug/ : display debug information")
+			end
 		end
 
 note
