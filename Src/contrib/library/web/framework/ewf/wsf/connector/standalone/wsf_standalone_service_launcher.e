@@ -176,7 +176,10 @@ feature {NONE} -- Initialization
 						f.read_line
 						l_line := utf.utf_8_string_8_to_escaped_string_32 (f.last_string)
 						pos := l_line.index_of ('=', 1)
-						if pos > 0 then
+						if 
+							pos > 0 and then 
+							not (l_line[1] = '#' or l_line[1] = ';')
+						then
 							execution_environment.put (l_line.substring (pos + 1, l_line.count), l_line.head (pos -1))
 						end
 					end
