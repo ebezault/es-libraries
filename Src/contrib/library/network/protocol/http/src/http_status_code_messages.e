@@ -145,6 +145,8 @@ feature -- Status messages
 			else
 				Result := Void
 			end
+		ensure
+			instance_free: class
 		end
 
 note
