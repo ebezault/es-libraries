@@ -110,10 +110,14 @@ feature -- Execution
 			l_mailer := api.setup.mailer
 			from until l_mailer = Void loop
 				s.append (" -&gt; ")
-				s.append (l_mailer.generator)
+--				s.append (l_mailer.generator)
 				if attached {NOTIFICATION_CHAIN_MAILER} l_mailer as l_chain_mailer then
+					if attached l_chain_mailer.active as l_active then
+						s.append (l_active.generator)
+					end
 					l_mailer := l_chain_mailer.next
 				else
+					s.append (l_mailer.generator)
 					l_mailer := Void
 				end
 			end
