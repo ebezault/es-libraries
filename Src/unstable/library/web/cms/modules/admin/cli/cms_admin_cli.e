@@ -209,7 +209,7 @@ feature -- Execution
 			across
 				ctx.logs as log
 			loop
-				sh.output.put_string_32 (log)
+				sh.output.put_string (log)
 				sh.output.put_new_line
 			end
 		end

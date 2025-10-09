@@ -121,6 +121,29 @@ feature -- Element change
 			modules.prune_all (a_module)
 		end
 
+	force (a_module: CMS_MODULE)
+			-- Add module or replace existing module with same name
+		local
+			mod: CMS_MODULE
+		do
+			from
+				modules.start
+			until
+				mod /= Void or modules.after
+			loop
+				mod := modules.item
+				if a_module.name.same_string (mod.name) then
+					modules.replace (a_module)
+				else
+					mod := Void
+					modules.forth
+				end
+			end
+			if mod = Void then
+				modules.force (a_module)
+			end
+		end
+
 feature {NONE} -- Implementation		
 
 	modules: ARRAYED_LIST [CMS_MODULE]
