@@ -726,6 +726,13 @@ feature -- Element change
 			module_registered: module_registered (m)
 		end
 
+	override_module (m: CMS_MODULE)
+			-- Add module `m' to `modules'.
+		deferred
+		ensure
+			module_registered: module_registered (m)
+		end
+
 note
 	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"

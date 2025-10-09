@@ -16,6 +16,8 @@ inherit
 
 	REFACTORING_HELPER
 
+	SHARED_EXECUTION_ENVIRONMENT
+
 create
 	make
 
@@ -119,13 +121,15 @@ feature -- Access
 			l_chain: NOTIFICATION_CHAIN_MAILER
 			l_storage_mailer: NOTIFICATION_STORAGE_MAILER
 			l_mailer: detachable NOTIFICATION_MAILER
+			l_sendmail_mailer: NOTIFICATION_SENDMAIL_MAILER
 			b: BOOLEAN
 		do
 			if not retried then
 				if attached text_item ("mailer.smtp") as l_smtp and then l_smtp.is_valid_as_string_8 then
 					create {NOTIFICATION_SMTP_MAILER} l_mailer.make (l_smtp.to_string_8)
 				elseif attached text_item ("mailer.sendmail") as l_sendmail then
-					create {NOTIFICATION_SENDMAIL_MAILER} l_mailer.make_with_location (l_sendmail)
+					create l_sendmail_mailer.make_with_location (l_sendmail)
+					l_mailer := l_sendmail_mailer
 				end
 					-- If a mailer.ouput is set, set a notification chain with potential previous mailer
 					-- and file storage.
@@ -205,8 +209,14 @@ feature -- Element change
 			modules.extend (m)
 		end
 
+	override_module (m: CMS_MODULE)
+			-- Add module `m' to `modules' or replace any with same name.
+		do
+			modules.force (m)
+		end
+
 
 note
-	copyright: "2011-2024, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end
