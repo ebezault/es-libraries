@@ -163,110 +163,110 @@ feature -- Control: attributes
 
 feature -- Control: foreground colors
 
-	reset_foreground_color 
+	reset_foreground_color
 			-- Reset foreground color (SGR 39)
-		do 
-			set_control ("39m") 
+		do
+			set_control ("39m")
 		end
 
-	set_foreground_color_to_black 
+	set_foreground_color_to_black
 			-- Set foreground color to black (SGR 30)
-		do 
-			set_control ("30m") 
+		do
+			set_control ("30m")
 		end
-	set_foreground_color_to_red 
+	set_foreground_color_to_red
 			-- Set foreground color to red (SGR 31)
-		do 
-			set_control ("31m") 
+		do
+			set_control ("31m")
 		end
-	set_foreground_color_to_green 
+	set_foreground_color_to_green
 			-- Set foreground color to green (SGR 32)
-		do 
-			set_control ("32m") 
+		do
+			set_control ("32m")
 		end
-	set_foreground_color_to_yellow 
+	set_foreground_color_to_yellow
 			-- Set foreground color to yellow (SGR 33)
-		do 
-			set_control ("33m") 
+		do
+			set_control ("33m")
 		end
-	set_foreground_color_to_blue 
+	set_foreground_color_to_blue
 			-- Set foreground color to blue (SGR 34)
-		do 
-			set_control ("34m") 
+		do
+			set_control ("34m")
 		end
-	set_foreground_color_to_magenta 
+	set_foreground_color_to_magenta
 			-- Set foreground color to magenta (SGR 35)
-		do 
-			set_control ("35m") 
+		do
+			set_control ("35m")
 		end
-	set_foreground_color_to_cyan 
+	set_foreground_color_to_cyan
 			-- Set foreground color to cyan (SGR 36)
-		do 
-			set_control ("36m") 
+		do
+			set_control ("36m")
 		end
-	set_foreground_color_to_white 
+	set_foreground_color_to_white
 			-- Set foreground color to white (SGR 37)
-		do 
-			set_control ("37m") 
+		do
+			set_control ("37m")
 		end
-	set_foreground_color_to_default 
+	set_foreground_color_to_default
 			-- Set foreground color to default (SGR 39)
-		do 
-			set_control ("39m") 
+		do
+			set_control ("39m")
 		end
 
 feature -- Control: background colors
 
-	reset_background_color 
+	reset_background_color
 			-- Reset background color (SGR 49)
-		do 
-			set_control ("49m") 
+		do
+			set_control ("49m")
 		end
 
-	set_background_color_to_black 
+	set_background_color_to_black
 			-- Set background color to black (SGR 40)
-		do 
-			set_control ("40m") 
+		do
+			set_control ("40m")
 		end
-	set_background_color_to_red 
+	set_background_color_to_red
 			-- Set background color to red (SGR 41)
-		do 
-			set_control ("41m") 
+		do
+			set_control ("41m")
 		end
-	set_background_color_to_green 
+	set_background_color_to_green
 			-- Set background color to green (SGR 42)
-		do 
-			set_control ("42m") 
+		do
+			set_control ("42m")
 		end
-	set_background_color_to_yellow 
+	set_background_color_to_yellow
 			-- Set background color to yellow (SGR 43)
-		do 
-			set_control ("43m") 
+		do
+			set_control ("43m")
 		end
-	set_background_color_to_blue 
+	set_background_color_to_blue
 			-- Set background color to blue (SGR 44)
-		do 
-			set_control ("44m") 
+		do
+			set_control ("44m")
 		end
-	set_background_color_to_magenta 
+	set_background_color_to_magenta
 			-- Set background color to magenta (SGR 45)
-		do 
-			set_control ("45m") 
+		do
+			set_control ("45m")
 		end
-	set_background_color_to_cyan 
+	set_background_color_to_cyan
 			-- Set background color to cyan (SGR 46)
-		do 
-			set_control ("46m") 
+		do
+			set_control ("46m")
 		end
-	set_background_color_to_white 
+	set_background_color_to_white
 			-- Set background color to white (SGR 47)
-		do 
-			set_control ("47m") 
+		do
+			set_control ("47m")
 		end
-	set_background_color_to_default 
+	set_background_color_to_default
 			-- Set background color to default (SGR 49)
-		do 
-			set_control ("49m") 
+		do
+			set_control ("49m")
 		end
 
 feature -- 256 colors
@@ -341,35 +341,35 @@ feature -- Control
 		do
 			set_control (a_line.out + ";" + a_column.out + "H")
 		end
-	move_cursor_up (nb: INTEGER) 
+	move_cursor_up (nb: INTEGER)
 			-- Move cursor up n lines (CSI nA)
-		do 
-			set_control (nb.out + "A") 
+		do
+			set_control (nb.out + "A")
 		end
-	move_cursor_down (nb: INTEGER) 
+	move_cursor_down (nb: INTEGER)
 			-- Move cursor down n lines (CSI nB)
-		do 
-			set_control (nb.out + "B") 
+		do
+			set_control (nb.out + "B")
 		end
-	move_cursor_forward (nb: INTEGER) 
+	move_cursor_forward (nb: INTEGER)
 			-- Move cursor forward n columns (CSI nC)
-		do 
-			set_control (nb.out + "C") 
+		do
+			set_control (nb.out + "C")
 		end
-	move_cursor_backward (nb: INTEGER) 
+	move_cursor_backward (nb: INTEGER)
 			-- Move cursor backward n columns (CSI nD)
-		do 
-			set_control (nb.out + "D") 
+		do
+			set_control (nb.out + "D")
 		end
-	move_cursor_to_beginning_of_next_line (nb: INTEGER) 
+	move_cursor_to_beginning_of_next_line (nb: INTEGER)
 			-- Move cursor to beginning of n-th next line (CSI nE)
-		do 
-			set_control (nb.out + "E") 
+		do
+			set_control (nb.out + "E")
 		end
-	move_cursor_to_beginning_of_previous_line (nb: INTEGER) 
+	move_cursor_to_beginning_of_previous_line (nb: INTEGER)
 			-- Move cursor to beginning of n-th previous line (CSI nF)
-		do 
-			set_control (nb.out + "F") 
+		do
+			set_control (nb.out + "F")
 		end
 	move_cursor_one_line_up
 			-- Move cursor one line up, scrolling if needed (CSI M)
@@ -395,86 +395,86 @@ feature -- Control
 			end
 		end
 
-	save_cursor_sco 
+	save_cursor_sco
 			-- Save cursor position (SCO: CSI s)
-		do 
-			set_control ("s") 
+		do
+			set_control ("s")
 		end
-	restore_cursor_sco 
+	restore_cursor_sco
 			-- Restore cursor position (SCO: CSI u)
-		do 
-			set_control ("u") 
+		do
+			set_control ("u")
 		end
 
-	save_screen 
+	save_screen
 			-- Save screen (CSI ?47l)
-		do 
-			set_control ("?47l") 
+		do
+			set_control ("?47l")
 		end
-	restore_screen 
+	restore_screen
 			-- Restore screen (CSI ?47h)
-		do 
-			set_control ("?47h") 
+		do
+			set_control ("?47h")
 		end
 
-	show_cursor 
+	show_cursor
 			-- Show cursor (CSI ?25h)
-		do 
-			set_control ("?25h") 
+		do
+			set_control ("?25h")
 		end
-	hide_cursor 
+	hide_cursor
 			-- Hide cursor (CSI ?25l)
-		do 
-			set_control ("?25l") 
+		do
+			set_control ("?25l")
 		end
 
-	erase_display_from_cursor 
+	erase_display_from_cursor
 			-- Erase display from cursor to end (CSI 0J)
-		do 
-			set_control ("0J") 
+		do
+			set_control ("0J")
 		end -- from the cursor position (inclusive) up to the end of the display
-	erase_display_until_cursor 
+	erase_display_until_cursor
 			-- Erase display from start to cursor (CSI 1J)
-		do 
-			set_control ("1J") 
+		do
+			set_control ("1J")
 		end -- from the beginning of the display up to the cursor (including the cursor position)
-	erase_display 
+	erase_display
 			-- Erase entire display (CSI 2J)
-		do 
-			set_control ("2J") 
+		do
+			set_control ("2J")
 		end
-	erase_saved_lines 
+	erase_saved_lines
 			-- Erase saved lines (CSI 3J)
-		do 
-			set_control ("3J") 
+		do
+			set_control ("3J")
 		end
-	erase_line_from_cursor 
+	erase_line_from_cursor
 			-- Erase line from cursor to end (CSI 0K)
-		do 
-			set_control ("0K") 
+		do
+			set_control ("0K")
 		end -- from the cursor position (inclusive) up to the end of the line
-	erase_line_until_cursor 
+	erase_line_until_cursor
 			-- Erase line from start to cursor (CSI 1K)
-		do 
-			set_control ("1K") 
+		do
+			set_control ("1K")
 		end -- from the beginning of the line up to the cursor (including the cursor position)
-	erase_line 
+	erase_line
 			-- Erase entire line (CSI 2K)
-		do 
-			set_control ("2K") 
+		do
+			set_control ("2K")
 		end
 
 feature -- Modes
 
-	enable_line_wrapping_mode 
+	enable_line_wrapping_mode
 			-- Enable line wrapping mode (CSI ?7h)
-		do 
-			set_control ("=7h") 
+		do
+			set_control ("=7h")
 		end
-	reset_line_wrapping_mode 
+	reset_line_wrapping_mode
 			-- Reset line wrapping mode (CSI ?7l)
-		do 
-			set_control ("=l") 
+		do
+			set_control ("=l")
 		end
 
 note

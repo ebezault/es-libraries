@@ -36,7 +36,7 @@ feature -- Execution
 
 	execute (req: WSF_REQUEST; res: WSF_RESPONSE)
 		do
-			if req.request_uri.ends_with ("/router/") then
+			if req.path_info.ends_with_general ("/router/") then
 				handle_debug_router (req, res)
 			else
 				handle_debug (req, res)
