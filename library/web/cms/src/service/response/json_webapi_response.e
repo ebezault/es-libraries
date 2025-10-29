@@ -52,7 +52,7 @@ feature -- Element change
 		do
 			h := a_href
 			if h = Void then
-				h := request.percent_encoded_path_info
+				h := request.request_uri
 			end
 			add_link ("self", Void, h)
 		end
