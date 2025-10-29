@@ -16,6 +16,8 @@ inherit
 
 	CMS_HOOK_AUTO_REGISTER
 
+	SHARED_EXECUTION_ENVIRONMENT
+
 create
 	make
 
@@ -41,11 +43,18 @@ feature -- Setup
 		local
 			cmd: CMS_CLI_AGENT_COMMAND
 		do
+			create cmd.make ("info", agent list_info (a_api, ?, ?, ?))
+			cmd.set_short_name ('i')
+			cmd.set_description ("Display CMS information")
+			a_shell.register_command (cmd, Current)
+
 			create cmd.make ("users-list", agent list_users (a_api, ?, ?, ?))
+			cmd.set_short_name ('u')
 			cmd.set_description ("List users")
 			a_shell.register_command (cmd, Current)
 
 			create cmd.make ("modules-list", agent list_modules (a_api, ?, ?, ?))
+			cmd.set_short_name ('m')
 			cmd.set_description ("List modules")
 			a_shell.register_command (cmd, Current)
 
@@ -55,6 +64,142 @@ feature -- Setup
 		end
 
 feature -- Execution
+
+	output_h1 (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
+		do
+			sh.ansi.set_foreground_color_to_cyan
+			sh.ansi.set_bold
+
+			sh.output.put_string_general (s)
+
+			sh.ansi.unset_bold
+			sh.ansi.reset_foreground_color
+		end
+
+	output_h2 (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
+		do
+--			sh.ansi.set_foreground_color_to_cyan
+			sh.ansi.set_bold
+
+			sh.output.put_string_general (s)
+
+			sh.ansi.unset_bold
+--			sh.ansi.reset_foreground_color
+		end
+
+	output_key (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
+		do
+			sh.ansi.set_foreground_color_to_yellow
+			sh.ansi.set_bold
+			sh.output.put_string_general (s)
+			sh.ansi.unset_bold
+			sh.ansi.reset_foreground_color
+		end
+
+	output_help (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
+		do
+			sh.ansi.set_foreground_color_to_default
+			sh.ansi.set_italic
+			sh.output.put_string_general (s)
+			sh.ansi.unset_italic
+			sh.ansi.reset_foreground_color
+		end
+
+	list_info (api: CMS_API; sh: CMS_CLI_SHELL; n:  READABLE_STRING_32; args: detachable READABLE_STRING_32)
+		local
+			n1, col1, n2, col2: INTEGER
+			k: READABLE_STRING_GENERAL
+			sp: STRING_8
+			l_mailer: NOTIFICATION_MAILER
+		do
+			output_h1 (sh, "System information:%N")
+
+			across
+				api.setup.system_info as v
+			loop
+				k := @v.key
+				col1 := col1.max (k.count)
+				col2 := col2.max (v.count)
+			end
+			across
+				api.setup.system_info as v
+			loop
+				k := @v.key
+				n1 := k.count
+				n2 := v.count
+				sh.output.put_string (" ")
+				output_key (sh, k)
+--				sh.ansi.set_foreground_color_to_yellow
+				if n1 < col1 then
+					create sp.make_filled (' ', col1 - n1)
+					sh.output.put_string (sp)
+				end
+				sh.output.put_character (':')
+				sh.output.put_character (' ')
+--				if n2 < col2 then
+--					create sp.make_filled (' ', col2 - n2)
+--					sh.output.put_string (sp)
+--				end
+				sh.output.put_string (v)
+--				sh.ansi.reset_foreground_color
+				sh.output.put_new_line
+			end
+
+			output_h1 (sh, "Storage:%N")
+			sh.output.put_string ("  ")
+			sh.output.put_string (api.storage.description)
+			sh.output.put_new_line
+
+			output_h1 (sh, "Mailer:%N")
+			l_mailer := api.setup.mailer
+			from until l_mailer = Void loop
+				sh.output.put_string (" -> ")
+--				sh.output.put_string (l_mailer.generator)
+				if attached {NOTIFICATION_CHAIN_MAILER} l_mailer as l_chain_mailer then
+					if attached l_chain_mailer.active as l_active then
+						output_key (sh, l_active.generator)
+					end
+					l_mailer := l_chain_mailer.next
+				else
+					output_key (sh, l_mailer.generator)
+					l_mailer := Void
+				end
+			end
+			sh.output.put_new_line
+			if args /= Void and then args.same_string ("all") then
+				output_h1 (sh, "Environment:%N")
+				output_h2 (sh, "- from setup:%N")
+				if attached api.setup.environment_items as l_site_envs then
+					across
+						l_site_envs as env
+					loop
+						sh.output.put_string ("  ")
+						output_key (sh, @env.key)
+						sh.output.put_character (':')
+						sh.output.put_character (' ')
+						if attached env as v then
+							sh.output.put_string_32 (v)
+						end
+						sh.output.put_new_line
+					end
+				end
+				output_h2 (sh, "- from process:%N")
+				if attached execution_environment.starting_environment as l_proc_envs then
+					across
+						l_proc_envs as env
+					loop
+						sh.output.put_string ("  ")
+						output_key (sh, @env.key)
+						sh.output.put_character (':')
+						sh.output.put_character (' ')
+						sh.output.put_string_32 (env)
+						sh.output.put_new_line
+					end
+				end
+			else
+				output_help (sh, "%NUse %""+ n +" all%" to display all available informations...%N")
+			end
+		end
 
 	list_users (api: CMS_API; sh: CMS_CLI_SHELL; n:  READABLE_STRING_32; args: detachable READABLE_STRING_32)
 		local
@@ -66,7 +211,7 @@ feature -- Execution
 		do
 			if attached api.user_api as l_user_api then
 				nb := l_user_api.users_count
-				sh.output.put_string (nb.out + " users:%N")
+				output_h1 (sh, nb.out + " users:%N")
 				from
 					o := 0
 					len := 5
@@ -133,10 +278,10 @@ feature -- Execution
 			nb: INTEGER
 			mod: CMS_MODULE
 			n1, col1, n2, col2: INTEGER
-			sp: STRING_8
+			tn, sp: STRING_8
 		do
 			nb := api.setup.modules.count
-			sh.output.put_string (nb.out + " modules:%N")
+			output_h1 (sh, nb.out + " modules:%N")
 
 			across
 				api.setup.modules as m
@@ -191,7 +336,10 @@ feature -- Execution
 						if dmod.is_required then
 							sh.output.put_character ('*')
 						end
-						sh.output.put_string (dmod.module_type.name)
+						tn := dmod.module_type.name.twin
+						tn.prune_all ('?')
+						tn.prune_all ('!')
+						sh.output.put_string (tn)
 					end
 					sh.output.put_string (")")
 				end
