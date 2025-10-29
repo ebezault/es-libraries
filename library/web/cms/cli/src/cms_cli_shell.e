@@ -89,6 +89,7 @@ feature -- Execution
 			s: STRING_32
 			cmd: CMS_CLI_AGENT_COMMAND
 		do
+			pre_execute
 			create cmd.make ("help", agent execute_help)
 			cmd.set_description ("Display this help")
 			cmd.set_short_name ('h')
@@ -106,7 +107,7 @@ feature -- Execution
 			loop
 				ansi.set_bold
 				output.put_string ("> ")
-				ansi.reset_attributes
+				ansi.unset_bold
 				io.input.read_unicode_line
 				s := io.input.last_string_32
 				if s.starts_with ("> ") then
@@ -114,6 +115,30 @@ feature -- Execution
 				end
 				execute_line (s)
 			end
+			post_execute
+		end
+
+	pre_execute
+		do
+			ansi.set_background_color_to_black
+			ansi.erase_display --_until_cursor
+		end
+
+	post_execute
+		do
+			ansi.reset_background_color
+		end
+
+	pre_execute_command
+		do
+--			ansi.set_background_color_to_black
+			ansi.erase_display_from_cursor
+		end
+
+	post_execute_command
+		do
+			ansi.reset_attributes
+			ansi.set_background_color_to_black
 		end
 
 	exit_requested: BOOLEAN
@@ -195,7 +220,7 @@ feature -- Execution
 						o.put_string_32 (create {STRING_32}.make_filled (c.short_name, 1))
 					end
 					sh.ansi.reset_foreground_color
-					sh.ansi.reset_attributes
+					sh.ansi.unset_bold
 					if attached c.description as desc then
 						o.put_character (':')
 						o.put_character (' ')
@@ -223,7 +248,7 @@ feature -- Execution
 						o.put_string_32 (create {STRING_32}.make_filled (cmd.short_name, 1))
 					end
 					sh.ansi.reset_foreground_color
-					sh.ansi.reset_attributes
+					sh.ansi.unset_bold
 					if attached cmd.description as desc then
 						o.put_character (':')
 						o.put_character (' ')
@@ -242,7 +267,9 @@ feature -- Execution
 
 	execute_command (cmd: CMS_CLI_COMMAND; n: READABLE_STRING_32; args: detachable READABLE_STRING_32)
 		do
+			pre_execute_command
 			cmd.execute (Current, n, args)
+			post_execute_command
 		end
 
 feature -- Streams		
@@ -256,7 +283,7 @@ feature -- Streams
 			ansi.set_foreground_color_to_red
 			ansi.set_bold
 			error.put_string ("[ERROR] ")
-			ansi.reset_attributes
+			ansi.unset_bold
 			error.put_string_32 (m)
 			ansi.reset_foreground_color
 		end
