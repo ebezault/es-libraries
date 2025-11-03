@@ -12,6 +12,8 @@ create
 feature {NONE} -- Initialization
 
 	make (a_category: like category; a_message: like message; a_level: like level; a_date: detachable like date)
+		require
+			has_known_level: is_known_level (a_level)
 		do
 			category := a_category
 			message := a_message
@@ -24,6 +26,8 @@ feature {NONE} -- Initialization
 		end
 
 	 make_with_id (a_id: like id; a_category: like category; a_message: like message; a_level: like level; a_date: detachable like date)
+		require
+			has_known_level: is_known_level (a_level)
 		do
 			id := a_id
 			make (a_category, a_message, a_level, a_date)
@@ -71,6 +75,8 @@ feature -- Change
 		end
 
 	set_level (a_level: like level)
+		require
+			has_known_level: is_known_level (a_level)
 		do
 			if a_level = 0 then
 				level := level_notice
@@ -90,6 +96,27 @@ feature -- Change
 		end
 
 feature -- Constants
+
+	is_known_level (a_level: like level): BOOLEAN
+		do
+			inspect a_level
+			when 
+				level_emergency,
+				level_alert,
+				level_critical,
+				level_error,
+				level_warning,
+				level_notice,
+				level_info,
+				level_debug
+			then
+				Result := True
+			else
+				Result := False
+			end
+		ensure
+			instance_free: class
+		end
 
 	level_from_string (s: READABLE_STRING_GENERAL): INTEGER
 		do
