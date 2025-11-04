@@ -184,7 +184,7 @@ feature -- Factory
 
 	approve_sign_in_challenge (ch: JWT_AUTH_SIGN_IN_CHALLENGE; u: CMS_USER)
 		do
-			cms_api.log ("auth", "approve sign-in challenge", 0, cms_api.user_local_link (u, Void))
+			cms_api.log ("auth", "approve sign-in challenge", {CMS_LOG}.level_notice, cms_api.user_local_link (u, Void))
 			ch.approve (u)
 			record_sign_in_challenge (ch)
 		end

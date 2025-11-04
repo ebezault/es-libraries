@@ -120,7 +120,9 @@ feature -- Request execution
 						apps := p_apps.value.split (',')
 					end
 					cl := p_client_id.value
-					api.log ("auth", "new sign-in challenge from " + req.remote_addr, 0, Void)
+					debug ("cms_node")
+						api.log_debug ("auth", "new sign-in challenge from " + req.remote_addr, Void)
+					end
 
 					l_challenge := jwt_auth_api.new_sign_in_challenge_with_expiration (cl, info, apps, 0)
 					if l_challenge /= Void then

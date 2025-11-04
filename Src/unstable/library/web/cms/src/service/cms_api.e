@@ -992,6 +992,8 @@ feature -- Logging
 		end
 
 	log	(a_category: READABLE_STRING_8; a_message: READABLE_STRING_8; a_level: INTEGER; a_link: detachable CMS_LINK)
+		require
+			has_known_level: {CMS_LOG}.is_known_level (a_level)
 		local
 			l_log: CMS_LOG
 			m: STRING
@@ -1019,6 +1021,11 @@ feature -- Logging
 	log_debug (a_category: READABLE_STRING_8; a_message: READABLE_STRING_8; a_link: detachable CMS_LINK)
 		do
 			log (a_category, a_message, {CMS_LOG}.level_debug, a_link)
+		end
+
+	log_notice (a_category: READABLE_STRING_8; a_message: READABLE_STRING_8; a_link: detachable CMS_LINK)
+		do
+			log (a_category, a_message, {CMS_LOG}.level_notice, a_link)
 		end
 
 feature {NONE} -- Logging / implementation

@@ -114,7 +114,7 @@ feature -- Persistence
 				else
 					debug ("cms_node")
 						if attached api as l_cms_api then
-							l_cms_api.log ({CMS_NODE_MODULE}.name, "Invalid parent node id!", 0, Void)
+							l_cms_api.log_debug ({CMS_NODE_MODULE}.name, "Invalid parent node id!", Void)
 						end
 					end
 				end
