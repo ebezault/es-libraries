@@ -11,8 +11,6 @@ inherit
 	CMS_BLOCK
 		redefine
 			out
---		select
---			out
 		end
 
 create
