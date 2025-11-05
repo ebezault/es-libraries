@@ -149,6 +149,22 @@ feature -- Query
 			Result := attached {DB_TUPLE} db_handler.item as l_item and then l_item.valid_index (a_index)
 		end
 
+	sql_columns_count: INTEGER
+		do
+			if attached {DB_TUPLE} db_handler.item as l_item then
+				Result := l_item.count
+			else
+				check has_row: False end
+			end
+		end
+
+	sql_column_name (a_index: INTEGER): detachable READABLE_STRING_8
+		do
+			if attached {DB_TUPLE} db_handler.item as l_item then
+				Result := l_item.column_name (a_index)
+			end
+		end
+
 	sql_item (a_index: INTEGER): detachable ANY
 		do
 			if attached {DB_TUPLE} db_handler.item as l_item and then l_item.count >= a_index then
@@ -184,6 +200,33 @@ feature -- Query
 				end
 			end
 		end
+
+	sql_read_real_32 (a_index: INTEGER): REAL_32
+			-- Retrieved value at `a_index' position in `item'.
+		local
+			l_item: like sql_item
+			r64: REAL_64
+		do
+			l_item := sql_item (a_index)
+			if attached {REAL_32} l_item as r then
+				Result := r
+			elseif attached {REAL_32_REF} l_item as l_value then
+				Result := l_value.item
+			else
+				if attached {REAL_64} l_item as r then
+					r64 := r
+				elseif attached {REAL_64_REF} l_item as l_value then
+					r64 := l_value.item
+				else
+					check is_real_32: False end
+				end
+				if r64 <= {REAL_32}.max_value then
+					Result := r64.truncated_to_real
+				else
+					check is_real_32: False end
+				end
+			end
+		end		
 
 	sql_read_date_time (a_index: INTEGER): detachable DATE_TIME
 			-- Retrieved value at `a_index' position in `item'.

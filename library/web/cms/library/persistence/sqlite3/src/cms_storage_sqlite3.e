@@ -385,6 +385,26 @@ feature -- Access
 			end
 		end
 
+	sql_columns_count: INTEGER
+		local
+			l_row: SQLITE_RESULT_ROW
+		do
+			if attached last_sqlite_result_cursor as l_cursor then
+				l_row := l_cursor.item
+				Result := l_row.count.to_integer_32
+			end
+		end
+
+	sql_column_name (a_index: INTEGER): detachable READABLE_STRING_8
+		local
+			l_row: SQLITE_RESULT_ROW
+		do
+			if attached last_sqlite_result_cursor as l_cursor then
+				l_row := l_cursor.item
+				Result := l_row.column_name (a_index.to_natural_32)
+			end
+		end
+
 	sql_item (a_index: INTEGER): detachable ANY
 		local
 			l_row: SQLITE_RESULT_ROW
@@ -431,6 +451,33 @@ feature -- Access
 					Result := i64.to_integer_32
 				else
 					check is_integer_32: False end
+				end
+			end
+		end
+
+	sql_read_real_32 (a_index: INTEGER): REAL_32
+			-- Retrieved value at `a_index' position in `item'.
+		local
+			l_item: like sql_item
+			r64: REAL_64
+		do
+			l_item := sql_item (a_index)
+			if attached {REAL_32} l_item as r then
+				Result := r
+			elseif attached {REAL_32_REF} l_item as l_value then
+				Result := l_value.item
+			else
+				if attached {REAL_64} l_item as r then
+					r64 := r
+				elseif attached {REAL_64_REF} l_item as l_value then
+					r64 := l_value.item
+				else
+					check is_real_32: False end
+				end
+				if r64 <= {REAL_32}.max_value then
+					Result := r64.truncated_to_real
+				else
+					check is_real_32: False end
 				end
 			end
 		end
