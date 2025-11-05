@@ -140,14 +140,14 @@ feature -- Execution
 --					create sp.make_filled (' ', col2 - n2)
 --					sh.output.put_string (sp)
 --				end
-				sh.output.put_string (v)
+				sh.output.put_string_general (v)
 --				sh.ansi.reset_foreground_color
 				sh.output.put_new_line
 			end
 
 			output_h1 (sh, "Storage:%N")
 			sh.output.put_string ("  ")
-			sh.output.put_string (api.storage.description)
+			sh.output.put_string_general (api.storage.description)
 			sh.output.put_new_line
 
 			output_h1 (sh, "Mailer:%N")
@@ -197,7 +197,7 @@ feature -- Execution
 					end
 				end
 			else
-				output_help (sh, "%NUse %""+ n +" all%" to display all available informations...%N")
+				output_help (sh, {STRING_32} "%NUse %""+ n +" all%" to display all available informations...%N")
 			end
 		end
 
@@ -336,7 +336,7 @@ feature -- Execution
 						if dmod.is_required then
 							sh.output.put_character ('*')
 						end
-						tn := dmod.module_type.name.twin
+						create tn.make_from_string (dmod.module_type.name.to_string_8)
 						tn.prune_all ('?')
 						tn.prune_all ('!')
 						sh.output.put_string (tn)
