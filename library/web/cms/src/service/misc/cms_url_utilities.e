@@ -256,18 +256,34 @@ feature -- Url
 	joined_paths (a_parts: ITERABLE [READABLE_STRING_8]): STRING_8
 			-- Join the given path
 			-- for instance: "abc", "def" will result "abc/def"
+		local
+			nb,n: INTEGER
 		do
-			create Result.make_empty
+			create Result.make (0)
 			across
 				a_parts as p
 			loop
-				if not Result.is_empty then
-					if Result [Result.count] /= '/' then
+				nb := Result.count
+				n := p.count
+				if nb = 0 then
+					Result.append (p)
+				elseif nb > 0 and then Result [nb] = '/' then
+					if n > 0 and then p [1] = '/' then
+						Result.append (p.substring (2, n))
+					else
+						Result.append (p)
+					end
+				else
+					if n > 0 and then p [1] = '/' then
+						Result.append (p)
+					else
 						Result.append_character ('/')
+						Result.append (p)
 					end
 				end
-				Result.append (p)
 			end
+		ensure
+			class
 		end
 
 note
