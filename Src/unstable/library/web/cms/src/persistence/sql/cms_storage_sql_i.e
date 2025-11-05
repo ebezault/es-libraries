@@ -354,6 +354,17 @@ feature -- Access
 		deferred
 		end
 
+	sql_columns_count: INTEGER
+		deferred
+		end
+
+	sql_column_name (a_index: INTEGER): detachable READABLE_STRING_8
+		require
+			no_error: not has_error
+			valid_index: sql_valid_item_index (a_index)
+		deferred
+		end
+
 	sql_item (a_index: INTEGER): detachable ANY
 		require
 			no_error: not has_error
@@ -392,6 +403,26 @@ feature -- Access
 		end
 
 	sql_read_integer_32 (a_index: INTEGER): INTEGER_32
+			-- Retrieved value at `a_index' position in `item'.
+		deferred
+		end
+
+	sql_read_real_64 (a_index: INTEGER): REAL_64
+			-- Retrieved value at `a_index' position in `item'.
+		local
+			l_item: like sql_item
+		do
+			l_item := sql_item (a_index)
+			if attached {REAL_64} l_item as r then
+				Result := r
+			elseif attached {REAL_64_REF} l_item as l_value then
+				Result := l_value.item
+			else
+				Result := sql_read_real_32 (a_index).to_double
+			end
+		end
+
+	sql_read_real_32 (a_index: INTEGER): REAL_32
 			-- Retrieved value at `a_index' position in `item'.
 		deferred
 		end

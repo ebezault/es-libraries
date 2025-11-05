@@ -125,6 +125,16 @@ feature -- Access
 			Result := sql_storage.sql_valid_item_index (a_index)
 		end
 
+	sql_columns_count: INTEGER
+		do
+			Result:= sql_storage.sql_columns_count
+		end
+
+	sql_column_name (a_index: INTEGER): detachable READABLE_STRING_8
+		do
+			Result:= sql_storage.sql_column_name (a_index)
+		end
+
 	sql_item (a_index: INTEGER): detachable ANY
 		do
 			Result:= sql_storage.sql_item (a_index)
@@ -133,6 +143,11 @@ feature -- Access
 	sql_read_integer_32 (a_index: INTEGER_32): INTEGER_32
 		do
 			Result := sql_storage.sql_read_integer_32 (a_index)
+		end
+
+	sql_read_real_32 (a_index: INTEGER_32): REAL_32
+		do
+			Result := sql_storage.sql_read_real_32 (a_index)
 		end
 
 	sql_read_date_time (a_index: INTEGER_32): detachable DATE_TIME
