@@ -54,6 +54,37 @@ feature -- Token Generation
 			cms_api.log ("registration", "new user %"" + html_encoded (u.name) + "%" <" + html_encoded (a_email) + ">", {CMS_LOG}.level_info, Void)
 		end
 
+	resend_email_verification (u: CMS_TEMP_USER; a_email: READABLE_STRING_8)
+		local
+			l_user_api: CMS_USER_API
+			l_url_activate: STRING
+			l_url_reject: STRING
+			l_token: STRING
+			es: CMS_AUTHENTICATION_EMAIL_SERVICE
+		do
+			l_user_api := cms_api.user_api
+
+				-- Create activation token
+			l_token := new_token
+			l_user_api.remove_activations_for_user (u) -- Clean previous token ... ?
+			l_user_api.new_activation (l_token, u.id)
+			l_url_activate := cms_api.absolute_url (cms_api.administration_path ("/account/activate/" + l_token), Void)
+			l_url_reject := cms_api.absolute_url (cms_api.administration_path ("/account/reject/" + l_token), Void)
+
+				-- Send Email to webmaster
+			if cms_api.user_has_permission (Void, {CMS_AUTHENTICATION_MODULE}.perm_account_auto_activate) then
+					-- Send Email comfirmation to user
+				cms_api.log_debug ("registration", "send_new_email_confirmation", Void)
+				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
+				es.send_contact_account_email_verification (a_email, u, cms_api.absolute_url ("/account/confirm-email/" + l_token, Void), cms_api.absolute_url ("", Void))
+			else
+					-- Send Email to user
+				cms_api.log_debug ("registration", "send_new_contact_email", Void)
+				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
+				es.send_contact_email (a_email, u, cms_api.absolute_url ("", Void))
+			end
+		end
+
 	activate_user (a_temp_user: CMS_TEMP_USER; a_token: READABLE_STRING_GENERAL)
 		require
 			a_temp_user.has_id
@@ -89,6 +120,8 @@ feature -- Token Generation
 				a_temp_user.set_id (l_temp_id)
 				l_user_api.delete_temp_user (a_temp_user)
 				l_user_api.remove_activation (a_token)
+				-- FIXME: maybe remove any activation for the uid
+				l_user_api.remove_activations_for_user (l_new_user)
 
 					-- Send Email
 				if attached l_new_user.email as l_email then

@@ -38,8 +38,8 @@ feature -- Element change
 				personal_information := a_personal_information.as_string_32
 			end
 		ensure
-			personal_information_assigned: a_personal_information /= Void 
-					implies (attached personal_information as inf and then 
+			personal_information_assigned: a_personal_information /= Void
+					implies (attached personal_information as inf and then
 								a_personal_information.same_string (inf))
 		end
 
