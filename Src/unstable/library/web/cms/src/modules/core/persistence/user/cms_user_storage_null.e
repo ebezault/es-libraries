@@ -210,6 +210,10 @@ feature -- Temp Users
 		do
 		end
 
+	remove_activations_for_user (uid: like {CMS_USER}.id)
+		do
+		end
+
 	new_temp_user (a_user: CMS_TEMP_USER)
 			-- <Precursor>
 		do
@@ -220,6 +224,6 @@ feature -- Temp Users
 		do
 		end
 note
-	copyright: "2011-2023, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

@@ -1080,6 +1080,9 @@ feature {NONE} -- Sql Queries: USER ACTIVATION
 	sql_remove_activation: STRING = "DELETE FROM users_activations WHERE token = :token;"
 			-- Remove activation token.
 
+	sql_remove_activations_by_uid: STRING = "DELETE FROM users_activations WHERE uid = :uid;"
+			-- Remove activation token.			
+
 feature {NONE} -- User Password Recovery
 
 	sql_insert_password: STRING = "INSERT INTO users_password_recovery (token, uid, created) VALUES (:token, :uid, :utc_date);"
@@ -1375,8 +1378,22 @@ feature -- Remove Activation
 			sql_begin_transaction
 			create l_parameters.make (1)
 			l_parameters.put (a_token, "token")
-			sql_modify (sql_remove_activation, l_parameters)
+			sql_delete (sql_remove_activation, l_parameters)
 			sql_finalize_modify (sql_remove_activation)
+			sql_commit_transaction
+		end
+
+	remove_activations_for_user (uid: like {CMS_USER}.id)
+			-- <Precursor>.
+		local
+			l_parameters: STRING_TABLE [detachable ANY]
+		do
+			error_handler.reset
+			sql_begin_transaction
+			create l_parameters.make (1)
+			l_parameters.put (uid, "uid")
+			sql_delete (sql_remove_activations_by_uid, l_parameters)
+			sql_finalize_modify (sql_remove_activations_by_uid)
 			sql_commit_transaction
 		end
 

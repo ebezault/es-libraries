@@ -314,6 +314,12 @@ feature -- New Temp User
 		deferred
 		end
 
+	remove_activations_for_user (uid: like {CMS_USER}.id)
+		require
+			uid /= 0
+		deferred
+		end
+
 	new_temp_user (a_temp_user: CMS_TEMP_USER)
 			-- New temp user `a_temp_user'.
 		require

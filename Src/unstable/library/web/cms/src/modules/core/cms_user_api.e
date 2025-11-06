@@ -803,6 +803,11 @@ feature -- Change Temp User
 			user_storage.remove_activation (a_token)
 		end
 
+	remove_activations_for_user (u: CMS_USER)
+		do
+			user_storage.remove_activations_for_user (u.id)
+		end
+
 	delete_temp_user (a_temp_user: CMS_TEMP_USER)
 			-- Delete user `a_temp_user'.
 		require
