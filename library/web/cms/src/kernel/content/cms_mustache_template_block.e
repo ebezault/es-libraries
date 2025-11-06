@@ -1,8 +1,6 @@
 note
 	description: "Summary description for {CMS_MUSTACHE_TEMPLATE_BLOCK}."
-	author: ""
 	date: "$Date$"
-	revision: "$Revision$"
 
 class
 	CMS_MUSTACHE_TEMPLATE_BLOCK
@@ -125,10 +123,8 @@ feature -- Conversion
 			-- <Precursor>
 		local
 			p: detachable PATH
-			tpl: detachable TEMPLATE_FILE
 			ut: FILE_UTILITIES
 			n: STRING_8
-			l_table_inspector: detachable STRING_TABLE_OF_STRING_INSPECTOR
 			f: PLAIN_TEXT_FILE
 			txt: STRING_8
 			i,j,k, nb: INTEGER
