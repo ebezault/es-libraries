@@ -4,7 +4,7 @@ CREATE TABLE jwt_auth_new (
   `secret` 	TEXT NOT NULL,
   `apps` 	TEXT,
   `refresh`	TEXT NOT NULL,
-  CONSTRAINT PK_uid_token_key PRIMARY KEY (uid,token)
+  CONSTRAINT PK_uid_token_key PRIMARY KEY (uid,token(512))
 );
 
 INSERT INTO jwt_auth_new SELECT * FROM jwt_auth;
