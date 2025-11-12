@@ -57,7 +57,7 @@ feature {NONE} -- Initialization
 	make
 		do
 			Precursor {CMS_AUTH_MODULE_I}
-			version := "1.1"
+			version := "1.2"
 			description := "JWT authentication"
 			package := "jwt_auth"
 			add_optional_dependency ({CMS_SESSION_AUTH_MODULE})
