@@ -1,17 +1,15 @@
-note
+﻿note
 
 	description:
 	"[
 		Eiffel dynamic types at run-time corresponding to primary types
 		(see ET_DYNAMIC_PRIMARY_TYPE) whose type mark status is overridden
-		(e.g. 'attached').
+		(e.g. 'attached' and/or 'separate').
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2018-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2018-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_DYNAMIC_SECONDARY_TYPE
 
@@ -68,6 +66,12 @@ feature -- Status report
 			Result := is_expanded or else (attached type_mark as l_type_mark and then l_type_mark.is_attached_mark)
 		end
 
+	is_separate: BOOLEAN
+			-- Is current type separate?
+		do
+			Result := attached type_mark as l_type_mark and then l_type_mark.is_separate_mark
+		end
+
 feature -- Access
 
 	base_type: ET_BASE_TYPE
@@ -97,8 +101,14 @@ feature -- Access
 			-- Type id
 		do
 			Result := primary_type.id
-			if attached type_mark as l_type_mark and then l_type_mark.is_attached_mark then
-				Result := (1 |<< 16) | Result
+			if attached type_mark as l_type_mark then
+				if l_type_mark.is_separate_mark and l_type_mark.is_attached_mark then
+					Result := (5 |<< 16) | Result
+				elseif l_type_mark.is_separate_mark then
+					Result := (4 |<< 16) | Result
+				elseif l_type_mark.is_attached_mark then
+					Result := (1 |<< 16) | Result
+				end
 			end
 		end
 

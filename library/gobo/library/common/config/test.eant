@@ -1,13 +1,11 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 
 <project name="test" default="help">
 
 	<description>
 		description: "Eiffel test"
-		copyright: "Copyright (c) 2001-2021, Eric Bezault and others"
+		copyright: "Copyright (c) 2001-2024, Eric Bezault and others"
 		license: "MIT License"
-		date: "$Date$"
-		revision: "$Revision$"
 	</description>
 
 	<inherit>
@@ -133,8 +131,6 @@
 		<delete>
 			<fileset include="vc*.pdb"/>
 		</delete>
-		<delete file="${system}.pdb"/>
-		<delete file="${system}.ilk"/>
 		<delete file="${system}${exe}" fail_on_error="false"/>
 		<delete file="${system}.melted"/>
 		<delete file="lib${system}.dll"/>
@@ -144,7 +140,7 @@
 		<delete file="EiffelSoftware.Runtime.dll"/>
 		<delete file="${system}.h2o"/>
 		<delete directory="TESTGEN"/>
-		<delete file="xcompile.log"/>
+		<delete file="xcompile.log" fail_on_error="false"/> <!-- Deletion sometimes fails on Windows in azure devops pipelines. -->
 		<geant target="other_clean"/>
 	</target>
 

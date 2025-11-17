@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Geyacc commands"
 
 	library: "Gobo Eiffel Ant"
-	copyright: "Copyright (c) 2001-2018, Sven Ehrke and others"
+	copyright: "Copyright (c) 2001-2024, Sven Ehrke and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_GEYACC_COMMAND
 
@@ -162,9 +160,12 @@ feature -- Execution
 		local
 			cmd: STRING
 			a_filename: STRING
+			l_geyacc_pathname: STRING
 		do
 			create cmd.make (128)
-			cmd.append_string ("geyacc ")
+			l_geyacc_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("geyacc")
+			cmd.append_string (l_geyacc_pathname)
+			cmd.append_character (' ')
 				-- Option --array-size
 			if attached array_size as l_array_size and then l_array_size.count > 0 then
 				cmd.append_string ("--array-size=")

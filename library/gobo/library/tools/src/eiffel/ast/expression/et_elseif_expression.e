@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel 'elseif' parts of 'if' expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2017-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2017-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ELSEIF_EXPRESSION
 
@@ -96,6 +94,38 @@ feature -- Status report
 				then_expression.is_instance_free
 		end
 
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current elseif part
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_result or
+				then_expression.has_result
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current elseif part
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_address_expression or
+				then_expression.has_address_expression
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current elseif part
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_agent or
+				then_expression.has_agent
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current elseif part
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_typed_object_test or
+				then_expression.has_typed_object_test
+		end
+
 feature -- Setting
 
 	set_then_keyword (a_then: like then_keyword)
@@ -104,6 +134,21 @@ feature -- Setting
 			then_keyword := a_then
 		ensure
 			then_keyword_set: then_keyword = a_then
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current elseif part
+			-- and (recursively) in its subexpressions.
+		require
+			a_list_not_void: a_list /= Void
+			no_void_item: not a_list.has_void
+		do
+			conditional_expression.add_old_expressions (a_list)
+			then_expression.add_old_expressions (a_list)
+		ensure
+			no_void_item: not a_list.has_void
 		end
 
 feature -- Processing

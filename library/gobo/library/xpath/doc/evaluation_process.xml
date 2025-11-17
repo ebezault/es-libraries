@@ -1,4 +1,4 @@
-<?xml version="1.0"?> 
+﻿<?xml version="1.0"?> 
 
 <!--
 	description:
@@ -8,11 +8,9 @@
 	library: "Gobo Eiffel XPath Library"
 	copyright: "Copyright (c) 2004, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 -->
 
-<chapter xmlns="http://www.gobosoft.com/eiffel/gobo/documentation" id="xpath_stand_alone_evaluation_process">
+<chapter xmlns="https://www.gobosoft.com/eiffel/gobo/documentation" id="xpath_stand_alone_evaluation_process">
  <chapterinfo>
     <copyright>
       <year>2004</year>

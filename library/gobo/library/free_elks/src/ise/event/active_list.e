@@ -6,8 +6,8 @@
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	keywords: "event, action, linked, list"
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2018-11-14 15:15:17 +0000 (Wed, 14 Nov 2018) $"
+	revision: "$Revision: 102463 $"
 
 class
 	ACTIVE_LIST [G]

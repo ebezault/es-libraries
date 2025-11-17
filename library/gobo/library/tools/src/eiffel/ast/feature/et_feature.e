@@ -1,20 +1,16 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel features"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_FEATURE
 
 inherit
-
-	ET_AST_NODE
 
 	ET_FLATTENED_FEATURE
 		rename
@@ -32,13 +28,16 @@ inherit
 		end
 
 	ET_STANDALONE_CLOSURE
+		undefine
+			first_seed,
+			other_seeds,
+			has_seed
 		redefine
 			is_feature,
 			as_feature,
-			first_indexing
+			first_note,
+			is_static
 		end
-
-	DEBUG_OUTPUT
 
 feature -- Initialization
 
@@ -153,7 +152,7 @@ feature -- Access
 		do
 		end
 
-	first_indexing: detachable ET_INDEXING_LIST
+	first_note: detachable ET_NOTE_LIST
 			-- Note clause at the beginning of the feature
 
 	id: INTEGER
@@ -282,59 +281,6 @@ feature -- Status report
 			-- Result := False
 		end
 
-	is_function: BOOLEAN
-			-- Is feature a function?
-		do
-			-- Result := False
-		ensure
-			query: Result implies is_query
-			routine: Result implies is_routine
-		end
-
-	is_attribute: BOOLEAN
-			-- Is feature an attribute?
-		do
-			-- Result := False
-		ensure
-			query: Result implies is_query
-			not_routine: Result implies not is_routine
-		end
-
-	is_constant_attribute: BOOLEAN
-			-- Is feature a constant attribute?
-		do
-			-- Result := False
-		ensure
-			query: Result implies is_query
-			not_routine: Result implies not is_routine
-		end
-
-	is_unique_attribute: BOOLEAN
-			-- Is feature a unique attribute?
-		do
-			-- Result := False
-		ensure
-			query: Result implies is_query
-			not_routine: Result implies not is_routine
-		end
-
-	is_query: BOOLEAN
-			-- Is current feature a query?
-		do
-			Result := (type /= Void)
-		ensure
-			definition: Result = (type /= Void)
-		end
-
-	is_procedure: BOOLEAN
-			-- Is current feature a procedure?
-		do
-			Result := (type = Void)
-		ensure
-			definition: Result = (type = Void)
-			routine: Result implies is_routine
-		end
-
 	is_creation_procedure (a_class: ET_CLASS; a_system_processor: ET_SYSTEM_PROCESSOR): BOOLEAN
 			-- Is current feature a creation procedure in `a_class'?
 			-- (Note: Use `a_system_processor.feature_flattener' on `a_class' if needed
@@ -352,12 +298,6 @@ feature -- Status report
 			else
 				Result := l_creators.has_feature_name (name)
 			end
-		end
-
-	is_routine: BOOLEAN
-			-- Is feature a routine?
-		do
-			-- Result := False
 		end
 
 	is_static: BOOLEAN
@@ -420,6 +360,44 @@ feature -- Status report
 			Result := attached arguments as l_arguments and then l_arguments.count > 0
 		ensure
 			definition: Result = (attached arguments as l_arguments and then l_arguments.count > 0)
+		end
+
+	is_precondition_free: BOOLEAN
+			-- Does the combined preconditions has value 'True'?
+			-- The combined preconditions take into account the
+			-- preconditions inherited from precursors.
+		local
+			i, nb: INTEGER
+			l_other_precursor: ET_FEATURE
+		do
+			if attached first_precursor as l_first_precursor then
+				if attached preconditions as l_preconditions and then l_preconditions.are_all_true then
+					Result := True
+				elseif l_first_precursor.is_precondition_free then
+					Result := True
+				elseif attached other_precursors as l_other_precursors then
+					from
+						i := 1
+						nb := l_other_precursors.count
+					until
+						i > nb
+					loop
+						l_other_precursor := l_other_precursors.item (i)
+						if l_other_precursor.is_precondition_free then
+							Result := True
+								 -- Jump out of the loop
+							i := nb
+						end
+						i := i + 1
+					end
+				end
+			elseif not attached preconditions as l_preconditions then
+				Result := True
+			elseif l_preconditions.is_empty then
+				Result := True
+			elseif l_preconditions.are_all_true then
+				Result := True
+			end
 		end
 
 	are_preconditions_instance_free_recursive: BOOLEAN
@@ -583,25 +561,6 @@ feature -- Status report
 	is_feature: BOOLEAN = True
 			-- Is `Current' a feature?
 
-	is_used: BOOLEAN
-			-- Is current feature used in the system?
-			-- For example, is it reachable from the root creation
-			-- procedure through the transitive closure.
-
-feature -- Measurement
-
-	arguments_count: INTEGER
-			-- Number of formal arguments
-		do
-			if attached arguments as l_arguments then
-				Result := l_arguments.count
-			end
-		ensure
-			arguments_count_not_negative: Result >= 0
-			no_argument: arguments = Void implies Result = 0
-			with_arguments: attached arguments as l_arguments implies Result = l_arguments.count
-		end
-
 feature -- Export status
 
 	is_exported_to (a_client: ET_CLASS; a_system_processor: ET_SYSTEM_PROCESSOR): BOOLEAN
@@ -740,12 +699,12 @@ feature -- Setting
 			feature_clause_set: feature_clause = a_feature_clause
 		end
 
-	set_first_indexing (an_indexing: like first_indexing)
-			-- Set `first_indexing' to `an_indexing'
+	set_first_note (a_note: like first_note)
+			-- Set `first_note' to `a_note'
 		do
-			first_indexing := an_indexing
+			first_note := a_note
 		ensure
-			first_indexing_set: first_indexing = an_indexing
+			first_note_set: first_note = a_note
 		end
 
 	set_version (a_version: INTEGER)
@@ -850,16 +809,6 @@ feature -- Setting
 			postconditions_reset: postconditions = Void
 		end
 
-feature -- Status setting
-
-	set_used (b: BOOLEAN)
-			-- Set `is_used' to `b'.
-		do
-			is_used := b
-		ensure
-			used_set: is_used = b
-		end
-
 feature -- Duplication
 
 	new_synonym (a_name: like extended_name): like Current
@@ -923,12 +872,37 @@ feature -- Conversion
 			Result := Current
 		end
 
-feature -- Output
+feature -- Element change
 
-	debug_output: STRING
-			-- String that should be displayed in debugger to represent `Current'
+	add_precursors (a_precursors: DS_HASH_SET [ET_FEATURE])
+			-- Add (recursively) all precursors of current feature to `a_precursors'
+			-- the oldest precursors first.
+		require
+			a_precursors_not_void: a_precursors /= Void
+			no_void_precursor: not a_precursors.has_void
+		local
+			i, nb: INTEGER
+			l_precursor: ET_FEATURE
 		do
-			Result := name.name
+			if attached first_precursor as l_first_precursor then
+				if not a_precursors.has (l_first_precursor) then
+					l_first_precursor.add_precursors (a_precursors)
+					a_precursors.force_last (l_first_precursor)
+				end
+				if attached other_precursors as l_other_precursors then
+					nb := l_other_precursors.count
+					from i := 1 until i > nb loop
+						l_precursor := l_other_precursors.item (i)
+						if not a_precursors.has (l_precursor) then
+							l_precursor.add_precursors (a_precursors)
+							a_precursors.force_last (l_precursor)
+						end
+						i := i + 1
+					end
+				end
+			end
+		ensure
+			no_void_precursor: not a_precursors.has_void
 		end
 
 invariant

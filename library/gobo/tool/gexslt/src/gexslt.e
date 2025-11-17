@@ -1,13 +1,11 @@
-note
+﻿note
 
 	description:
 
 		"Gobo Eiffel XSLT 2.0 processor"
 
-	copyright: "Copyright (c) 2004-2018, Colin Adams and others"
+	copyright: "Copyright (c) 2004-2024, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEXSLT
 
@@ -60,6 +58,12 @@ inherit
 	KL_SHARED_MEMORY
 		export {NONE} all end
 
+	UT_SHARED_ISE_VARIABLES
+		export {NONE} all end
+
+	UT_SHARED_GOBO_VARIABLES
+		export {NONE} all end
+
 create
 
 	execute
@@ -72,6 +76,14 @@ feature -- Execution
 			i, nb: INTEGER
 			arg: STRING
 		do
+			Arguments.set_program_name ("gexslt")
+				-- Set environment variables "$GOBO", "$GOBO_LIBRARY",
+				-- "$BOEHM_GC" and "$ZIG" if not set yet.
+			gobo_variables.set_gobo_variables
+				-- For compatibility with ISE's tools, define the environment
+				-- variables "$ISE_LIBRARY", "$EIFFEL_LIBRARY", "$ISE_PLATFORM"
+				-- and "$ISE_C_COMPILER" if not set yet.
+			ise_variables.set_ise_variables
 			digits := 18
 			create configuration.make_with_defaults
 			error_handler := configuration.error_reporter

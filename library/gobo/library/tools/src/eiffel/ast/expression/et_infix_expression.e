@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel infix expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_INFIX_EXPRESSION
 
@@ -20,10 +18,17 @@ inherit
 			arguments as right
 		undefine
 			reset,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 	ET_BINARY_EXPRESSION
+		undefine
+			add_separate_arguments
 		redefine
 			reset
 		end
@@ -55,6 +60,7 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor {ET_BINARY_EXPRESSION}
 			name.reset
 			is_boolean_operator := False
 			if attached {ET_INFIX_CAST_EXPRESSION} left as l_cast then

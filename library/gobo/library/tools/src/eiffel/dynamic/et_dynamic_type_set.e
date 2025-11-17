@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel dynamic type sets"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_DYNAMIC_TYPE_SET
 
@@ -71,7 +69,7 @@ feature --Status setting
 			-- Set `is_never_void' to True.
 		deferred
 		ensure
-			is_never_void: not static_type.base_class.is_none implies is_never_void
+			is_never_void: (not static_type.base_class.is_none and not static_type.base_class.is_formal) implies is_never_void
 		end
 
 feature -- Access

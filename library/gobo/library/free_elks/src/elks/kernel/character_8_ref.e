@@ -3,8 +3,8 @@
 	library: "Free implementation of ELKS library"
 	status: "See notice at end of class."
 	legal: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2020-07-03 18:42:10 +0000 (Fri, 03 Jul 2020) $"
+	revision: "$Revision: 104530 $"
 
 class CHARACTER_8_REF inherit
 

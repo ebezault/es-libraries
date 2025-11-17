@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 	"[
@@ -10,10 +10,8 @@ note
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2018-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2018-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_DYNAMIC_PRIMARY_TYPE
 
@@ -50,7 +48,6 @@ feature -- Status report
 	is_alive: BOOLEAN
 			-- Is current type considered alive?
 			-- (e.g. instances of this type may be created)
-
 
 	is_agent_type: BOOLEAN
 			-- Is current type an agent type?
@@ -91,16 +88,20 @@ feature -- Status report
 			Result := is_expanded
 		end
 
+	is_separate: BOOLEAN = False
+			-- Is current type separate?
+
 	has_static: BOOLEAN
 			-- Does current type contain features that are used as static features?
 
 	is_used: BOOLEAN
 			-- Should current type used in the system?
 		do
-			Result := is_alive or has_static or (attached meta_type as l_meta_type and then l_meta_type.is_used)
+			Result := is_alive or has_static or base_class.is_formal or (attached meta_type as l_meta_type and then l_meta_type.is_used)
 		ensure
 			is_alive: is_alive implies Result
 			has_static: has_static implies Result
+			formal: base_class.is_formal implies Result
 			has_meta_type: (attached meta_type as l_meta_type and then l_meta_type.is_used) implies Result
 		end
 
@@ -154,6 +155,12 @@ feature -- Access
 	attached_type: detachable ET_DYNAMIC_SECONDARY_TYPE
 			-- Attached version of current type, if already available
 
+	separate_type: detachable ET_DYNAMIC_SECONDARY_TYPE
+			-- Separate version of current type, if already available
+
+	attached_separate_type: detachable ET_DYNAMIC_SECONDARY_TYPE
+			-- Attached separate version of current type, if already available
+
 	hash_code: INTEGER
 			-- Hash code
 
@@ -174,6 +181,22 @@ feature -- Setting
 			attached_type := a_type
 		ensure
 			attached_type_set: attached_type = a_type
+		end
+
+	set_separate_type (a_type: like separate_type)
+			-- Set `separate_type' to `a_type'.
+		do
+			separate_type := a_type
+		ensure
+			separate_type_set: separate_type = a_type
+		end
+
+	set_attached_separate_type (a_type: like attached_separate_type)
+			-- Set `attached_separate_type' to `a_type'.
+		do
+			attached_separate_type := a_type
+		ensure
+			attached_separate_type_set: attached_separate_type = a_type
 		end
 
 	set_id (i: INTEGER)
@@ -431,6 +454,9 @@ feature -- Features
 	procedures: ET_DYNAMIC_FEATURE_LIST
 			-- Procedures executed at run-time, if any
 
+	invariants: detachable ET_DYNAMIC_FEATURE
+			-- Invariants executed at run-time, if any
+
 	dynamic_query (a_query: ET_QUERY; a_system: ET_DYNAMIC_SYSTEM): ET_DYNAMIC_FEATURE
 			-- Run-time query associated with `a_query'
 		require
@@ -497,6 +523,23 @@ feature -- Features
 		ensure
 			dynamic_procedure_not_void: Result /= Void
 			is_procedure: Result.is_procedure
+		end
+
+	dynamic_invariants (a_system: ET_DYNAMIC_SYSTEM): ET_DYNAMIC_FEATURE
+			-- Run-time invariants for current type
+		do
+			if attached invariants as l_invariants then
+				Result := l_invariants
+			else
+				if attached base_class.invariants as l_static_invariant then
+					create Result.make (l_static_invariant, Current, a_system)
+				else
+					create Result.make (create {ET_INVARIANTS}.make_with_capacity (base_class, 0), Current, a_system)
+				end
+				invariants := Result
+			end
+		ensure
+			dynamic_invariant_not_void: Result /= Void
 		end
 
 	seeded_dynamic_query (a_seed: INTEGER; a_system: ET_DYNAMIC_SYSTEM): detachable ET_DYNAMIC_FEATURE
@@ -613,7 +656,7 @@ feature -- Features
 			end
 		end
 
-	is_builtin_attribute (a_feature: ET_FEATURE; a_builtin_class_code, a_builtin_feature_code: NATURAL_8): BOOLEAN
+	is_builtin_attribute (a_feature: ET_STANDALONE_CLOSURE; a_builtin_class_code, a_builtin_feature_code: NATURAL_8): BOOLEAN
 			-- Is built-in feature `a_feature' with code `a_built_class_code'
 			-- and `a_builtin_feature_code' considered as an attribute or not
 			-- in the current type?

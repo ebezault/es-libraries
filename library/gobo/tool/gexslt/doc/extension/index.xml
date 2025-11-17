@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?> 
+﻿<?xml version="1.0" encoding="UTF-8"?> 
 
 <!--
 	description:
@@ -8,11 +8,9 @@
 	library: "Gobo Eiffel XSLT"
 	copyright: "Copyright (c) 2004, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 -->
 
-<chapter xmlns="http://www.gobosoft.com/eiffel/gobo/documentation" id="gexslt_extensions">
+<chapter xmlns="https://www.gobosoft.com/eiffel/gobo/documentation" id="gexslt_extensions">
   <chapterinfo>
     <copyright>
       <year>2004</year>
@@ -27,7 +25,7 @@
   </chapterinfo>
   <title>Extensions</title>
   <para>
-    All extensions are in the namespace <uri>http://www.gobosoft.com/eiffel/gobo/gexslt/extension</uri>.
+    All extensions are in the namespace <uri>https://www.gobosoft.com/eiffel/gobo/tool/gexslt/doc/extension</uri>.
   </para>
   <section>
     <title>Extension attributes</title>
@@ -215,7 +213,7 @@
     <para>
      There is also an example provided to show Eiffel programmers
       how to write their own output methods. This is in the namespace 
-      <uri>http://www.gobosoft.com/eiffel/gobo/gexslt/extension/example</uri>, and has
+      <uri>https://www.gobosoft.com/eiffel/gobo/tool/gexslt/doc/extension/example</uri>, and has
       a local name of <exmlsyntax>xml</exmlsyntax>. It functions identically to the standard
       <xslt>xml</xslt> method, unless the extension attribute <exmlsyntax>internal-subset</exmlsyntax> (in the same
       namespace) is supplied. In which case, it's value is used as the text for a DTD internal subset. You

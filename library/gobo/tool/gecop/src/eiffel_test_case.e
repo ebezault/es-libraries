@@ -1,13 +1,11 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel standard test cases"
 
-	copyright: "Copyright (c) 2002-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class EIFFEL_TEST_CASE
 
@@ -42,6 +40,7 @@ feature {NONE} -- Initialization
 			a_test_dirname_not_empty: not a_test_dirname.is_empty
 		do
 			make_default
+			program_name := "aa"
 			program_dirname := a_program_dirname
 			testrun_dirname := a_test_dirname
 		ensure
@@ -52,6 +51,7 @@ feature {NONE} -- Initialization
 	make_default
 			-- <Precursor>
 		do
+			program_name := "aa"
 			program_dirname := default_testrun_dirname
 			testrun_dirname := default_testrun_dirname
 			precursor
@@ -101,7 +101,10 @@ feature -- Test Gobo Eiffel Compiler
 			a_geant_filename: STRING
 			l_directory: KL_DIRECTORY
 			l_executable: STRING
+			l_thread_option: STRING
+			l_geant_pathname: STRING
 		do
+			program_name := "aa" + program_dirname.hash_code.out
 			if variables.has ("debug") then
 				a_debug := "debug_"
 			else
@@ -112,18 +115,21 @@ feature -- Test Gobo Eiffel Compiler
 			else
 				l_executable := ""
 			end
+			if use_thread_count then
+				l_thread_option := " --thread=" + thread_count.out
+			else
+				l_thread_option := ""
+			end
 			a_geant_filename := geant_filename
+			l_geant_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("geant")
 				-- Compile program.
-			execute_shell ("geant -b %"" + a_geant_filename + "%"" + l_executable + " -Dgelint_option=true compile_" + a_debug + "ge" + output1_log)
+			execute_shell_with_timeout (l_geant_pathname + " -b %"" + a_geant_filename + "%"" + l_executable + l_thread_option + " -Dgelint_option=true -Dexecutable_name=" + program_name + " compile_" + a_debug + "ge", output1_log, three_minutes_in_milliseconds)
 			concat_output1 (agent filter_output_gec)
 				-- Execute program.
 			if file_system.file_exists (file_system.pathname (testrun_dirname, program_exe)) then
-				execute_shell (program_exe + output2_log)
+				execute_shell_with_timeout (program_exe, output2_log, three_minutes_in_milliseconds)
 				concat_output2
 			end
-				-- Clean.
-			execute_shell ("geant -b %"" + a_geant_filename + "%" clobber" + output3_log)
-			concat_output3
 				-- Test.
 			create l_directory.make (program_dirname)
 			if l_directory.there_exists (agent output_recognized (?, l_directory, passed_filename_regexp ("gec?"), output_log_filename)) then
@@ -146,8 +152,8 @@ feature {NONE} -- Test Gobo Eiffel Compiler
 			out_file: KL_TEXT_OUTPUT_FILE
 			in_file: KL_TEXT_INPUT_FILE
 			a_line: STRING
-			a_pattern1, a_pattern2, a_pattern3, a_pattern4: STRING
-			a_regexp1, a_regexp2, a_regexp3, a_regexp4: RX_PCRE_REGULAR_EXPRESSION
+			a_pattern1, a_pattern2, a_pattern3, a_pattern4, a_pattern5, a_pattern6, a_pattern7: STRING
+			a_regexp1, a_regexp2, a_regexp3, a_regexp4, a_regexp5, a_regexp6, a_regexp7: RX_PCRE_REGULAR_EXPRESSION
 			l_empty_line: BOOLEAN
 			l_first_line: BOOLEAN
 		do
@@ -157,21 +163,36 @@ feature {NONE} -- Test Gobo Eiffel Compiler
 			a_regexp1.compile (a_pattern1)
 			assert ("cannot compile regexp '" + a_pattern1 + "'", a_regexp1.is_compiled)
 			a_regexp1.optimize
-			a_pattern2 := "aa[0-9]+\.c"
+			a_pattern2 := "(" + program_name + "_?[0-9]+|boehm_gc)\.c"
 			create a_regexp2.make
 			a_regexp2.compile (a_pattern2)
 			assert ("cannot compile regexp '" + a_pattern2 + "'", a_regexp2.is_compiled)
 			a_regexp2.optimize
-			a_pattern3 := "(Degree -?[0-9]+|Total Time): [ 0-9:./]*"
+			a_pattern3 := "(Degree -?[0-9]+|Total Time): [ 0-9:./\-]*"
 			create a_regexp3.make
 			a_regexp3.compile (a_pattern3)
 			assert ("cannot compile regexp '" + a_pattern3 + "'", a_regexp3.is_compiled)
 			a_regexp3.optimize
-			a_pattern4 := "(line [0-9]+ column [0-9]+ in )([^\\/]*[\\/])*([a-z][a-z0-9_]*\.e)"
+			a_pattern4 := "ld: warning: REFERENCED_DYNAMICALLY flag on symbol '_catch_exception[_a-z]*' is deprecated"
 			create a_regexp4.make
 			a_regexp4.compile (a_pattern4)
 			assert ("cannot compile regexp '" + a_pattern4 + "'", a_regexp4.is_compiled)
 			a_regexp4.optimize
+			a_pattern5 := "(line [0-9]+ column [0-9]+ in )([^\\/]*[\\/])*([a-z][a-z0-9_]*\.e)"
+			create a_regexp5.make
+			a_regexp5.compile (a_pattern5)
+			assert ("cannot compile regexp '" + a_pattern5 + "'", a_regexp5.is_compiled)
+			a_regexp5.optimize
+			a_pattern6 := "(\[VSCI\] system aa: class BB name clash between class BB in cluster \'aa/cluster[12]\')( \(in file [^)]+\))( and class BB in cluster \'aa/cluster[12]\')( \(in file [^)]+\))(\.)"
+			create a_regexp6.make
+			a_regexp6.compile (a_pattern6)
+			assert ("cannot compile regexp '" + a_pattern6 + "'", a_regexp6.is_compiled)
+			a_regexp6.optimize
+			a_pattern7 := "(\tclass [a-zA-Z0-9_]+: )([^\\/]*[\\/])*([a-z][a-z0-9_]*\.e)"
+			create a_regexp7.make
+			a_regexp7.compile (a_pattern7)
+			assert ("cannot compile regexp '" + a_pattern7 + "'", a_regexp7.is_compiled)
+			a_regexp7.optimize
 				-- Copy files.
 			create out_file.make (an_output_filename)
 			out_file.open_append
@@ -200,13 +221,21 @@ feature {NONE} -- Test Gobo Eiffel Compiler
 						elseif a_regexp3.recognizes (a_line) then
 								-- Skip this line and the previous empty line.
 							l_empty_line := False
+						elseif a_regexp4.recognizes (a_line) then
+								-- Skip this line and the previous empty line.
+							l_empty_line := False
+						elseif a_regexp7.recognizes (a_line) then
+								-- Skip this line and the previous empty line.
+							l_empty_line := False
 						else
 							if l_empty_line then
 								out_file.put_new_line
 								l_empty_line := False
 							end
-							if a_regexp4.recognizes (a_line) then
-								out_file.put_line (a_regexp4.captured_substring (1) + a_regexp4.captured_substring (3))
+							if a_regexp5.recognizes (a_line) then
+								out_file.put_line (a_regexp5.captured_substring (1) + a_regexp5.captured_substring (3))
+							elseif a_regexp6.recognizes (a_line) then
+								out_file.put_line (a_regexp6.captured_substring (1) + a_regexp6.captured_substring (3) + a_regexp6.captured_substring (5))
 							else
 								out_file.put_line (a_line)
 							end
@@ -215,6 +244,9 @@ feature {NONE} -- Test Gobo Eiffel Compiler
 						a_regexp2.wipe_out
 						a_regexp3.wipe_out
 						a_regexp4.wipe_out
+						a_regexp5.wipe_out
+						a_regexp6.wipe_out
+						a_regexp7.wipe_out
 						in_file.read_line
 						l_first_line := False
 					end
@@ -240,6 +272,7 @@ feature -- Test gelint
 			a_debug: STRING
 			l_directory: KL_DIRECTORY
 			l_executable: STRING
+			l_thread_option: STRING
 		do
 			if variables.has ("debug") then
 				a_debug := "debug_"
@@ -251,7 +284,12 @@ feature -- Test gelint
 			else
 				l_executable := "gelint"
 			end
-			execute_shell (l_executable + " --variable=GOBO_EIFFEL=ge --flat %"" + ecf_filename + "%"" + output1_log)
+			if use_thread_count then
+				l_thread_option := " --thread=" + thread_count.out
+			else
+				l_thread_option := ""
+			end
+			execute_shell_with_timeout (l_executable + l_thread_option + " --variable=GOBO_EIFFEL=ge --flat %"" + ecf_filename + "%"", output1_log, three_minutes_in_milliseconds)
 			concat_output1 (agent filter_output_gelint)
 				-- Test.
 			create l_directory.make (program_dirname)
@@ -275,8 +313,8 @@ feature {NONE} -- Test gelint
 			out_file: KL_TEXT_OUTPUT_FILE
 			in_file: KL_TEXT_INPUT_FILE
 			a_line: STRING
-			a_pattern1, a_pattern2, a_pattern3: STRING
-			a_regexp1, a_regexp2, a_regexp3: RX_PCRE_REGULAR_EXPRESSION
+			a_pattern1, a_pattern2, a_pattern3, a_pattern4, a_pattern5: STRING
+			a_regexp1, a_regexp2, a_regexp3, a_regexp4, a_regexp5: RX_PCRE_REGULAR_EXPRESSION
 			l_empty_line: BOOLEAN
 			l_first_line: BOOLEAN
 		do
@@ -286,7 +324,7 @@ feature {NONE} -- Test gelint
 			a_regexp1.compile (a_pattern1)
 			assert ("cannot compile regexp '" + a_pattern1 + "'", a_regexp1.is_compiled)
 			a_regexp1.optimize
-			a_pattern2 := "(Degree -?[0-9]+|Total Time): [ 0-9:./]*"
+			a_pattern2 := "(Degree -?[0-9]+|Total Time): [ 0-9:./\-]*"
 			create a_regexp2.make
 			a_regexp2.compile (a_pattern2)
 			assert ("cannot compile regexp '" + a_pattern2 + "'", a_regexp2.is_compiled)
@@ -296,6 +334,16 @@ feature {NONE} -- Test gelint
 			a_regexp3.compile (a_pattern3)
 			assert ("cannot compile regexp '" + a_pattern3 + "'", a_regexp3.is_compiled)
 			a_regexp3.optimize
+			a_pattern4 := "(\[VSCI\] system aa: class BB name clash between class BB in cluster \'aa/cluster[12]\')( \(in file [^)]+\))( and class BB in cluster \'aa/cluster[12]\')( \(in file [^)]+\))(\.)"
+			create a_regexp4.make
+			a_regexp4.compile (a_pattern4)
+			assert ("cannot compile regexp '" + a_pattern4 + "'", a_regexp4.is_compiled)
+			a_regexp4.optimize
+			a_pattern5 := "(\tclass [a-zA-Z0-9_]+: )([^\\/]*[\\/])*([a-z][a-z0-9_]*\.e)"
+			create a_regexp5.make
+			a_regexp5.compile (a_pattern5)
+			assert ("cannot compile regexp '" + a_pattern5 + "'", a_regexp5.is_compiled)
+			a_regexp5.optimize
 				-- Copy files.
 			create out_file.make (an_output_filename)
 			out_file.open_append
@@ -321,6 +369,9 @@ feature {NONE} -- Test gelint
 						elseif a_regexp2.recognizes (a_line) then
 								-- Skip this line and the previous empty line.
 							l_empty_line := False
+						elseif a_regexp5.recognizes (a_line) then
+								-- Skip this line and the previous empty line.
+							l_empty_line := False
 						else
 							if l_empty_line then
 								out_file.put_new_line
@@ -328,6 +379,8 @@ feature {NONE} -- Test gelint
 							end
 							if a_regexp3.recognizes (a_line) then
 								out_file.put_line (a_regexp3.captured_substring (1) + a_regexp3.captured_substring (3))
+							elseif a_regexp4.recognizes (a_line) then
+								out_file.put_line (a_regexp4.captured_substring (1) + a_regexp4.captured_substring (3) + a_regexp4.captured_substring (5))
 							else
 								out_file.put_line (a_line)
 							end
@@ -335,6 +388,8 @@ feature {NONE} -- Test gelint
 						a_regexp1.wipe_out
 						a_regexp2.wipe_out
 						a_regexp3.wipe_out
+						a_regexp4.wipe_out
+						a_regexp5.wipe_out
 						in_file.read_line
 						l_first_line := False
 					end
@@ -362,6 +417,7 @@ feature -- Test ISE Eiffel
 			a_geant_filename: STRING
 			l_directory: KL_DIRECTORY
 			l_executable: STRING
+			l_geant_pathname: STRING
 		do
 			if variables.has ("debug") then
 				a_debug := "debug_"
@@ -383,16 +439,17 @@ feature -- Test ISE Eiffel
 				l_dotnet := ""
 			end
 			a_geant_filename := geant_filename
+			l_geant_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("geant")
 				-- Compile program.
-			execute_shell ("geant -b %"" + a_geant_filename + "%"" + l_executable + l_dotnet + " compile_" + a_debug + "ise" + output1_log)
+			execute_shell_with_timeout (l_geant_pathname + " -b %"" + a_geant_filename + "%"" + l_executable + l_dotnet + " compile_" + a_debug + "ise", output1_log, ten_minutes_in_milliseconds)
 			concat_output1 (agent filter_output_ise)
 				-- Execute program.
 			if file_system.file_exists (file_system.pathname (testrun_dirname, program_exe)) then
-				execute_shell (program_exe + output2_log)
+				execute_shell_with_timeout (program_exe, output2_log, three_minutes_in_milliseconds)
 				concat_output2
 			end
 				-- Clean.
-			execute_shell ("geant -b %"" + a_geant_filename + "%" clobber" + output3_log)
+			execute_shell_with_timeout (l_geant_pathname + " -b %"" + a_geant_filename + "%" clobber", output3_log, three_minutes_in_milliseconds)
 			concat_output3
 				-- Test.
 			create l_directory.make (program_dirname)
@@ -416,8 +473,12 @@ feature {NONE} -- Test ISE Eiffel
 			out_file: KL_TEXT_OUTPUT_FILE
 			in_file: KL_TEXT_INPUT_FILE
 			a_line: STRING
-			a_pattern1, a_pattern2, a_pattern3, a_pattern4, a_pattern5, a_pattern6, a_pattern7, a_pattern8, a_pattern9, a_pattern10: STRING
-			a_regexp1, a_regexp2, a_regexp3, a_regexp4, a_regexp5, a_regexp6, a_regexp7, a_regexp8, a_regexp9, a_regexp10: RX_PCRE_REGULAR_EXPRESSION
+			a_pattern1, a_pattern2, a_pattern3, a_pattern4, a_pattern5, a_pattern6: STRING
+			a_pattern7, a_pattern8, a_pattern9, a_pattern10, a_pattern11, a_pattern12: STRING
+			a_pattern13: STRING
+			a_regexp1, a_regexp2, a_regexp3, a_regexp4, a_regexp5, a_regexp6: RX_PCRE_REGULAR_EXPRESSION
+			a_regexp7, a_regexp8, a_regexp9, a_regexp10, a_regexp11, a_regexp12: RX_PCRE_REGULAR_EXPRESSION
+			a_regexp13: RX_PCRE_REGULAR_EXPRESSION
 			l_empty_line: BOOLEAN
 			l_first_line: BOOLEAN
 		do
@@ -452,7 +513,7 @@ feature {NONE} -- Test ISE Eiffel
 			a_regexp6.compile (a_pattern6)
 			assert ("cannot compile regexp '" + a_pattern6 + "'", a_regexp6.is_compiled)
 			a_regexp6.optimize
-			a_pattern7 := "(-STACK:5000000)|(-NODEFAULTLIB:libc)|(-SUBSYSTEM:CONSOLE)|(-OUT:aa\.exe)|(e1\\emain\.obj)|(E1\\estructure\.h)|(wkbench\.lib)|(finalized\.lib)|(USER32\.lib)|(WSOCK32\.lib)|(WSOCK32\.dll)|(ADVAPI32\.lib)|(GDI32\.lib)|(SHELL32\.lib)|(MSIMG32\.lib)|(COMDLG32\.lib)|(UUID\.lib)|(OLE32\.lib)|(OLEAUT32\.lib)|(COMCTL32\.lib)|(MPR\.LIB)|(aa\.res)|(E[0-9]+\\[A-Za-z0-9_]+\.obj)|(E[0-9]+\\[A-Za-z0-9_]+\.lib)|(C[0-9]+\\Cobj[0-9]+\.lib)"
+			a_pattern7 := "(-STACK:5000000)|(-NODEFAULTLIB:libc)|(-SUBSYSTEM:CONSOLE)|(-OUT:aa\.exe)|(e1\\emain\.obj)|(E1\\estructure\.h)|(wkbench\.lib)|(finalized\.lib)|(USER32\.lib)|(WSOCK32\.lib)|(WSOCK32\.dll)|(ADVAPI32\.lib)|(GDI32\.lib)|(SHELL32\.lib)|(MSIMG32\.lib)|(COMDLG32\.lib)|(UUID\.lib)|(OLE32\.lib)|(OLEAUT32\.lib)|(COMCTL32\.lib)|(MPR\.LIB)|(" + program_name + "\.res)|(E[0-9]+\\[A-Za-z0-9_]+\.obj)|(E[0-9]+\\[A-Za-z0-9_]+\.lib)|(C[0-9]+\\Cobj[0-9]+\.lib)"
 			create a_regexp7.make
 			a_regexp7.compile (a_pattern7)
 			assert ("cannot compile regexp '" + a_pattern7 + "'", a_regexp7.is_compiled)
@@ -467,11 +528,26 @@ feature {NONE} -- Test ISE Eiffel
 			a_regexp9.compile (a_pattern9)
 			assert ("cannot compile regexp '" + a_pattern9 + "'", a_regexp9.is_compiled)
 			a_regexp9.optimize
-			a_pattern10 := "(.*([^-]|[^-]-)) @[0-9]+ *"
+			a_pattern10 := "(.*([^-]|[^-]-) )@[0-9]+( +[^ :][^:]*:)? *"
 			create a_regexp10.make
 			a_regexp10.compile (a_pattern10)
 			assert ("cannot compile regexp '" + a_pattern10 + "'", a_regexp10.is_compiled)
 			a_regexp10.optimize
+			a_pattern11 := "(.*[/\\])?(cluster[12])([/\\])(bb\.e)"
+			create a_regexp11.make
+			a_regexp11.compile (a_pattern11)
+			assert ("cannot compile regexp '" + a_pattern11 + "'", a_regexp11.is_compiled)
+			a_regexp11.optimize
+			a_pattern12 := "Configuration: (.*[/\\])?compile_ise.ecf"
+			create a_regexp12.make
+			a_regexp12.compile (a_pattern12)
+			assert ("cannot compile regexp '" + a_pattern12 + "'", a_regexp12.is_compiled)
+			a_regexp12.optimize
+			a_pattern13 := "Parse error \(XML syntax\)  in (.*[/\\])?compile_ise.ecf (.*)"
+			create a_regexp13.make
+			a_regexp13.compile (a_pattern13)
+			assert ("cannot compile regexp '" + a_pattern13 + "'", a_regexp13.is_compiled)
+			a_regexp13.optimize
 				-- Copy files.
 			create out_file.make (an_output_filename)
 			out_file.open_append
@@ -527,7 +603,17 @@ feature {NONE} -- Test ISE Eiffel
 							elseif a_regexp10.recognizes (a_line) then
 									-- These are breakpoint positions in exception traces.
 								out_file.put_string (a_regexp10.captured_substring (1))
-								out_file.put_line (" @N")
+								out_file.put_string ("@N")
+								out_file.put_line (a_regexp10.captured_substring (3))
+							elseif a_regexp11.recognizes (a_line) then
+								out_file.put_string (a_regexp11.captured_substring (2))
+								out_file.put_character ('/')
+								out_file.put_line (a_regexp11.captured_substring (4))
+							elseif a_regexp12.recognizes (a_line) then
+								out_file.put_line ("Configuration: compile_ise.ecf")
+							elseif a_regexp13.recognizes (a_line) then
+								out_file.put_string ("Parse error (XML syntax)  in compile_ise.ecf ")
+								out_file.put_line (a_regexp13.captured_substring (2))
 							else
 								out_file.put_line (a_line)
 							end
@@ -542,6 +628,9 @@ feature {NONE} -- Test ISE Eiffel
 						a_regexp8.wipe_out
 						a_regexp9.wipe_out
 						a_regexp10.wipe_out
+						a_regexp11.wipe_out
+						a_regexp12.wipe_out
+						a_regexp13.wipe_out
 						in_file.read_line
 						l_first_line := False
 					end
@@ -676,6 +765,24 @@ feature -- Execution
 
 feature -- Multi-threading
 
+	use_thread_count: BOOLEAN
+			-- Should the number of threads to be used when running thread-capable
+			-- compilers be overridden with `thread_count'?
+
+	thread_count: INTEGER
+			-- Number of threads to be used when running thread-capable compilers.
+			-- Negative numbers -N mean "number of CPUs - N".
+
+	set_thread_count (a_thread_count: INTEGER)
+			-- Set `thread_count' to `a_thread_count'.
+		do
+			thread_count := a_thread_count
+			use_thread_count := True
+		ensure
+			use_thread_count_set: use_thread_count
+			thread_count_set: thread_count = a_thread_count
+		end
+
 	set_up_mutex: detachable MUTEX
 			-- Mutex to create directories in `set_up'
 
@@ -691,12 +798,6 @@ feature {NONE} -- Directory and file names
 
 	program_name: STRING
 			-- Program name
-		once
-			Result := "aa"
-		ensure
-			program_name_not_void: Result /= Void
-			program_name_not_empty: Result.count > 0
-		end
 
 	program_dirname: STRING
 			-- Name of program source directory
@@ -812,8 +913,8 @@ feature {NONE} -- Output logs
 
 	output1_log: STRING
 			-- Where and how to redirect compilation output logs
-		once
-			Result := " > " + output1_log_basename + " 2> " + error1_log_basename
+		do
+			Result := " > " + output1_log_filename + " 2> " + error1_log_filename
 		ensure
 			output1_log_not_void: Result /= Void
 			output1_log_not_empty: Result.count > 0
@@ -845,8 +946,8 @@ feature {NONE} -- Output logs
 
 	output2_log: STRING
 			-- Where and how to redirect execution output logs
-		once
-			Result := " > " + output2_log_basename + " 2> " + error2_log_basename
+		do
+			Result := " > " + output2_log_filename + " 2> " + error2_log_filename
 		ensure
 			output2_log_not_void: Result /= Void
 			output2_log_not_empty: Result.count > 0
@@ -878,8 +979,8 @@ feature {NONE} -- Output logs
 
 	output3_log: STRING
 			-- Where and how to redirect cleaning output logs
-		once
-			Result := " > " + output3_log_basename + " 2> " + error3_log_basename
+		do
+			Result := " > " + output3_log_filename + " 2> " + error3_log_filename
 		ensure
 			output3_log_not_void: Result /= Void
 			output3_log_not_empty: Result.count > 0
@@ -901,8 +1002,16 @@ feature {NONE} -- Output logs
 			out_file: KL_TEXT_OUTPUT_FILE
 			in_file: KL_TEXT_INPUT_FILE
 			a_line: STRING
-			a_pattern1, a_pattern2: STRING
-			a_regexp1, a_regexp2: RX_PCRE_REGULAR_EXPRESSION
+			a_pattern1: STRING
+			a_pattern2: STRING
+			a_pattern3: STRING
+			a_pattern4: STRING
+			a_pattern5: STRING
+			a_regexp1: RX_PCRE_REGULAR_EXPRESSION
+			a_regexp2: RX_PCRE_REGULAR_EXPRESSION
+			a_regexp3: RX_PCRE_REGULAR_EXPRESSION
+			a_regexp4: RX_PCRE_REGULAR_EXPRESSION
+			a_regexp5: RX_PCRE_REGULAR_EXPRESSION
 			l_input_filename: STRING
 			l_output2_log_filename: STRING
 			l_first_line: BOOLEAN
@@ -913,11 +1022,26 @@ feature {NONE} -- Output logs
 			a_regexp1.compile (a_pattern1)
 			assert ("cannot compile regexp '" + a_pattern1 + "'", a_regexp1.is_compiled)
 			a_regexp1.optimize
-			a_pattern2 := "(.*([^-]|[^-]-)) @[0-9]+ *"
+			a_pattern2 := "(.*([^-]|[^-]-) )@[0-9]+( +[^ :][^:]*:)? *"
 			create a_regexp2.make
 			a_regexp2.compile (a_pattern2)
 			assert ("cannot compile regexp '" + a_pattern2 + "'", a_regexp2.is_compiled)
 			a_regexp2.optimize
+			a_pattern3 := "(.*)0x([0-9A-F]{16})( +\(region id\))(.*)"
+			create a_regexp3.make
+			a_regexp3.compile (a_pattern3)
+			assert ("cannot compile regexp '" + a_pattern3 + "'", a_regexp3.is_compiled)
+			a_regexp3.optimize
+			a_pattern4 := "(.*)0x([1-9A-F]|[0-9A-F]{2,})( +\(thread id\) *)"
+			create a_regexp4.make
+			a_regexp4.compile (a_pattern4)
+			assert ("cannot compile regexp '" + a_pattern4 + "'", a_regexp4.is_compiled)
+			a_regexp4.optimize
+			a_pattern5 := program_name + ":(.*)"
+			create a_regexp5.make
+			a_regexp5.compile (a_pattern5)
+			assert ("cannot compile regexp '" + a_pattern5 + "'", a_regexp5.is_compiled)
+			a_regexp5.optimize
 				-- Copy files.
 			create out_file.make (output_log_filename)
 			out_file.open_append
@@ -948,12 +1072,36 @@ feature {NONE} -- Output logs
 							elseif a_regexp2.recognizes (a_line) then
 									-- These are breakpoint positions in exception traces.
 								out_file.put_string (a_regexp2.captured_substring (1))
-								out_file.put_line (" @N")
+								out_file.put_string ("@N")
+								out_file.put_line (a_regexp2.captured_substring (3))
+							elseif a_regexp3.recognizes (a_line) then
+									-- These are object addresses in exception traces.
+								out_file.put_string (a_regexp3.captured_substring (1))
+								out_file.put_string ("0xXXXXXXXXXXXXXXXX")
+								out_file.put_string (a_regexp3.captured_substring (3))
+								a_line := a_regexp3.captured_substring (4)
+								if a_regexp4.recognizes (a_line) then
+									out_file.put_string (a_regexp4.captured_substring (1))
+									out_file.put_string ("0xXXXXXXXX")
+									out_file.put_line (a_regexp4.captured_substring (3))
+								else
+									out_file.put_line (a_line)
+								end
+							elseif a_regexp4.recognizes (a_line) then
+								out_file.put_string (a_regexp4.captured_substring (1))
+								out_file.put_string ("0xXXXXXXXX")
+								out_file.put_line (a_regexp4.captured_substring (3))
+							elseif a_regexp5.recognizes (a_line) then
+								out_file.put_string ("aa:")
+								out_file.put_line (a_regexp5.captured_substring (1))
 							else
 								out_file.put_line (a_line)
 							end
 							a_regexp1.wipe_out
 							a_regexp2.wipe_out
+							a_regexp3.wipe_out
+							a_regexp4.wipe_out
+							a_regexp5.wipe_out
 							in_file.read_line
 							l_first_line := False
 						end
@@ -1115,19 +1263,44 @@ feature {NONE} -- Output logs
 
 feature {NONE} -- Execution
 
-	execute_shell (a_shell_command: STRING)
+	execute_shell (a_shell_command: STRING; a_output_log: STRING)
 			-- Execute `a_shell_command'.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
+			a_output_log_not_void: a_output_log /= Void
 		local
 			l_command: DP_SHELL_COMMAND
 			l_command_name: STRING
+			l_geant_pathname: STRING
 		do
 			l_command_name := a_shell_command.twin
 			l_command_name.replace_substring_all ("\", "\\")
 			l_command_name.replace_substring_all ("%"", "\%"")
-			l_command_name := "geant -b %"" + execution_buildname + "%" -Dexecutable=%"" + l_command_name + "%" -Ddirectory=%"" + testrun_dirname + "%" execute"
+			l_geant_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("geant")
+			l_command_name := l_geant_pathname + " -b %"" + execution_buildname + "%" -Dexecutable=%"" + l_command_name + "%" -Ddirectory=%"" + testrun_dirname + "%" execute" + a_output_log
+
+			create l_command.make (l_command_name)
+			l_command.execute
+		end
+
+	execute_shell_with_timeout (a_shell_command: STRING; a_output_log: STRING; a_timeout_ms: NATURAL_64)
+			-- Execute `a_shell_command'.
+			-- Wait for the command to terminate for at most `a_timeout_ms' milliseconds.
+		require
+			a_shell_command_not_void: a_shell_command /= Void
+			a_shell_command_not_empty: a_shell_command.count > 0
+			a_output_log_not_void: a_output_log /= Void
+		local
+			l_command: DP_SHELL_COMMAND
+			l_command_name: STRING
+			l_geant_pathname: STRING
+		do
+			l_command_name := a_shell_command.twin
+			l_command_name.replace_substring_all ("\", "\\")
+			l_command_name.replace_substring_all ("%"", "\%"")
+			l_geant_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("geant")
+			l_command_name := l_geant_pathname + " -b %"" + execution_buildname + "%" -Dexecutable=%"" + l_command_name + "%" -Dtimeout=%"" + a_timeout_ms.out + "%" -Ddirectory=%"" + testrun_dirname + "%" execute_with_timeout" + a_output_log
 
 			create l_command.make (l_command_name)
 			l_command.execute
@@ -1177,8 +1350,16 @@ feature {NONE} -- Constants
 	default_testrun_dirname: STRING = "test1"
 			-- Default value for `testrun_dirname'
 
+	three_minutes_in_milliseconds: NATURAL_64 = 180_000
+			-- 3 minutes in milliseconds
+
+	ten_minutes_in_milliseconds: NATURAL_64 = 600_000
+			-- 10 minutes in milliseconds
+
 invariant
 
+	program_name_not_void: program_name /= Void
+	program_name_not_empty: not program_name.is_empty
 	program_dirname_not_void: program_dirname /= Void
 	program_dirname_not_empty: not program_dirname.is_empty
 	testrun_dirname_not_void: testrun_dirname /= Void

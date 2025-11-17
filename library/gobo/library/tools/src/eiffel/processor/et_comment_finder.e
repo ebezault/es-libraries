@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel AST comment finders"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2007-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2007-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_COMMENT_FINDER
 
@@ -127,15 +125,14 @@ inherit
 			process_identifier_comma,
 			process_if_expression,
 			process_if_instruction,
-			process_indexing,
-			process_indexing_semicolon,
-			process_indexing_term_comma,
-			process_indexing_term_list,
-			process_indexing_list,
 			process_infix_cast_expression,
 			process_infix_and_then_operator,
 			process_infix_expression,
 			process_infix_or_else_operator,
+			process_inline_separate_argument,
+			process_inline_separate_argument_comma,
+			process_inline_separate_arguments,
+			process_inline_separate_instruction,
 			process_inspect_expression,
 			process_inspect_instruction,
 			process_invariants,
@@ -159,6 +156,11 @@ inherit
 			process_manifest_tuple,
 			process_manifest_type,
 			process_named_object_test,
+			process_note,
+			process_note_semicolon,
+			process_note_term_comma,
+			process_note_term_list,
+			process_note_list,
 			process_object_equality_expression,
 			process_object_test,
 			process_octal_integer_constant,
@@ -201,7 +203,7 @@ inherit
 			process_strip_expression,
 			process_symbol,
 			process_tagged_assertion,
-			process_tagged_indexing,
+			process_tagged_note,
 			process_token,
 			process_tuple_type,
 			process_type_comma,
@@ -1188,46 +1190,6 @@ feature {ET_AST_NODE} -- Processing
 			end
 		end
 
-	process_indexing (an_indexing: ET_INDEXING)
-			-- Process `an_indexing'.
-		do
-			if not excluded_nodes.has (an_indexing) then
-				precursor (an_indexing)
-			end
-		end
-
-	process_indexing_semicolon (an_indexing: ET_INDEXING_SEMICOLON)
-			-- Process `an_indexing'.
-		do
-			if not excluded_nodes.has (an_indexing) then
-				precursor (an_indexing)
-			end
-		end
-
-	process_indexing_term_comma (an_indexing_term: ET_INDEXING_TERM_COMMA)
-			-- Process `an_indexing_term'.
-		do
-			if not excluded_nodes.has (an_indexing_term) then
-				precursor (an_indexing_term)
-			end
-		end
-
-	process_indexing_term_list (a_list: ET_INDEXING_TERM_LIST)
-			-- Process `a_list'.
-		do
-			if not excluded_nodes.has (a_list) then
-				precursor (a_list)
-			end
-		end
-
-	process_indexing_list (a_list: ET_INDEXING_LIST)
-			-- Process `a_list'.
-		do
-			if not excluded_nodes.has (a_list) then
-				precursor (a_list)
-			end
-		end
-
 	process_infix_cast_expression (an_expression: ET_INFIX_CAST_EXPRESSION)
 			-- Process `an_expression'.
 		do
@@ -1257,6 +1219,38 @@ feature {ET_AST_NODE} -- Processing
 		do
 			if not excluded_nodes.has (an_operator) then
 				precursor (an_operator)
+			end
+		end
+
+	process_inline_separate_argument (a_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Process `a_argument'.
+		do
+			if not excluded_nodes.has (a_argument) then
+				precursor (a_argument)
+			end
+		end
+
+	process_inline_separate_argument_comma (a_argument_comma: ET_INLINE_SEPARATE_ARGUMENT_COMMA)
+			-- Process `a_argument_comma'.
+		do
+			if not excluded_nodes.has (a_argument_comma) then
+				precursor (a_argument_comma)
+			end
+		end
+
+	process_inline_separate_arguments (a_arguments: ET_INLINE_SEPARATE_ARGUMENTS)
+			-- Process `a_arguments'.
+		do
+			if not excluded_nodes.has (a_arguments) then
+				precursor (a_arguments)
+			end
+		end
+
+	process_inline_separate_instruction (a_instruction: ET_INLINE_SEPARATE_INSTRUCTION)
+			-- Process `a_instruction'.
+		do
+			if not excluded_nodes.has (a_instruction) then
+				precursor (a_instruction)
 			end
 		end
 
@@ -1451,6 +1445,46 @@ feature {ET_AST_NODE} -- Processing
 		do
 			if not excluded_nodes.has (an_expression) then
 				precursor (an_expression)
+			end
+		end
+
+	process_note (a_note: ET_NOTE)
+			-- Process `a_note'.
+		do
+			if not excluded_nodes.has (a_note) then
+				precursor (a_note)
+			end
+		end
+
+	process_note_semicolon (a_note: ET_NOTE_SEMICOLON)
+			-- Process `a_note'.
+		do
+			if not excluded_nodes.has (a_note) then
+				precursor (a_note)
+			end
+		end
+
+	process_note_term_comma (a_note_term: ET_NOTE_TERM_COMMA)
+			-- Process `a_note_term'.
+		do
+			if not excluded_nodes.has (a_note_term) then
+				precursor (a_note_term)
+			end
+		end
+
+	process_note_term_list (a_list: ET_NOTE_TERM_LIST)
+			-- Process `a_list'.
+		do
+			if not excluded_nodes.has (a_list) then
+				precursor (a_list)
+			end
+		end
+
+	process_note_list (a_list: ET_NOTE_LIST)
+			-- Process `a_list'.
+		do
+			if not excluded_nodes.has (a_list) then
+				precursor (a_list)
 			end
 		end
 
@@ -1793,11 +1827,11 @@ feature {ET_AST_NODE} -- Processing
 			end
 		end
 
-	process_tagged_indexing (an_indexing: ET_TAGGED_INDEXING)
-			-- Process `an_indexing'.
+	process_tagged_note (a_note: ET_TAGGED_NOTE)
+			-- Process `a_note'.
 		do
-			if not excluded_nodes.has (an_indexing) then
-				precursor (an_indexing)
+			if not excluded_nodes.has (a_note) then
+				precursor (a_note)
 			end
 		end
 

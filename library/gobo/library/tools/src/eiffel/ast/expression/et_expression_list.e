@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel comma-separated lists of expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_EXPRESSION_LIST
 
@@ -97,6 +95,76 @@ feature -- Status report
 			end
 		end
 
+feature -- Status report
+
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in one of the current expressions
+			-- or (recursively) in one of their subexpressions?
+		local
+			i, nb: INTEGER
+		do
+			nb := count
+			from i := 1 until i > nb loop
+				if expression (i).has_result then
+					Result := True
+						-- Jump out o fthe loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in one of the current expressions
+			-- or (recursively) in one of their subexpressions?
+		local
+			i, nb: INTEGER
+		do
+			nb := count
+			from i := 1 until i > nb loop
+				if expression (i).has_address_expression then
+					Result := True
+						-- Jump out o fthe loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in one of the current expressions
+			-- or (recursively) in one of their subexpressions?
+		local
+			i, nb: INTEGER
+		do
+			nb := count
+			from i := 1 until i > nb loop
+				if expression (i).has_agent then
+					Result := True
+						-- Jump out o fthe loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in one of the current expressions
+			-- or (recursively) in one of their subexpressions?
+		local
+			i, nb: INTEGER
+		do
+			nb := count
+			from i := 1 until i > nb loop
+				if expression (i).has_typed_object_test then
+					Result := True
+						-- Jump out o fthe loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
 feature -- Setting
 
 	set_left_symbol (l: like left_symbol)
@@ -117,6 +185,26 @@ feature -- Setting
 			right_symbol := r
 		ensure
 			right_symbol_set: right_symbol = r
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current expressions
+			-- and (recursively) in its subexpressions.
+		require
+			a_list_not_void: a_list /= Void
+			no_void_item: not a_list.has_void
+		local
+			i, nb: INTEGER
+		do
+			nb := count
+			from i := 1 until i > nb loop
+				expression (i).add_old_expressions (a_list)
+				i := i + 1
+			end
+		ensure
+			no_void_item: not a_list.has_void
 		end
 
 feature {NONE} -- Implementation

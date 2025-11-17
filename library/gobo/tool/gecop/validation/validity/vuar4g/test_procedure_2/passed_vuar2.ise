@@ -1,0 +1,21 @@
+-------------------------------------------------------------------------------
+
+Error code: VUAR(2)
+
+Type error: incompatible actual argument in feature call. 
+What to do: make sure that type of actual argument is compatible with
+  the type of corresponding formal argument. 
+
+Class: AA
+Feature: g
+Called feature: f (a: separate ANY) from BB
+Argument name: a
+Argument position: 1
+Formal argument type: separate ANY
+Actual argument type: CC
+Line: 22
+        c.set_name ("eiffel")
+->      b.f (c)
+      end
+
+-------------------------------------------------------------------------------

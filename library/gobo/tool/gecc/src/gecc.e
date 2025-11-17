@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,10 +7,8 @@ note
 			Take advantage of multi-CPU machines to compile several C files concurrently.
 		]"
 
-	copyright: "Copyright (c) 2018-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2018-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GECC
 
@@ -25,7 +23,10 @@ inherit
 
 	KL_SHARED_ARGUMENTS
 
-	ET_SHARED_ISE_VARIABLES
+	UT_SHARED_ISE_VARIABLES
+		export {NONE} all end
+
+	UT_SHARED_GOBO_VARIABLES
 		export {NONE} all end
 
 create
@@ -75,6 +76,9 @@ feature -- Execution
 			l_thread_count: INTEGER
 		do
 			Arguments.set_program_name ("gecc")
+				-- Set environment variables "$GOBO", "$GOBO_LIBRARY",
+				-- "$BOEHM_GC" and "$ZIG" if not set yet.
+			gobo_variables.set_gobo_variables
 				-- For compatibility with ISE's tools, define the environment
 				-- variables "$ISE_LIBRARY", "$EIFFEL_LIBRARY", "$ISE_PLATFORM"
 				-- and "$ISE_C_COMPILER" if not set yet.
@@ -199,7 +203,7 @@ feature -- Status report
 	thread_count: INTEGER
 			-- Number of threads to be used
 		do
-			Result := {EXECUTION_ENVIRONMENT}.available_cpu_count.as_integer_32
+			Result := {EXECUTION_ENVIRONMENT}.available_cpu_count.as_integer_32 - 3
 			if thread_option.was_found then
 				Result := thread_option.parameter
 				if Result <= 0 then
@@ -238,7 +242,7 @@ feature -- Argument parsing
 			l_parser.set_parameters_description ("script_filename")
 				-- thread
 			create thread_option.make_with_long_form ("thread")
-			thread_option.set_description ("Number of threads to be used. Negative numbers -N mean %"number of CPUs - N%". (default: number of CPUs)")
+			thread_option.set_description ("Number of threads to be used. Negative numbers -N mean %"number of CPUs - N%". (default: -3)")
 			thread_option.set_parameter_description ("thread_count")
 			if {PLATFORM}.is_thread_capable then
 				l_parser.options.force_last (thread_option)

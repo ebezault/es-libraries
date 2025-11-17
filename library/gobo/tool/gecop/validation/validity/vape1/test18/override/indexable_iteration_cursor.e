@@ -3,8 +3,8 @@ note
 	library: "EiffelBase: Library of reusable components for Eiffel."
 	status: "See notice at end of class."
 	legal: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2016-04-13 13:29:38 +0000 (Wed, 13 Apr 2016) $"
+	revision: "$Revision: 98619 $"
 
 deferred class
 	INDEXABLE_ITERATION_CURSOR [G]

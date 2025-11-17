@@ -1,13 +1,11 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel tools test cases"
 
-	copyright: "Copyright (c) 2019-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2019-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class EIFFEL_TOOL_TEST_CASE
 
@@ -21,9 +19,17 @@ feature -- Test
 			-- Run Eiffel validation suite with `program_name'.
 		local
 			l_program_full_filename: STRING
+			l_thread_option: STRING
+			l_gecop_pathname: STRING
 		do
 			l_program_full_filename := file_system.pathname (file_system.current_working_directory, program_name + file_system.exe_extension)
-			assert_execute ("gecop --tool=" + program_name + " --tool-executable=" + l_program_full_filename + output_log)
+			if use_thread_count then
+				l_thread_option := " --thread=" + thread_count.out
+			else
+				l_thread_option := ""
+			end
+			l_gecop_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("gecop")
+			assert_execute_with_command_output (l_gecop_pathname + " --tool=" + program_name + " --tool-executable=" + l_program_full_filename + l_thread_option + " --keep-testdir" + output2_log, output2_log_filename, error2_log_filename)
 			assert_expected_validation_results
 		end
 
@@ -36,7 +42,7 @@ feature -- Test
 			l_tag: STRING
 			l_message: STRING
 		do
-			create l_file.make (output_log_filename)
+			create l_file.make (output2_log_filename)
 			l_file.open_read
 			if l_file.is_open_read then
 				create l_string.make (4096)

@@ -29,8 +29,8 @@
 			into 1 byte, it uses the letter `u' followed by the hexadecimal value of the 2-byte sequence,
 			otherwise it simply uses the 1-byte hexadecimal representation.
 		]"
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-06-18 17:01:52 +0000 (Fri, 18 Jun 2021) $"
+	revision: "$Revision: 105548 $"
 
 expanded class
 	UTF_CONVERTER

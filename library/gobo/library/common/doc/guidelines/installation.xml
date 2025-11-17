@@ -1,18 +1,15 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 
 <!--
 	description:
 
 		"Installation Procedure"
 
-	copyright: "Copyright (c) 2004-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
-
 -->
 
-<chapter xmlns="http://www.gobosoft.com/eiffel/gobo/documentation" id="guidelines/installation">
+<chapter xmlns="https://www.gobosoft.com/eiffel/gobo/documentation" id="guidelines/installation">
 <chapterinfo>
 	<copyright>
 		<year>2001-2019</year>

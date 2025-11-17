@@ -7,8 +7,8 @@ note
 	implementation_details: "[
 		The GC might be moving objects, some of the routines are actually builtin.
 	]"
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-02-22 14:30:58 +0000 (Mon, 22 Feb 2021) $"
+	revision: "$Revision: 105200 $"
 
 class
 	REFLECTED_REFERENCE_OBJECT

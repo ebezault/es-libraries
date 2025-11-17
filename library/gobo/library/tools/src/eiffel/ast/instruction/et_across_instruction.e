@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel across instructions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2012-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2012-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ACROSS_INSTRUCTION
 
@@ -18,6 +16,10 @@ inherit
 
 	ET_ACROSS_COMPONENT
 		undefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
 			reset
 		end
 

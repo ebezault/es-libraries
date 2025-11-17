@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel keywords"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_KEYWORD
 
@@ -64,7 +62,6 @@ create
 	make_indexing,
 	make_inherit,
 	make_inspect,
-	make_invariant,
 	make_is,
 	make_like,
 	make_local,

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel types"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_TYPE
 
@@ -17,6 +15,8 @@ inherit
 	ET_TYPE_ITEM
 
 	ET_ACTUAL_PARAMETER
+		rename
+			append_canonical_to_string as append_canonical_actual_parameter_to_string
 		undefine
 			resolved_syntactical_constraint_with_type
 		end
@@ -62,9 +62,6 @@ feature -- Access
 	type_mark: detachable ET_TYPE_MARK
 			-- 'attached', 'detachable', 'expanded', 'reference' or 'separate' keyword,
 			-- or '!' or '?' symbol
-		do
-			-- Result := Void
-		end
 
 	overridden_type_mark (a_override_type_mark: detachable ET_TYPE_MARK): detachable ET_TYPE_MARK
 			-- Version of `type_mark' overridden by `a_override_type_mark'
@@ -391,14 +388,47 @@ feature -- Status report
 			named_type: Result implies is_named_type
 		end
 
-	is_type_expanded (a_context: ET_TYPE_CONTEXT): BOOLEAN
-			-- Is current type expanded when viewed from `a_context'?
-			-- (Note that the feature name `is_expanded_type' is
-			-- already the name of a feature in SmartEiffel's GENERAL.)
+	is_type_separate (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is current type separate when viewed from `a_context'?
 		require
 			a_context_not_void: a_context /= Void
 			a_context_valid: a_context.is_valid_context
 			-- no_cycle: no cycle in anchored types involved.
+		do
+			Result := is_type_separate_with_type_mark (Void, a_context)
+		end
+
+	is_type_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Same as `is_type_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		require
+			a_context_not_void: a_context /= Void
+			a_context_valid: a_context.is_valid_context
+			-- no_cycle: no cycle in anchored types involved.
+		deferred
+		end
+
+	is_type_non_separate (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is current type not separate when viewed from `a_context'?
+		do
+			Result := is_type_non_separate_with_type_mark (Void, a_context)
+		end
+
+	is_type_non_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Same as `is_type_non_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		require
+			a_context_not_void: a_context /= Void
+			a_context_valid: a_context.is_valid_context
+			-- no_cycle: no cycle in anchored types involved.
+		do
+			Result := not is_type_separate_with_type_mark (a_type_mark, a_context)
+		end
+
+	is_type_expanded (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is current type expanded when viewed from `a_context'?
+			-- (Note that the feature name `is_expanded_type' is
+			-- already the name of a feature in SmartEiffel's GENERAL.)
 		do
 			Result := is_type_expanded_with_type_mark (Void, a_context)
 		end
@@ -436,10 +466,6 @@ feature -- Status report
 
 	is_type_attached (a_context: ET_TYPE_CONTEXT): BOOLEAN
 			-- Is current type attached when viewed from `a_context'?
-		require
-			a_context_not_void: a_context /= Void
-			a_context_valid: a_context.is_valid_context
-			-- no_cycle: no cycle in anchored types involved.
 		do
 			Result := is_type_attached_with_type_mark (Void, a_context)
 		end
@@ -500,6 +526,12 @@ feature -- Status report
 			-- no_cycle: no cycle in anchored types involved.
 		do
 			Result := is_type_expanded_with_type_mark (a_type_mark, a_context) or is_type_detachable_with_type_mark (a_type_mark, a_context)
+		end
+
+	is_controlled: BOOLEAN
+			-- Is current type a controlled separate type?
+		do
+			-- Result := False
 		end
 
 	has_anchored_type: BOOLEAN
@@ -577,11 +609,40 @@ feature -- Status report
 			Result := base_type_has_class (a_class, a_context)
 		end
 
+	named_type_has_class_with_ancestors_not_built_successfully (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Does the named type of current type contain a class
+			-- whose ancestors have not been built successfully
+			-- when it appears in `a_context'?
+		require
+			a_context_not_void: a_context /= Void
+			a_context_valid: a_context.is_valid_context
+			-- no_cycle: no cycle in anchored types involved.
+		deferred
+		end
+
 	named_parameter_has_class (a_class: ET_CLASS; a_context: ET_TYPE_CONTEXT): BOOLEAN
 			-- Does the named parameter of current type contain `a_class'
 			-- when it appears in `a_context'?
 		do
 			Result := named_type_has_class (a_class, a_context)
+		end
+
+	named_parameter_has_class_with_ancestors_not_built_successfully (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Does named parameter of current type contain  a class
+			-- whose ancestors have not been built successfully
+			-- when it appears in `a_context'?
+		do
+			Result := named_type_has_class_with_ancestors_not_built_successfully (a_context)
+		end
+
+feature -- Setting
+
+	set_type_mark (a_keyword: like type_mark)
+			-- Set `type_mark' to `a_keyword'.
+		do
+			type_mark := a_keyword
+		ensure
+			type_mark_set: type_mark = a_keyword
 		end
 
 feature -- Basic operations
@@ -1151,8 +1212,7 @@ feature -- Output
 		end
 
 	append_to_string (a_string: STRING)
-			-- Append textual representation of
-			-- current type to `a_string'.
+			-- Append `to_text' to `a_string'.
 		require
 			a_string_not_void: a_string /= Void
 		deferred
@@ -1161,8 +1221,9 @@ feature -- Output
 	unaliased_to_text: STRING
 			-- Textual representation of unaliased version of current type
 			-- (Create a new string at each call.)
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- An unaliased version is when aliased types such as INTEGER
+			-- are replaced with the associated types such as INTEGER_32.
+			-- Also, tuple types have no labels.
 		do
 			create Result.make (15)
 			append_unaliased_to_string (Result)
@@ -1171,22 +1232,57 @@ feature -- Output
 		end
 
 	append_unaliased_to_string (a_string: STRING)
-			-- Append textual representation of unaliased
-			-- version of current type to `a_string'.
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- Append `unaliased_to_text' to `a_string'.
 		require
 			a_string_not_void: a_string /= Void
 		do
 			append_to_string (a_string)
 		end
 
+	canonical_to_text: STRING
+			-- Textual representation of canonical version of current type
+			-- (Create a new string at each call.)
+			-- A canonical version is an unaliased version, that is when
+			-- aliased types such as INTEGER are replaced with the associated
+			-- types such as INTEGER_32. Also, the canonical version has no
+			-- leading type mark (e.g. "FOO" instead of "detachable FOO").
+			-- And implicit type marks of actual generic parameters are
+			-- replaced with explicit type marks, except when the actual
+			-- generic parameters are base types where the type mark is not
+			-- shown at all if 'attached', or if 'expanded' and the base class
+			-- is expanded, or if 'separate' and the base class is separate
+			-- (e.g. "FOO [BAR, INTEGER_8, detachable BAZ]" instead of
+			-- "FOO [attached BAR, expanded INTEGER_8, detachable BAZ]").
+			-- Do not show the 'detachable' type mark for base types in
+			-- non-void-safe mode.
+			-- Also, tuple types have no labels.
+		do
+			create Result.make (15)
+			append_canonical_to_string (Result)
+		ensure
+			canonical_to_text_not_void: Result /= Void
+		end
+
+	append_canonical_to_string (a_string: STRING)
+			-- Append `canonical_to_text' to `a_string'.
+		require
+			a_string_not_void: a_string /= Void
+		local
+			l_old_type_mark: like type_mark
+		do
+			l_old_type_mark := type_mark
+			type_mark := Void
+			append_unaliased_to_string (a_string)
+			type_mark := l_old_type_mark
+		end
+
 	runtime_name_to_text: STRING
 			-- Textual representation of unaliased version of current type
 			-- as returned by 'TYPE.runtime_name'.
 			-- (Create a new string at each call.)
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- An unaliased version is when aliased types such as INTEGER
+			-- are replaced with the associated types such as INTEGER_32.
+			-- Also, tuple types have no labels.
 		do
 			create Result.make (15)
 			append_runtime_name_to_string (Result)
@@ -1195,20 +1291,16 @@ feature -- Output
 		end
 
 	append_runtime_name_to_string (a_string: STRING)
-			-- Append to `a_string' textual representation of unaliased
-			-- version of current type as returned by 'TYPE.runtime_name'.
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- Append `runtime_name_to_text' to `a_string'.
 		require
 			a_string_not_void: a_string /= Void
-		do
-			append_unaliased_to_string (a_string)
+		deferred
 		end
 
 	debug_output: STRING
 			-- String that should be displayed in debugger to represent `Current'
 		do
-			Result := unaliased_to_text
+			Result := canonical_to_text
 		end
 
 end

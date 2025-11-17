@@ -1,4 +1,4 @@
-<?xml version="1.0"?> 
+﻿<?xml version="1.0"?> 
 
 <!--
 	description:
@@ -6,10 +6,8 @@
 		"Gobo Eiffel XPointer wrapper 2"
 
 	library: "Gobo Eiffel XPath"
-	copyright: "Copyright (c) 2005, Colin Adams and others"
+	copyright: "Copyright (c) 2005-2025, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 -->
 
 <!DOCTYPE chapter [
@@ -20,7 +18,7 @@
  <!ENTITY framework "XPointer Framework">
  <!ENTITY inclusion SYSTEM "xpointer.xml" >
 ]>
-<chapter  xmlns="http://www.gobosoft.com/eiffel/gobo/documentation" id="xpointer">
+<chapter  xmlns="https://www.gobosoft.com/eiffel/gobo/documentation" id="xpointer">
 &inclusion;
 </chapter>
 

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel feature validity checkers"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_FEATURE_CHECKER
 
@@ -73,6 +71,7 @@ inherit
 			process_if_instruction,
 			process_infix_cast_expression,
 			process_infix_expression,
+			process_inline_separate_instruction,
 			process_inspect_expression,
 			process_inspect_instruction,
 			process_iteration_cursor,
@@ -176,6 +175,9 @@ feature {NONE} -- Initialization
 			create current_iteration_cursor_types.make_map (50)
 			create current_iteration_item_types.make_map (50)
 			create current_iteration_item_scope.make
+				-- Inline separate arguments.
+			create current_inline_separate_argument_types.make_map (50)
+			create current_inline_separate_argument_scope.make
 				-- Attachments.
 			create current_initialization_scope.make
 			create current_attachment_scope.make
@@ -184,12 +186,8 @@ feature {NONE} -- Initialization
 			create assertions_by_feature.make_map (30)
 				-- Common Ancestor Types.
 			create common_ancestor_type_list.make (500)
-				-- Indexing.
-			create indexing_term_list.make (10)
-				-- Default creation call.
-			create default_creation_call_name.make (tokens.default_create_feature_name.name)
-			default_creation_call_name.set_seed (current_system.default_create_seed)
-			create default_creation_call.make (default_creation_call_name, Void)
+				-- Note clauses.
+			create note_term_list.make (10)
 				-- VAPE validity check.
 			create vape_non_descendant_clients.make_with_capacity (20)
 			create vape_creation_clients.make_with_capacity (20)
@@ -325,7 +323,9 @@ feature -- Validity checking
 					end
 					old_in_static_feature := in_static_feature
 					in_static_feature := a_feature.is_static
+					initialize_indexes (a_feature)
 					a_feature.process (Current)
+					reset_indexes
 					in_static_feature := old_in_static_feature
 					if current_type = current_class_impl then
 						a_feature.set_validity_checked
@@ -355,6 +355,7 @@ feature -- Validity checking
 				end
 				current_iteration_item_types.wipe_out
 				current_iteration_item_scope.wipe_out
+				current_inline_separate_argument_scope.wipe_out
 				current_attachment_scope.wipe_out
 				current_initialization_scope.wipe_out
 				current_class := old_class
@@ -456,6 +457,7 @@ feature -- Validity checking
 					boolean_type := current_universe_impl.boolean_type
 					l_assertion_context := new_context (current_type)
 					l_old_object_test_scope := current_object_test_scope.count
+					initialize_indexes (a_current_feature)
 					nb := a_preconditions.count
 					from i := 1 until i > nb loop
 						if attached a_preconditions.assertion (i).expression as l_expression then
@@ -480,6 +482,7 @@ feature -- Validity checking
 						end
 						i := i + 1
 					end
+					reset_indexes
 					current_object_test_scope.keep_object_tests (l_old_object_test_scope)
 					free_context (l_assertion_context)
 					has_fatal_error := has_fatal_error or had_error
@@ -513,6 +516,7 @@ feature -- Validity checking
 				end
 				current_iteration_item_types.wipe_out
 				current_iteration_item_scope.wipe_out
+				current_inline_separate_argument_scope.wipe_out
 				current_attachment_scope.wipe_out
 				current_initialization_scope.wipe_out
 				current_class := old_class
@@ -610,6 +614,7 @@ feature -- Validity checking
 					boolean_type := current_universe_impl.boolean_type
 					l_assertion_context := new_context (current_type)
 					l_old_object_test_scope := current_object_test_scope.count
+					initialize_indexes (a_current_feature)
 					nb := a_postconditions.count
 					from i := 1 until i > nb loop
 						if attached a_postconditions.assertion (i).expression as l_expression then
@@ -634,6 +639,7 @@ feature -- Validity checking
 						end
 						i := i + 1
 					end
+					reset_indexes
 					current_object_test_scope.keep_object_tests (l_old_object_test_scope)
 					free_context (l_assertion_context)
 					has_fatal_error := has_fatal_error or had_error
@@ -667,6 +673,7 @@ feature -- Validity checking
 				end
 				current_iteration_item_types.wipe_out
 				current_iteration_item_scope.wipe_out
+				current_inline_separate_argument_scope.wipe_out
 				current_attachment_scope.wipe_out
 				current_initialization_scope.wipe_out
 				current_class := old_class
@@ -739,6 +746,7 @@ feature -- Validity checking
 						-- The error should have already been reported.
 					set_fatal_error
 				else
+					initialize_indexes (an_invariants)
 					boolean_type := current_universe_impl.boolean_type
 					l_assertion_context := new_context (current_type)
 					l_old_object_test_scope := current_object_test_scope.count
@@ -766,6 +774,7 @@ feature -- Validity checking
 						end
 						i := i + 1
 					end
+					reset_indexes
 					current_object_test_scope.keep_object_tests (l_old_object_test_scope)
 					free_context (l_assertion_context)
 					has_fatal_error := has_fatal_error or had_error
@@ -798,6 +807,7 @@ feature -- Validity checking
 				end
 				current_iteration_item_types.wipe_out
 				current_iteration_item_scope.wipe_out
+				current_inline_separate_argument_scope.wipe_out
 				current_attachment_scope.wipe_out
 				current_initialization_scope.wipe_out
 				current_class := old_class
@@ -847,6 +857,47 @@ feature {NONE} -- Feature validity
 				error_handler.report_vucr0a_error (current_class, a_feature)
 				had_error := True
 			end
+			if current_system.scoop_mode then
+				if current_class.is_expanded then
+					if l_type.is_type_reference (current_type) then
+						if l_type.is_type_non_separate (current_type) then
+								-- Error: the reference type of an attribute of an expanded class
+								-- should be separate.	
+							set_fatal_error
+							error_handler.report_v1ea1ga_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						elseif not l_type.is_type_separate (current_type) then
+								-- Error: the reference type of an attribute of an expanded class
+								-- should be separate (which is potentially not the case if it is
+								-- a formal generic parameter, hence the test 'not is_type_separate'
+								-- instead of just 'is_type_non_separate').	
+							set_fatal_error
+							error_handler.report_v1ea1gc_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						end
+					elseif not l_type.is_type_expanded (current_type) then
+						if l_type.is_type_non_separate (current_type) then
+								-- Error: the reference type (potentially, if it is a formal generic
+								-- parameter, hence the test 'not is_type_expanded' instead of just
+								-- 'is_type_reference') of an attribute of an expanded class
+								-- should be separate.	
+							set_fatal_error
+							error_handler.report_v1ea1gb_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						elseif not l_type.is_type_separate (current_type) then
+								-- Error: the reference type (potentially, if it is a formal generic
+								-- parameter, hence the test 'not is_type_expanded' instead of just
+								-- 'is_type_reference') of an attribute of an expanded class
+								-- should be separate (which is potentially not the case if it is
+								-- a formal generic parameter, hence the test 'not is_type_separate'
+								-- instead of just 'is_type_non_separate').	
+							set_fatal_error
+							error_handler.report_v1ea1gd_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						end
+					end
+				end
+			end
 			has_fatal_error := had_error
 		end
 
@@ -866,6 +917,7 @@ feature {NONE} -- Feature validity
 			l_type := a_feature.type
 			check_query_type_validity (l_type, a_feature)
 			if not has_fatal_error then
+				report_result_declaration (l_type)
 				if in_precursor then
 -- TODO: when processing a precursor, its signature should be resolved to the
 -- context of `current_class', but it is currently seen in the context of its parent class.
@@ -1477,6 +1529,47 @@ feature {NONE} -- Feature validity
 				error_handler.report_vucr0a_error (current_class, a_feature)
 				had_error := True
 			end
+			if current_system.scoop_mode then
+				if current_class.is_expanded then
+					if l_type.is_type_reference (current_type) then
+						if l_type.is_type_non_separate (current_type) then
+								-- Error: the reference type of an attribute of an expanded class
+								-- should be separate.	
+							set_fatal_error
+							error_handler.report_v1ea1ga_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						elseif not l_type.is_type_separate (current_type) then
+								-- Error: the reference type of an attribute of an expanded class
+								-- should be separate (which is potentially not the case if it is
+								-- a formal generic parameter, hence the test 'not is_type_separate'
+								-- instead of just 'is_type_non_separate').	
+							set_fatal_error
+							error_handler.report_v1ea1gc_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						end
+					elseif not l_type.is_type_expanded (current_type) then
+						if l_type.is_type_non_separate (current_type) then
+								-- Error: the reference type (potentially, if it is a formal generic
+								-- parameter, hence the test 'not is_type_expanded' instead of just
+								-- 'is_type_reference') of an attribute of an expanded class
+								-- should be separate.	
+							set_fatal_error
+							error_handler.report_v1ea1gb_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						elseif not l_type.is_type_separate (current_type) then
+								-- Error: the reference type (potentially, if it is a formal generic
+								-- parameter, hence the test 'not is_type_expanded' instead of just
+								-- 'is_type_reference') of an attribute of an expanded class
+								-- should be separate (which is potentially not the case if it is
+								-- a formal generic parameter, hence the test 'not is_type_separate'
+								-- instead of just 'is_type_non_separate').	
+							set_fatal_error
+							error_handler.report_v1ea1gd_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+							had_error := True
+						end
+					end
+				end
+			end
 			has_fatal_error := had_error
 		end
 
@@ -1589,7 +1682,7 @@ feature {NONE} -- Feature validity
 				check_locals_validity (l_locals, a_feature)
 				had_error := had_error or has_fatal_error
 			end
-			check_once_keys_validity (a_feature.keys, a_feature.first_indexing)
+			check_once_keys_validity (a_feature.keys, a_feature.first_note)
 			had_key_error := has_fatal_error
 			if not had_error then
 				l_compound := a_feature.compound
@@ -1653,6 +1746,18 @@ feature {NONE} -- Feature validity
 				error_handler.report_vucr0b_error (current_class, a_feature)
 				had_error := True
 			end
+			if current_system.scoop_mode and then a_feature.is_once_per_process then
+				if l_type.is_type_reference (current_type) and then not l_type.is_type_separate (current_type) then
+						-- Error: the reference type of a once-per-process function
+						-- should be separate.
+						-- (Note that we don't use "not l_type.is_type_expanded" instead
+						-- of "l_type.is_type_reference" because the type of a once-per-process
+						-- function cannot be a formal generic parameter.)
+					set_fatal_error
+					error_handler.report_vffd11ga_error (current_class, current_class_impl, a_feature, l_type.named_type (current_type))
+					had_error := True
+				end
+			end
 			has_fatal_error := had_error or had_key_error
 		end
 
@@ -1689,7 +1794,7 @@ feature {NONE} -- Feature validity
 				check_locals_validity (l_locals, a_feature)
 				had_error := had_error or has_fatal_error
 			end
-			check_once_keys_validity (a_feature.keys, a_feature.first_indexing)
+			check_once_keys_validity (a_feature.keys, a_feature.first_note)
 			had_key_error := has_fatal_error
 			if not had_error then
 				l_compound := a_feature.compound
@@ -1752,6 +1857,7 @@ feature {NONE} -- Feature validity
 			l_type := a_feature.type
 			check_query_type_validity (l_type, a_feature)
 			if not has_fatal_error then
+				report_result_declaration (l_type)
 				if in_precursor then
 -- TODO: when processing a precursor, its signature should be resolved to the
 -- context of `current_class', but it is currently seen in the context of its parent class.
@@ -1848,6 +1954,9 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 						had_error := had_error or has_fatal_error
 						check_signature_type_validity (l_formals_impl.formal_argument (i).type)
 						if not has_fatal_error then
+							l_formal.set_index (i)
+							l_formal.name.set_index (i)
+							l_formal.set_attached_index (i + nb)
 							report_formal_argument_declaration (l_formal)
 							if in_precursor then
 -- TODO: when processing a precursor, its signature should be resolved to the
@@ -1888,6 +1997,12 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 					l_name := l_formal.name
 					l_name.set_argument (True)
 					l_name.set_seed (i)
+					if l_formal.index = 0 then
+						l_formal.set_index (index_count + 1)
+						index_count := index_count + 2
+						l_formal.set_attached_index (index_count)
+						l_name.set_index (l_formal.index)
+					end
 					from j := 1 until j >= i loop
 						other_formal := an_arguments.formal_argument (j)
 						if other_formal.name.same_identifier (l_name) then
@@ -1958,6 +2073,13 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 						set_fatal_error
 						error_handler.report_vpir1g_error (current_class, l_formal, an_agent, l_iteration_component)
 					end
+					if attached current_inline_separate_argument_scope.hidden_inline_separate_argument (l_name) as l_inline_separate_argument then
+							-- This formal argument has the same name as the argument of an
+							-- inline separate instruction in an enclosing feature or inline agent
+							-- whose scope contains the inline agent `an_agent'.
+						set_fatal_error
+						error_handler.report_vpir1i_error (current_class, l_formal, an_agent, l_inline_separate_argument)
+					end
 					l_type := l_formal.type
 					had_error := had_error or has_fatal_error
 					check_signature_type_validity (l_type)
@@ -1971,6 +2093,12 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 				nb := an_arguments.count
 				from i := 1 until i > nb loop
 					l_formal := an_arguments.formal_argument (i)
+					if l_formal.index = 0 then
+						l_formal.set_index (index_count + 1)
+						index_count := index_count + 2
+						l_formal.set_attached_index (index_count)
+						l_formal.name.set_index (l_formal.index)
+					end
 					l_type := l_formal.type
 					had_error := had_error or has_fatal_error
 					check_signature_type_validity (l_type)
@@ -2007,6 +2135,12 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 					l_name := l_local.name
 					l_name.set_local (True)
 					l_name.set_seed (i)
+					if l_local.index = 0 then
+						l_local.set_index (index_count + 1)
+						index_count := index_count + 2
+						l_local.set_attached_index (index_count)
+						l_name.set_index (l_local.index)
+					end
 					from j := 1 until j >= i loop
 						other_local := a_locals.local_variable (j)
 						if other_local.name.same_identifier (l_name) then
@@ -2044,6 +2178,12 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 				nb := a_locals.count
 				from i := 1 until i > nb loop
 					l_local := a_locals.local_variable (i)
+					if l_local.index = 0 then
+						l_local.set_index (index_count + 1)
+						index_count := index_count + 2
+						l_local.set_attached_index (index_count)
+						l_local.name.set_index (l_local.index)
+					end
 					l_type := l_local.type
 					had_error := had_error or has_fatal_error
 					check_local_type_validity (l_type)
@@ -2082,6 +2222,12 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 					l_name := l_local.name
 					l_name.set_local (True)
 					l_name.set_seed (i)
+					if l_local.index = 0 then
+						l_local.set_index (index_count + 1)
+						index_count := index_count + 2
+						l_local.set_attached_index (index_count)
+						l_name.set_index (l_local.index)
+					end
 					from j := 1 until j >= i loop
 						other_local := a_locals.local_variable (j)
 						if other_local.name.same_identifier (l_name) then
@@ -2161,6 +2307,13 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 						set_fatal_error
 						error_handler.report_vpir1h_error (current_class, l_local, an_agent, l_iteration_component)
 					end
+					if attached current_inline_separate_argument_scope.hidden_inline_separate_argument (l_name) as l_inline_separate_argument then
+							-- This local variable has the same name as the argument of an
+							-- inline separate instruction in an enclosing feature or inline agent
+							-- whose scope contains the inline agent `an_agent'.
+						set_fatal_error
+						error_handler.report_vpir1j_error (current_class, l_local, an_agent, l_inline_separate_argument)
+					end
 					l_type := l_local.type
 					had_error := had_error or has_fatal_error
 					check_local_type_validity (l_type)
@@ -2174,6 +2327,12 @@ feature {NONE} -- Locals/Formal arguments/query type validity
 				nb := a_locals.count
 				from i := 1 until i > nb loop
 					l_local := a_locals.local_variable (i)
+					if l_local.index = 0 then
+						l_local.set_index (index_count + 1)
+						index_count := index_count + 2
+						l_local.set_attached_index (index_count)
+						l_local.name.set_index (l_local.index)
+					end
 					l_type := l_local.type
 					had_error := had_error or has_fatal_error
 					check_local_type_validity (l_type)
@@ -2467,50 +2626,50 @@ feature {NONE} -- Type checking
 
 feature {NONE} -- Once key validity
 
-	check_once_keys_validity (a_keys: detachable ET_MANIFEST_STRING_LIST; a_indexing_list: detachable ET_INDEXING_LIST)
+	check_once_keys_validity (a_keys: detachable ET_MANIFEST_STRING_LIST; a_note_list: detachable ET_NOTE_LIST)
 			-- Check validity of once keys `a_keys'.
 			-- Set `has_fatal_error' if a fatal error occurred.
 		local
-			l_indexing_term_list: like indexing_term_list
-			l_indexing_term: ET_INDEXING_TERM
+			l_note_term_list: like note_term_list
+			l_note_term: ET_NOTE_TERM
 			l_object_key: detachable ET_MANIFEST_STRING
 			l_thread_key: detachable ET_MANIFEST_STRING
 			l_process_key: detachable ET_MANIFEST_STRING
-			l_thread_indexing: detachable ET_INDEXING_TERM
-			l_process_indexing: detachable ET_INDEXING_TERM
+			l_thread_note: detachable ET_NOTE_TERM
+			l_process_note: detachable ET_NOTE_TERM
 			i, nb: INTEGER
 			l_key: ET_MANIFEST_STRING
 		do
 			has_fatal_error := False
-			if a_indexing_list /= Void then
-				l_indexing_term_list := indexing_term_list
-				a_indexing_list.append_tagged_indexing_terms_to_list (tokens.once_indexing_tag, l_indexing_term_list)
-				nb := l_indexing_term_list.count
+			if a_note_list /= Void then
+				l_note_term_list := note_term_list
+				a_note_list.append_tagged_note_terms_to_list (tokens.once_note_tag, l_note_term_list)
+				nb := l_note_term_list.count
 				from i := 1 until i > nb loop
-					l_indexing_term := l_indexing_term_list.item (i)
-					if l_indexing_term.has_indexing_term_value (tokens.global_once_indexing_value) then
-						l_process_indexing := l_indexing_term
-						if l_thread_indexing /= Void then
+					l_note_term := l_note_term_list.item (i)
+					if l_note_term.has_note_term_value (tokens.global_once_note_value) then
+						l_process_note := l_note_term
+						if l_thread_note /= Void then
 								-- Error: once keys "THREAD" and "PROCESS" cannot be combined.
 							set_fatal_error
-							error_handler.report_vvok1c_error (current_class, l_thread_indexing, l_indexing_term)
+							error_handler.report_vvok1c_error (current_class, l_thread_note, l_note_term)
 						end
-					elseif l_indexing_term.has_indexing_term_value (tokens.thread_once_indexing_value) then
-						l_thread_indexing := l_indexing_term
-						if l_process_indexing /= Void then
+					elseif l_note_term.has_note_term_value (tokens.thread_once_note_value) then
+						l_thread_note := l_note_term
+						if l_process_note /= Void then
 								-- Error: once keys "PROCESS" and "THREAD" cannot be combined.
 							set_fatal_error
-							error_handler.report_vvok1c_error (current_class, l_process_indexing, l_indexing_term)
+							error_handler.report_vvok1c_error (current_class, l_process_note, l_note_term)
 						end
 					else
 							-- Error: this once key is not supported. The supported once keys
 							-- are "THREAD", "PROCESS" and "OBJECT".
 						set_fatal_error
-						error_handler.report_vvok2b_error (current_class, l_indexing_term)
+						error_handler.report_vvok2b_error (current_class, l_note_term)
 					end
 					i := i + 1
 				end
-				l_indexing_term_list.wipe_out
+				l_note_term_list.wipe_out
 			end
 			if a_keys /= Void then
 				nb := a_keys.count
@@ -2526,14 +2685,14 @@ feature {NONE} -- Once key validity
 								-- Error: once keys "PROCESS" and "OBJECT" cannot be combined.
 							set_fatal_error
 							error_handler.report_vvok1a_error (current_class, l_process_key, l_key)
-						elseif l_thread_indexing /= Void then
+						elseif l_thread_note /= Void then
 								-- Error: once keys "THREAD" and "OBJECT" cannot be combined.
 							set_fatal_error
-							error_handler.report_vvok1b_error (current_class, l_thread_indexing, l_key)
-						elseif l_process_indexing /= Void then
+							error_handler.report_vvok1b_error (current_class, l_thread_note, l_key)
+						elseif l_process_note /= Void then
 								-- Error: once keys "PROCESS" and "OBJECT" cannot be combined.
 							set_fatal_error
-							error_handler.report_vvok1b_error (current_class, l_process_indexing, l_key)
+							error_handler.report_vvok1b_error (current_class, l_process_note, l_key)
 						end
 					elseif standard_once_keys.is_thread_key (l_key) then
 						l_thread_key := l_key
@@ -2545,10 +2704,10 @@ feature {NONE} -- Once key validity
 								-- Error: once keys "PROCESS" and "THREAD" cannot be combined.
 							set_fatal_error
 							error_handler.report_vvok1a_error (current_class, l_process_key, l_key)
-						elseif l_process_indexing /= Void then
+						elseif l_process_note /= Void then
 								-- Error: once keys "PROCESS" and "THREAD" cannot be combined.
 							set_fatal_error
-							error_handler.report_vvok1b_error (current_class, l_process_indexing, l_key)
+							error_handler.report_vvok1b_error (current_class, l_process_note, l_key)
 						end
 					elseif standard_once_keys.is_process_key (l_key) then
 						l_process_key := l_key
@@ -2560,10 +2719,10 @@ feature {NONE} -- Once key validity
 								-- Error: once keys "THREAD" and "PROCESS" cannot be combined.
 							set_fatal_error
 							error_handler.report_vvok1a_error (current_class, l_thread_key, l_key)
-						elseif l_thread_indexing /= Void then
+						elseif l_thread_note /= Void then
 								-- Error: once keys "THREAD" and "PROCESS" cannot be combined.
 							set_fatal_error
-							error_handler.report_vvok1b_error (current_class, l_thread_indexing, l_key)
+							error_handler.report_vvok1b_error (current_class, l_thread_note, l_key)
 						end
 					else
 							-- Error: this once key is not supported. The supported once keys
@@ -2622,9 +2781,13 @@ feature {NONE} -- Instruction validity
 			l_seed: INTEGER
 			l_query: detachable ET_QUERY
 			l_convert_expression: detachable ET_CONVERT_EXPRESSION
+			l_is_target_type_separate: BOOLEAN
+			l_formal_argument_index: INTEGER
+			l_target_named_type: ET_NAMED_TYPE
 			had_error: BOOLEAN
 		do
 			has_fatal_error := False
+			l_formal_argument_index := 1
 			l_call := an_instruction.call
 			l_target_context := new_context (current_type)
 			l_call_info := new_call_info (l_target_context)
@@ -2706,9 +2869,10 @@ feature {NONE} -- Instruction validity
 						error_handler.report_giaaa_error
 					elseif l_target_base_class.is_dotnet then
 							-- Under .NET the value is passed as the last argument of the assigner.
-						l_expected_type := l_assigner_procedure_arguments.formal_argument (l_assigner_procedure.arguments_count).type
+						l_formal_argument_index := l_assigner_procedure.arguments_count
+						l_expected_type := l_assigner_procedure_arguments.formal_argument (l_formal_argument_index).type
 					else
-						l_expected_type := l_assigner_procedure_arguments.formal_argument (1).type
+						l_expected_type := l_assigner_procedure_arguments.formal_argument (l_formal_argument_index).type
 					end
 				else
 					l_expected_type := l_query.type
@@ -2752,9 +2916,9 @@ feature {NONE} -- Instruction validity
 			if l_expected_type = Void then
 					-- The call is not valid. As a consequence its type has not
 					-- been computed correctly. We will consider that it is of
-					-- type 'detachable ANY' when checking the validity of the source.
+					-- type 'detachable separate ANY' when checking the validity of the source.
 				check has_fatal_error: has_fatal_error end
-				check_expression_validity (l_source, l_source_context, current_system.detachable_any_type)
+				check_expression_validity (l_source, l_source_context, current_system.detachable_separate_any_type)
 				has_fatal_error := True
 			else
 					-- After this, `l_source_context' will represent the type of the source.
@@ -2764,6 +2928,9 @@ feature {NONE} -- Instruction validity
 					-- where 'f' is declared of type 'ARRAY [COMPARABLE]' in the base class of 'target'.
 					-- The type of the manifest array will be 'ARRAY [COMPARABLE]'. Without the
 					-- this hint it could have been 'ARRAY [HASHABLE]' or even 'ARRAY [ANY]'.
+				if current_system.scoop_mode then
+					l_is_target_type_separate := not l_target_context.is_type_non_separate
+				end
 				l_target_context.force_last (l_expected_type)
 				l_expected_type_context := l_target_context
 				had_error := has_fatal_error
@@ -2788,6 +2955,27 @@ feature {NONE} -- Instruction validity
 								-- to the type of the call. See VBAC-1, ECMA 367-2 p.119.
 							set_fatal_error
 							error_handler.report_vbac1a_error (current_class, current_class_impl, an_instruction, l_source_context.named_type, l_expected_type_context.named_type)
+						end
+					end
+				end
+				if not has_fatal_error then
+					if l_is_target_type_separate then
+						if not l_source_context.is_type_expanded and not l_expected_type_context.is_type_separate then
+								-- Error: It's a separate call (qualified call with a target of separate type),
+								-- the actual argument has a reference type (potentially, if it a formal generic
+								-- parameter, hence the test 'not is_type_expanded' instead of just
+								-- 'is_type_reference'), but the type of ther formal argument is not separate.
+							set_fatal_error
+							if l_assigner_procedure /= Void then
+								error_handler.report_vuar3ga_error (current_class, current_class_impl, l_name, l_assigner_procedure, l_target_base_class, l_formal_argument_index, l_source_context.named_type, l_expected_type_context.named_type)
+							else
+								check tuple_label: l_name.is_tuple_label end
+								l_target_context.remove_last
+								l_target_named_type := l_target_context.named_type
+								l_target_context.force_last (l_expected_type)
+								error_handler.report_vuar3gb_error (current_class, current_class_impl, l_name, l_target_named_type, l_source_context.named_type, l_expected_type_context.named_type)
+								l_target_context.force_last (l_expected_type)
+							end
 						end
 					end
 				end
@@ -2833,10 +3021,10 @@ feature {NONE} -- Instruction validity
 			if has_fatal_error then
 					-- The target is not valid. As a consequence its type might not
 					-- have been computed correctly. We will consider that it is of
-					-- type 'detachable ANY' when checking the validity of the source.
+					-- type 'detachable separate ANY' when checking the validity of the source.
 				had_error := True
 				l_target_context.wipe_out
-				l_target_context.force_last (current_system.detachable_any_type)
+				l_target_context.force_last (current_system.detachable_separate_any_type)
 			end
 				-- Check the validity of the source.
 				-- After this, `l_source_context' will represent the type of the source.
@@ -2962,10 +3150,10 @@ feature {NONE} -- Instruction validity
 			if has_fatal_error then
 					-- The target is not valid. As a consequence its type might not
 					-- have been computed correctly. We will consider that it is of
-					-- type 'detachable ANY' when checking the validity of the source.
+					-- type 'detachable separate ANY' when checking the validity of the source.
 				had_error := True
 				l_target_context.wipe_out
-				l_target_context.force_last (current_system.detachable_any_type)
+				l_target_context.force_last (current_system.detachable_separate_any_type)
 			elseif not (current_system.is_dotnet or system_processor.newer_or_same_ise_version (ise_5_7_0)) and not l_target_context.is_type_reference then
 					-- Assignment attempts with expanded targets are allowed in Eiffel for .NET
 					-- and versions of ISE greater than or equal to 5.7. Otherwise, report a
@@ -3127,6 +3315,12 @@ feature {NONE} -- Instruction validity
 			an_instruction_not_void: an_instruction /= Void
 		do
 			check_creation_instruction_validity (an_instruction)
+			if attached an_instruction.creation_region as l_creation_region then
+				if not l_creation_region.class_name.same_class_name (tokens.none_class_name) then
+					set_fatal_error
+					error_handler.report_vkin5ga_error (current_class, current_class_impl, l_creation_region)
+				end
+			end
 		end
 
 	check_creation_instruction_validity (an_instruction: ET_CREATION_INSTRUCTION)
@@ -3141,9 +3335,7 @@ feature {NONE} -- Instruction validity
 			l_target_context: ET_NESTED_TYPE_CONTEXT
 			l_explicit_creation_type: detachable ET_TYPE
 			l_seed: INTEGER
-			l_creation_call: detachable ET_QUALIFIED_CALL
 			l_name: ET_FEATURE_NAME
-			l_name_position: ET_POSITION
 			l_adapted_base_class: ET_ADAPTED_CLASS
 			l_adapted_base_classes: DS_ARRAYED_LIST [ET_ADAPTED_CLASS]
 			l_has_multiple_constraints: BOOLEAN
@@ -3151,19 +3343,11 @@ feature {NONE} -- Instruction validity
 			l_had_error: BOOLEAN
 		do
 			has_fatal_error := False
-			l_creation_call := an_instruction.creation_call
-			if l_creation_call /= Void then
-					-- There is an explicit creation call.
-				l_name := l_creation_call.name
-				l_seed := l_name.seed
-			else
-					-- No explicit creation call. Use 'default_create' instead.
-				l_creation_call := default_creation_call
-				l_name_position := an_instruction.last_position
-				default_creation_call_name.set_position (l_name_position.line, l_name_position.column)
-				l_name := default_creation_call_name
-				l_seed := current_system.default_create_seed
+			l_name := an_instruction.name
+			if an_instruction.creation_call = Void then
+				l_name.set_seed (current_system.default_create_seed)
 			end
+			l_seed := l_name.seed
 			l_target := an_instruction.target
 			l_target_context := new_context (current_type)
 			l_explicit_creation_type := an_instruction.type
@@ -3186,13 +3370,13 @@ feature {NONE} -- Instruction validity
 				check_adapted_base_classes_validity (l_name, l_adapted_base_classes, l_creation_context)
 			end
 			if has_fatal_error then
-				check_orphan_actual_arguments_validity (l_creation_call)
+				check_orphan_actual_arguments_validity (an_instruction)
 			elseif l_seed = 0 then
 				l_adapted_base_class := l_adapted_base_classes.first
 				l_class := l_adapted_base_class.base_class
-				if l_creation_call = default_creation_call then
+				if an_instruction.creation_call = Void then
 						-- There is no explicit creation call.
-					check_creation_procedure_call_instruction_validity (an_instruction, l_creation_call, Void, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
+					check_creation_procedure_call_instruction_validity (an_instruction, Void, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
 				elseif current_class_impl /= current_class then
 						-- We need to resolve `l_name' in the implementation
 						-- class of `current_feature_impl' first.
@@ -3202,27 +3386,27 @@ feature {NONE} -- Instruction validity
 							-- the implementation feature.
 						error_handler.report_giaaa_error
 					end
-					check_orphan_actual_arguments_validity (l_creation_call)
+					check_orphan_actual_arguments_validity (an_instruction)
 				elseif l_class.is_dotnet then
 						-- A class coming from a .NET assembly can contain overloaded
 						-- features (i.e. several features with the same name).
 						-- We have to be careful about that here.
-					check_dotnet_creation_procedure_call_instruction_validity (an_instruction, l_creation_call, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
+					check_dotnet_creation_procedure_call_instruction_validity (an_instruction, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
 				elseif attached l_adapted_base_class.named_procedure (l_name) as l_procedure then
 					l_seed := l_procedure.first_seed
 					l_name.set_seed (l_seed)
-					check_creation_procedure_call_instruction_validity (an_instruction, l_creation_call, l_procedure, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
+					check_creation_procedure_call_instruction_validity (an_instruction, l_procedure, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
 				elseif attached l_adapted_base_class.named_query (l_name) as l_query then
 						-- This is not a procedure.
 					set_fatal_error
 					error_handler.report_vgcc6d_error (current_class, l_name, l_query, l_class)
-					check_orphan_actual_arguments_validity (l_creation_call)
+					check_orphan_actual_arguments_validity (an_instruction)
 				else
 					set_fatal_error
 						-- ISE Eiffel 5.4 reports this error as a VEEN,
 						-- but it is in fact a VUEX-2 (ETL2 p.368).
 					error_handler.report_vuex2a_error (current_class_impl, l_name, l_class)
-					check_orphan_actual_arguments_validity (l_creation_call)
+					check_orphan_actual_arguments_validity (an_instruction)
 				end
 			elseif l_adapted_base_classes.is_empty then
 					-- Internal error: the seed was already computed in a proper ancestor
@@ -3231,14 +3415,14 @@ feature {NONE} -- Instruction validity
 					-- be a procedure for this seed.
 				set_fatal_error
 				error_handler.report_giaaa_error
-				check_orphan_actual_arguments_validity (l_creation_call)
+				check_orphan_actual_arguments_validity (an_instruction)
 			else
 				nb := l_adapted_base_classes.count
 				from i := 1 until i > nb loop
 					l_adapted_base_class := l_adapted_base_classes.item (i)
 					l_class := l_adapted_base_class.base_class
 					if attached l_class.seeded_procedure (l_seed) as l_procedure then
-						check_creation_procedure_call_instruction_validity (an_instruction, l_creation_call, l_procedure, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
+						check_creation_procedure_call_instruction_validity (an_instruction, l_procedure, l_adapted_base_class, l_has_multiple_constraints, l_target_context, l_creation_context)
 					elseif l_class.is_none then
 -- TODO: "NONE" conforms to all reference types.
 						set_fatal_error
@@ -3263,7 +3447,7 @@ feature {NONE} -- Instruction validity
 			free_adapted_base_classes (l_adapted_base_classes)
 		end
 
-	check_dotnet_creation_procedure_call_instruction_validity (a_instruction: ET_CREATION_INSTRUCTION; a_creation_call: ET_CREATION_CALL; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_target_context, a_creation_context: ET_NESTED_TYPE_CONTEXT)
+	check_dotnet_creation_procedure_call_instruction_validity (a_instruction: ET_CREATION_INSTRUCTION; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_target_context, a_creation_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check validity of `a_instruction' with .NET creation type base class.
 			--
 			-- A class coming from a .NET assembly can contain overloaded
@@ -3272,7 +3456,6 @@ feature {NONE} -- Instruction validity
 			--
 			-- The validity of the creation type and of the target of the creation are
 			-- assumed to have already been checked.
-			-- `a_creation_call' is the creation call in `current_class_impl'.
 			-- `a_target_context' represents the type of the creation target.
 			-- `a_creation_context' represents the creation type of `a_instruction'.
 			-- `a_adapted_base_class' is the base class (or the best possible constraint in case of multiple
@@ -3282,7 +3465,6 @@ feature {NONE} -- Instruction validity
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
 			a_instruction_not_void: a_instruction /= Void
-			a_creation_call_not_void: a_creation_call /= Void
 			a_adapted_base_class_not_void: a_adapted_base_class /= Void
 			a_class_is_dotnet: a_adapted_base_class.base_class.is_dotnet
 			a_target_context_not_void: a_target_context /= Void
@@ -3297,45 +3479,44 @@ feature {NONE} -- Instruction validity
 		do
 			has_fatal_error := False
 			l_class := a_adapted_base_class.base_class
-			l_name := a_creation_call.name
+			l_name := a_instruction.name
 			l_overloaded_procedures := new_overloaded_procedures
 			a_adapted_base_class.add_overloaded_procedures (l_name, l_overloaded_procedures)
 			if not l_overloaded_procedures.is_empty then
-				keep_best_overloaded_features (l_overloaded_procedures, adapted_name (l_name, a_adapted_base_class), a_creation_call.arguments, a_creation_context, False, True)
+				keep_best_overloaded_features (l_overloaded_procedures, adapted_name (l_name, a_adapted_base_class), a_instruction.arguments, a_creation_context, False, True)
 				if has_fatal_error then
-					check_orphan_actual_arguments_validity (a_creation_call)
+					check_orphan_actual_arguments_validity (a_instruction)
 				elseif l_overloaded_procedures.count = 1 then
 					l_procedure := l_overloaded_procedures.first
 					l_seed := l_procedure.first_seed
 					l_name.set_seed (l_seed)
-					check_creation_procedure_call_instruction_validity (a_instruction, a_creation_call, l_procedure, a_adapted_base_class, a_has_multiple_constraints, a_target_context, a_creation_context)
+					check_creation_procedure_call_instruction_validity (a_instruction, l_procedure, a_adapted_base_class, a_has_multiple_constraints, a_target_context, a_creation_context)
 				else
 					-- Ambiguity in overloaded procedures.
 -- TODO: report VIOF
 					set_fatal_error
 					error_handler.report_giaaa_error
-					check_orphan_actual_arguments_validity (a_creation_call)
+					check_orphan_actual_arguments_validity (a_instruction)
 				end
 			elseif attached a_adapted_base_class.named_query (l_name) as l_query then
 					-- This is not a procedure.
 				set_fatal_error
 				error_handler.report_vgcc6d_error (current_class, l_name, l_query, l_class)
-				check_orphan_actual_arguments_validity (a_creation_call)
+				check_orphan_actual_arguments_validity (a_instruction)
 			else
 				set_fatal_error
 					-- ISE Eiffel 5.4 reports this error as a VEEN,
 					-- but it is in fact a VUEX-2 (ETL2 p.368).
 				error_handler.report_vuex2a_error (current_class_impl, l_name, l_class)
-				check_orphan_actual_arguments_validity (a_creation_call)
+				check_orphan_actual_arguments_validity (a_instruction)
 			end
 			free_overloaded_procedures (l_overloaded_procedures)
 		end
 
-	check_creation_procedure_call_instruction_validity (a_instruction: ET_CREATION_INSTRUCTION; a_creation_call: ET_CREATION_CALL; a_procedure: detachable ET_PROCEDURE; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_target_context, a_creation_context: ET_NESTED_TYPE_CONTEXT)
+	check_creation_procedure_call_instruction_validity (a_instruction: ET_CREATION_INSTRUCTION; a_procedure: detachable ET_PROCEDURE; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_target_context, a_creation_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check validity of `a_instruction' with `a_procedure' as creation procedure.
 			-- The validity of the creation type and of the target of the creation are
 			-- assumed to have already been checked.
-			-- `a_creation_call' is the creation call in `current_class_impl'.
 			-- `a_target_context' represents the type of the creation target.
 			-- `a_creation_context' represents the creation type of `a_instruction'.
 			-- `a_adapted_base_class' is the base class (or the best possible constraint in case of multiple
@@ -3347,8 +3528,7 @@ feature {NONE} -- Instruction validity
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
 			a_instruction_not_void: a_instruction /= Void
-			a_creation_call_not_void: a_creation_call /= Void
-			no_call_if_not_procedure: a_procedure = Void implies a_creation_call = default_creation_call
+			no_call_if_not_procedure: a_procedure = Void implies a_instruction.creation_call = Void
 			no_default_create_if_not_procedure: a_procedure = Void implies current_system.default_create_seed = 0
 			a_adapted_base_class_not_void: a_adapted_base_class /= Void
 			a_target_context_not_void: a_target_context /= Void
@@ -3395,19 +3575,19 @@ feature {NONE} -- Instruction validity
 			end
 			had_error := had_error or has_fatal_error
 			if a_procedure = Void then
-				check_no_creation_procedure_call_validity (a_instruction, a_creation_call, l_class, a_creation_context)
+				check_no_creation_procedure_call_validity (a_instruction, l_class, a_creation_context)
 			elseif attached {ET_FORMAL_PARAMETER_TYPE} l_creation_named_type as l_formal_type then
 				if a_has_multiple_constraints then
 					l_creation_context := new_context (current_type)
 					l_creation_context.copy_type_context (a_creation_context)
 					adapted_base_class_checker.reset_context_if_multiple_constraints (a_has_multiple_constraints, a_adapted_base_class, l_creation_context)
-					check_formal_creation_procedure_call_validity (a_instruction, a_creation_call, a_procedure, l_class, l_formal_type, l_creation_context)
+					check_formal_creation_procedure_call_validity (a_instruction, a_procedure, l_class, l_formal_type, l_creation_context)
 					free_context (l_creation_context)
 				else
-					check_formal_creation_procedure_call_validity (a_instruction, a_creation_call, a_procedure, l_class, l_formal_type, a_creation_context)
+					check_formal_creation_procedure_call_validity (a_instruction, a_procedure, l_class, l_formal_type, a_creation_context)
 				end
 			else
-				check_creation_procedure_call_validity (a_instruction, a_creation_call, a_procedure, l_class, a_creation_context)
+				check_creation_procedure_call_validity (a_instruction, a_procedure, l_class, a_creation_context)
 			end
 			reset_fatal_error (had_error or has_fatal_error)
 			if not has_fatal_error then
@@ -3439,21 +3619,22 @@ feature {NONE} -- Instruction validity
 						-- the object created is attached.
 					l_creation_named_type := l_creation_named_type.type_with_type_mark (tokens.implicit_attached_type_mark)
 				end
+				if current_system.scoop_mode and not a_creation_context.is_type_non_separate then
+					set_index (a_instruction.separate_target)
+				end
 				report_creation_instruction (a_instruction, l_creation_named_type, a_procedure)
 			end
 		end
 
-	check_creation_procedure_call_validity (a_creation_component: ET_CREATION_COMPONENT; a_creation_call: ET_CREATION_CALL; a_procedure: ET_PROCEDURE; a_class: ET_CLASS; a_context: ET_NESTED_TYPE_CONTEXT)
+	check_creation_procedure_call_validity (a_creation_component: ET_CREATION_COMPONENT; a_procedure: ET_PROCEDURE; a_class: ET_CLASS; a_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check validity of `a_creation_component' with `a_procedure' as creation procedure.
 			-- The validity of the creation type and of the target of the creation are
 			-- assumed to have already been checked.
-			-- `a_creation_call' is the creation call in `current_class_impl'.
 			-- `a_context' represents the creation type of `a_creation_component'.
 			-- `a_class' is the base class of the creation type.
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
 			a_creation_component_not_void: a_creation_component /= Void
-			a_creation_call_not_void: a_creation_call /= Void
 			a_procedure_not_void: a_procedure /= Void
 			a_class_not_void: a_class /= Void
 			a_context_not_void: a_context /= Void
@@ -3464,7 +3645,7 @@ feature {NONE} -- Instruction validity
 			had_error: BOOLEAN
 		do
 			has_fatal_error := False
-			l_name := a_creation_call.name
+			l_name := a_creation_component.name
 			l_creation_type := a_context.first
 			if not a_procedure.is_creation_exported_to (current_class, a_class, system_processor) then
 					-- The procedure is not a creation procedure exported to `current_class',
@@ -3481,15 +3662,14 @@ feature {NONE} -- Instruction validity
 			had_error := has_fatal_error
 			check_creation_vape_validity (l_name, a_procedure, a_class)
 			had_error := had_error or has_fatal_error
-			check_actual_arguments_validity (a_creation_call, a_context, a_procedure, a_class, Void)
+			check_actual_arguments_validity (a_creation_component, a_context, a_procedure, a_class, Void)
 			reset_fatal_error (had_error or has_fatal_error)
 		end
 
-	check_formal_creation_procedure_call_validity (a_creation_component: ET_CREATION_COMPONENT; a_creation_call: ET_CREATION_CALL; a_procedure: ET_PROCEDURE; a_class: ET_CLASS; a_formal_type: ET_FORMAL_PARAMETER_TYPE; a_context: ET_NESTED_TYPE_CONTEXT)
+	check_formal_creation_procedure_call_validity (a_creation_component: ET_CREATION_COMPONENT; a_procedure: ET_PROCEDURE; a_class: ET_CLASS; a_formal_type: ET_FORMAL_PARAMETER_TYPE; a_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check validity of `a_creation_component' with `a_procedure' as creation procedure.
 			-- The validity of the creation type and of the target of the creation are
 			-- assumed to have already been checked.
-			-- `a_creation_call' is the creation call in `current_class_impl'.
 			-- `a_context' represents the creation type of `a_creation_component'.
 			-- `a_formal_type' is the named type of the creation type when viewed
 			-- in the context of `current_type'.
@@ -3497,7 +3677,6 @@ feature {NONE} -- Instruction validity
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
 			a_creation_component_not_void: a_creation_component /= Void
-			a_creation_call_not_void: a_creation_call /= Void
 			a_procedure_not_void: a_procedure /= Void
 			a_class_not_void: a_class /= Void
 			a_formal_type_not_void: a_formal_type /= Void
@@ -3510,7 +3689,7 @@ feature {NONE} -- Instruction validity
 			had_error: BOOLEAN
 		do
 			has_fatal_error := False
-			l_name := a_creation_call.name
+			l_name := a_creation_component.name
 				-- The creation type if a formal generic parameter.
 				-- We need to find out what creation procedures are
 				-- declared with the associated constraint.
@@ -3533,24 +3712,22 @@ feature {NONE} -- Instruction validity
 				check_formal_parameter_creation_vape_validity (l_name, a_procedure, l_formal_parameter)
 			end
 			had_error := had_error or has_fatal_error
-			check_actual_arguments_validity (a_creation_call, a_context, a_procedure, a_class, Void)
+			check_actual_arguments_validity (a_creation_component, a_context, a_procedure, a_class, Void)
 			reset_fatal_error (had_error or has_fatal_error)
 		end
 
-	check_no_creation_procedure_call_validity (a_creation_component: ET_CREATION_COMPONENT; a_creation_call: ET_CREATION_CALL; a_class: ET_CLASS; a_context: ET_NESTED_TYPE_CONTEXT)
+	check_no_creation_procedure_call_validity (a_creation_component: ET_CREATION_COMPONENT; a_class: ET_CLASS; a_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check validity of `a_creation_component' when there is no creation procedure.
 			-- This happens when there is no creation call, and feature 'default_create' is
 			-- not supported by the underlying Eiffel compiler.
 			-- The validity of the creation type and of the target of the creation are
 			-- assumed to have already been checked.
-			-- `a_creation_call' is the creation call in `current_class_impl'.
 			-- `a_context' represents the creation type of `a_creation_component'.
 			-- `a_class' is the base class of the creation type.
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
 			a_creation_component_not_void: a_creation_component /= Void
-			a_creation_call_not_void: a_creation_call /= Void
-			no_call: a_creation_call = default_creation_call
+			no_call: a_creation_component.creation_call = Void
 			no_default_create: current_system.default_create_seed = 0
 			a_class_not_void: a_class /= Void
 			a_context_not_void: a_context /= Void
@@ -3741,6 +3918,46 @@ feature {NONE} -- Instruction validity
 			end
 		end
 
+	check_inline_separate_instruction_validity (a_instruction: ET_INLINE_SEPARATE_INSTRUCTION)
+			-- Check validity of `a_instruction'.
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_instruction_not_void: a_instruction /= Void
+		local
+			had_error: BOOLEAN
+			i, nb: INTEGER
+			l_arguments: ET_INLINE_SEPARATE_ARGUMENTS
+			l_argument: ET_INLINE_SEPARATE_ARGUMENT
+		do
+			has_fatal_error := False
+			l_arguments := a_instruction.arguments
+			nb := l_arguments.count
+			check_inline_separate_arguments_validity (l_arguments)
+			had_error := has_fatal_error
+			if attached a_instruction.compound as l_compound then
+				from i := 1 until i > nb loop
+					l_argument := l_arguments.argument (i)
+					current_inline_separate_argument_scope.add_inline_separate_argument (l_argument)
+					i := i + 1
+				end
+				check_instructions_validity (l_compound)
+				had_error := had_error or has_fatal_error
+				current_inline_separate_argument_scope.remove_inline_separate_arguments (nb)
+			end
+			from i := 1 until i > nb loop
+				l_argument := l_arguments.argument (i)
+				current_inline_separate_argument_types.search (l_argument)
+				if current_inline_separate_argument_types.found then
+					free_context (current_inline_separate_argument_types.found_item)
+					current_inline_separate_argument_types.remove_found_item
+				end
+				i := i + 1
+			end
+			if had_error then
+				set_fatal_error
+			end
+		end
+
 	check_inspect_instruction_validity (an_instruction: ET_INSPECT_INSTRUCTION)
 			-- Check validity of `an_instruction'.
 			-- Set `has_fatal_error' if a fatal error occurred.
@@ -3755,7 +3972,7 @@ feature {NONE} -- Instruction validity
 			had_value_error: BOOLEAN
 			l_value_context: ET_NESTED_TYPE_CONTEXT
 			l_value_type: ET_TYPE
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			l_value_named_type: ET_NAMED_TYPE
 			l_choices: ET_CHOICE_LIST
 			l_choice: ET_CHOICE
@@ -3764,18 +3981,16 @@ feature {NONE} -- Instruction validity
 			l_choice_named_type: ET_NAMED_TYPE
 			j, nb2: INTEGER
 			l_constant: detachable ET_CONSTANT
-			l_cast_type: detachable ET_TARGET_TYPE
-			l_index: INTEGER
 			l_old_attachment_scope: like current_attachment_scope
 			l_inspect_attachment_scope: detachable like current_attachment_scope
 			l_old_initialization_scope: like current_initialization_scope
 			l_inspect_initialization_scope: detachable like current_initialization_scope
 		do
 			has_fatal_error := False
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			l_value_context := new_context (current_type)
 			l_expression := an_instruction.conditional.expression
-			check_expression_validity (l_expression, l_value_context, l_detachable_any_type)
+			check_expression_validity (l_expression, l_value_context, l_detachable_separate_any_type)
 			if has_fatal_error then
 				had_error := True
 			elseif l_value_context.same_named_type (current_universe_impl.integer_8_type, current_class_impl) then
@@ -3828,45 +4043,9 @@ feature {NONE} -- Instruction validity
 							elseif not had_value_error then
 								if l_choice_context.same_named_type (l_value_type, l_value_context) then
 									-- OK.
-								elseif attached {ET_INTEGER_CONSTANT} l_constant as l_integer_constant then
-										-- If we use the same object for the constant attribute
-										-- when analyzing different client features, each feature
-										-- will assign its own index to this object. That's why
-										-- we need to reset the index so that the index does not
-										-- get corrupted.
-									l_index := l_integer_constant.index
-									l_integer_constant.set_index (0)
-									l_cast_type := l_integer_constant.cast_type
-									l_integer_constant.set_cast_type (Void)
+								elseif l_constant.is_integer_constant or l_constant.is_character_constant then
 									l_choice_context.wipe_out
-									check_expression_validity (l_integer_constant, l_choice_context, l_value_context)
-									l_integer_constant.set_cast_type (l_cast_type)
-									l_integer_constant.set_index (l_index)
-									if has_fatal_error then
-										had_error := True
-									elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
-										-- OK.
-									else
-										had_error := True
-										set_fatal_error
-										l_value_named_type := l_value_context.named_type
-										l_choice_named_type := l_choice_context.named_type
-										error_handler.report_vomb2a_error (current_class, current_class_impl, l_choice_constant, l_choice_named_type, l_value_named_type)
-									end
-								elseif attached {ET_CHARACTER_CONSTANT} l_constant as l_character_constant then
-										-- If we use the same object for the constant attribute
-										-- when analyzing different client features, each feature
-										-- will assign its own index to this object. That's why
-										-- we need to reset the index so that the index does not
-										-- get corrupted.
-									l_index := l_character_constant.index
-									l_character_constant.set_index (0)
-									l_cast_type := l_character_constant.cast_type
-									l_character_constant.set_cast_type (Void)
-									l_choice_context.wipe_out
-									check_expression_validity (l_character_constant, l_choice_context, l_value_context)
-									l_character_constant.set_cast_type (l_cast_type)
-									l_character_constant.set_index (l_index)
+									check_expression_validity (l_constant, l_choice_context, l_value_context)
 									if has_fatal_error then
 										had_error := True
 									elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
@@ -3902,45 +4081,9 @@ feature {NONE} -- Instruction validity
 								elseif not had_value_error then
 									if l_choice_context.same_named_type (l_value_type, l_value_context) then
 										-- OK.
-									elseif attached {ET_INTEGER_CONSTANT} l_constant as l_integer_constant2 then
-											-- If we use the same object for the constant attribute
-											-- when analyzing different client features, each feature
-											-- will assign its own index to this object. That's why
-											-- we need to reset the index so that the index does not
-											-- get corrupted.
-										l_index := l_integer_constant2.index
-										l_integer_constant2.set_index (0)
-										l_cast_type := l_integer_constant2.cast_type
-										l_integer_constant2.set_cast_type (Void)
+									elseif l_constant.is_integer_constant or l_constant.is_character_constant then
 										l_choice_context.wipe_out
-										check_expression_validity (l_integer_constant2, l_choice_context, l_value_context)
-										l_integer_constant2.set_cast_type (l_cast_type)
-										l_integer_constant2.set_index (l_index)
-										if has_fatal_error then
-											had_error := True
-										elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
-											-- OK.
-										else
-											had_error := True
-											set_fatal_error
-											l_value_named_type := l_value_context.named_type
-											l_choice_named_type := l_choice_context.named_type
-											error_handler.report_vomb2a_error (current_class, current_class_impl, l_choice_constant, l_choice_named_type, l_value_named_type)
-										end
-									elseif attached {ET_CHARACTER_CONSTANT} l_constant as l_character_constant2 then
-											-- If we use the same object for the constant attribute
-											-- when analyzing different client features, each feature
-											-- will assign its own index to this object. That's why
-											-- we need to reset the index so that the index does not
-											-- get corrupted.
-										l_index := l_character_constant2.index
-										l_character_constant2.set_index (0)
-										l_cast_type := l_character_constant2.cast_type
-										l_character_constant2.set_cast_type (Void)
-										l_choice_context.wipe_out
-										check_expression_validity (l_character_constant2, l_choice_context, l_value_context)
-										l_character_constant2.set_cast_type (l_cast_type)
-										l_character_constant2.set_index (l_index)
+										check_expression_validity (l_constant, l_choice_context, l_value_context)
 										if has_fatal_error then
 											had_error := True
 										elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
@@ -4092,14 +4235,18 @@ feature {NONE} -- Instruction validity
 				if l_query /= Void then
 					if attached {ET_CONSTANT_ATTRIBUTE} l_query as l_constant_attribute then
 						Result := l_constant_attribute.constant
-						if Result.is_character_constant then
-							Result := character_choice_constant
-						elseif Result.is_integer_constant then
-							Result := integer_choice_constant
-						end
 					elseif attached {ET_UNIQUE_ATTRIBUTE} l_query as l_unique_attribute then
 						Result := integer_choice_constant
 					end
+				end
+			end
+			if Result /= Void then
+				if Result.is_character_constant then
+					Result := character_choice_constant
+					Result.set_index (a_choice_constant.index)
+				elseif Result.is_integer_constant then
+					Result := integer_choice_constant
+					Result.set_index (a_choice_constant.index)
 				end
 			end
 			has_fatal_error := l_old_has_fatal_error
@@ -4125,7 +4272,7 @@ feature {NONE} -- Instruction validity
 					had_error := True
 				end
 			end
-			check_loop_component_no_from_validity (an_instruction)
+			check_repetition_instruction_no_from_validity (an_instruction)
 			current_iteration_item_scope.remove_iteration_components (1)
 			current_iteration_item_types.search (an_instruction)
 			if current_iteration_item_types.found then
@@ -4161,13 +4308,13 @@ feature {NONE} -- Instruction validity
 					had_error := True
 				end
 			end
-			check_loop_component_no_from_validity (an_instruction)
+			check_repetition_instruction_no_from_validity (an_instruction)
 			if had_error then
 				set_fatal_error
 			end
 		end
 
-	check_loop_component_no_from_validity (an_instruction: ET_LOOP_COMPONENT)
+	check_repetition_instruction_no_from_validity (an_instruction: ET_REPETITION_INSTRUCTION)
 			-- Check validity of `an_instruction' except for the from-part.
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
@@ -4249,7 +4396,7 @@ feature {NONE} -- Instruction validity
 							-- condition and loop body have been detached in the loop body.
 							-- We need to check whether subsequent iterations will still work
 							-- without any attachment problems.
-						check_loop_component_no_from_validity (an_instruction)
+						check_repetition_instruction_no_from_validity (an_instruction)
 					end
 				end
 			end
@@ -4537,7 +4684,7 @@ feature {NONE} -- Instruction validity
 			l_context := new_context (current_type)
 			l_name := a_call.name
 			l_seed := l_name.seed
-			check_expression_validity (l_target, l_context, current_system.detachable_any_type)
+			check_expression_validity (l_target, l_context, current_system.detachable_separate_any_type)
 			l_context_count := l_context.count
 			l_adapted_base_classes := new_adapted_base_classes
 			if not has_fatal_error then
@@ -5045,6 +5192,9 @@ feature {NONE} -- Instruction validity
 				elseif l_identifier.is_iteration_item then
 					check_unqualified_iteration_item_call_instruction_validity (a_call, l_identifier)
 					l_checked := True
+				elseif l_identifier.is_inline_separate_argument then
+					check_unqualified_inline_separate_argument_call_instruction_validity (a_call, l_identifier)
+					l_checked := True
 				elseif l_identifier.is_object_test_local then
 					check_unqualified_object_test_local_call_instruction_validity (a_call, l_identifier)
 					l_checked := True
@@ -5165,6 +5315,68 @@ feature {NONE} -- Instruction validity
 			end
 		end
 
+	check_unqualified_inline_separate_argument_call_instruction_validity (a_call: ET_UNQUALIFIED_FEATURE_CALL_INSTRUCTION; a_name: ET_IDENTIFIER)
+			-- Check validity of unqualified call `a_call' whose
+			-- name `a_name' appears to be the name of an argument
+			-- of an inline separate instruction.
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_call_not_void: a_call /= Void
+			a_name_not_void: a_name /= Void
+			is_inline_separate_argument: a_name.is_inline_separate_argument
+		local
+			l_context: ET_NESTED_TYPE_CONTEXT
+		do
+			has_fatal_error := False
+			if current_class_impl /= current_class then
+				set_fatal_error
+				if not has_implementation_error (current_feature_impl) then
+						-- Internal error: `a_name' should have been resolved in
+						-- the implementation feature.
+					error_handler.report_giaaa_error
+				end
+				check_orphan_actual_arguments_validity (a_call)
+			else
+				l_context := new_context (current_type)
+				check_inline_separate_argument_parenthesis_call_validity (a_call, a_name, l_context)
+				free_context (l_context)
+				if has_fatal_error then
+					-- Do nothing.
+				elseif a_call.parenthesis_call /= Void then
+					-- The validity checking has already been done with the
+					-- unfolded form of the parenthesis call.
+				else
+					if a_call.arguments /= Void then
+							-- Syntax error: an inline separate argument cannot have arguments.
+						set_fatal_error
+						if attached current_inline_agent as l_current_inline_agent then
+							error_handler.report_gvuas0b_error (current_class, a_name, l_current_inline_agent)
+						elseif current_feature_impl.is_feature then
+							error_handler.report_gvuas0a_error (current_class, a_name, current_feature_impl.as_feature)
+						elseif current_feature_impl.is_invariants then
+							error_handler.report_gvuas0c_error (current_class, a_name, current_feature_impl.as_invariants)
+						else
+							error_handler.report_giaaa_error
+						end
+					end
+						-- Syntax error: an inline separate argument cannot be an instruction.
+					set_fatal_error
+						-- Note: ISE 5.4 reports a VKCN-1 here. However
+						-- `a_name' is not a function nor an attribute name.
+					if attached current_inline_agent as l_current_inline_agent then
+						error_handler.report_gvuis0b_error (current_class, a_name, l_current_inline_agent)
+					elseif current_feature_impl.is_feature then
+						error_handler.report_gvuis0a_error (current_class, a_name, current_feature_impl.as_feature)
+					elseif current_feature_impl.is_invariants then
+						error_handler.report_gvuis0c_error (current_class, a_name, current_feature_impl.as_invariants)
+					else
+						error_handler.report_giaaa_error
+					end
+					check_orphan_actual_arguments_validity (a_call)
+				end
+			end
+		end
+
 	check_unqualified_iteration_item_call_instruction_validity (a_call: ET_UNQUALIFIED_FEATURE_CALL_INSTRUCTION; a_name: ET_IDENTIFIER)
 			-- Check validity of unqualified call `a_call' whose
 			-- name `a_name' appears to be an iteration item.
@@ -5196,7 +5408,7 @@ feature {NONE} -- Instruction validity
 					-- unfolded form of the parenthesis call.
 				else
 					if a_call.arguments /= Void then
-							-- Syntax error: an across cursor cannot have arguments.
+							-- Syntax error: an iteration item cannot have arguments.
 						set_fatal_error
 						if attached current_inline_agent as l_current_inline_agent then
 							error_handler.report_gvuac0b_error (current_class, a_name, l_current_inline_agent)
@@ -5208,7 +5420,7 @@ feature {NONE} -- Instruction validity
 							error_handler.report_giaaa_error
 						end
 					end
-						-- Syntax error: an across cursor cannot be an instruction.
+						-- Syntax error: an iteration item cannot be an instruction.
 					set_fatal_error
 						-- Note: ISE 5.4 reports a VKCN-1 here. However
 						-- `a_name' is not a function nor an attribute name.
@@ -5505,6 +5717,7 @@ feature {NONE} -- Expression validity
 			--    * 'manifest_value' is representable as an instance of 'manifest_type'.
 			--  * otherwise, try to determine whether 'manifest_value' is representable
 			--    as an instance of the type expected in the surrounding context.
+			--  * otherwise, if "CHARACTER" is mapped to "CHARACTER_32", then use this type.
 			--  * otherwise, the constant will be of type "CHARACTER_8" if 'manifest_value'
 			--    is representable as a CHARACTER_8, otherwise of type "CHARACTER_32" if it
 			--    is representable as a CHARACTER_32.
@@ -5512,7 +5725,7 @@ feature {NONE} -- Expression validity
 			--
 			-- Note that ECMA 367-2 says that the type of a manifest character constant
 			-- with no explicit 'manifest_type' is "CHARACTER" (see 8.29.6 "Definition:
-			-- Type of a manifest constant", page 143). So the third bullet above is
+			-- Type of a manifest constant", page 143). So the fourth bullet above is
 			-- not quite compliant with ECMA. But this is the way it is implemented
 			-- in ISE (as of 20.05.10.xxxx) to be able to capture Unicode characters.
 			--
@@ -5553,6 +5766,7 @@ feature {NONE} -- Expression validity
 				-- Do nothing
 			elseif current_universe_impl.character_8_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_character_8 then
+					set_character_8_index (a_constant)
 					l_type := current_universe_impl.character_8_type
 					report_character_8_constant (a_constant, l_type)
 				else
@@ -5561,6 +5775,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.character_32_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_character_32 then
+					set_character_32_index (a_constant)
 					l_type := current_universe_impl.character_32_type
 					report_character_32_constant (a_constant, l_type)
 				else
@@ -5576,10 +5791,21 @@ feature {NONE} -- Expression validity
 					-- Error: invalid cast type, it should be a sized variant of "CHARACTER".
 				set_fatal_error
 				error_handler.report_vwmq0c_error (current_class, current_class_impl, a_constant)
+			elseif current_universe_impl.character_type.same_named_type_with_type_marks (current_universe.character_32_type, tokens.implicit_attached_type_mark, current_class_impl, tokens.implicit_attached_type_mark, current_class_impl) then
+				if a_constant.is_character_32 then
+					set_character_32_index (a_constant)
+					l_type := current_universe_impl.character_32_type
+					report_character_32_constant (a_constant, l_type)
+				else
+					set_fatal_error
+					error_handler.report_gvwmc2b_error (current_class, current_class_impl, a_constant, current_universe_impl.character_32_type)
+				end
 			elseif a_constant.is_character_8 then
+				set_character_8_index (a_constant)
 				l_type := current_universe_impl.character_8_type
 				report_character_8_constant (a_constant, l_type)
 			elseif a_constant.is_character_32 then
+				set_character_32_index (a_constant)
 				l_type := current_universe_impl.character_32_type
 				report_character_32_constant (a_constant, l_type)
 			else
@@ -5606,6 +5832,7 @@ feature {NONE} -- Expression validity
 			check_expression_validity (an_expression.expression, a_context, current_target_type)
 			if not has_fatal_error then
 				l_target_type := an_expression.type
+				set_index (an_expression)
 				report_builtin_conversion (an_expression, l_target_type)
 				a_context.reset (current_type)
 				a_context.force_last (l_target_type)
@@ -5686,7 +5913,7 @@ feature {NONE} -- Expression validity
 			elseif attached convert_expression (l_left_expression, a_left_context, a_right_context) as l_convert_expression and then not has_fatal_error then
 					-- Insert the conversion feature call in the AST.
 				create l_cast_expression.make (l_convert_expression, a_right_context.named_type)
-				l_cast_expression.set_index (l_convert_expression.index)
+				set_index_to (l_cast_expression, l_convert_expression.index)
 				l_formal := l_formal_arguments.formal_argument (1)
 				l_new_query := l_query
 			elseif has_fatal_error then
@@ -5695,7 +5922,7 @@ feature {NONE} -- Expression validity
 					-- The left-hand-side does not convert to the type
 					-- of the right-hand-side, but it conforms to it!
 				create l_cast_expression.make (l_left_expression, a_right_context.named_type)
-				l_cast_expression.set_index (l_left_expression.index)
+				set_index_to (l_cast_expression, l_left_expression.index)
 				l_new_query := l_query
 				l_formal := l_formal_arguments.formal_argument (1)
 			end
@@ -5770,6 +5997,12 @@ feature {NONE} -- Expression validity
 			a_context_not_void: a_context /= Void
 		do
 			check_creation_expression_validity (an_expression, a_context)
+			if attached an_expression.creation_region as l_creation_region then
+				if not l_creation_region.class_name.same_class_name (tokens.none_class_name) then
+					set_fatal_error
+					error_handler.report_vkex4ga_error (current_class, current_class_impl, l_creation_region)
+				end
+			end
 		end
 
 	check_creation_expression_validity (an_expression: ET_CREATION_EXPRESSION; a_context: ET_NESTED_TYPE_CONTEXT)
@@ -5785,27 +6018,17 @@ feature {NONE} -- Expression validity
 			l_creation_type: ET_TYPE
 			l_seed: INTEGER
 			l_name: ET_FEATURE_NAME
-			l_name_position: ET_POSITION
-			l_creation_call: detachable ET_CREATION_CALL
 			l_adapted_base_class: ET_ADAPTED_CLASS
 			l_adapted_base_classes: DS_ARRAYED_LIST [ET_ADAPTED_CLASS]
 			l_has_multiple_constraints: BOOLEAN
 			i, nb: INTEGER
 		do
 			has_fatal_error := False
-			l_creation_call := an_expression.creation_call
-			if l_creation_call /= Void then
-					-- There is an explicit creation call.
-				l_name := l_creation_call.name
-				l_seed := l_name.seed
-			else
-					-- No explicit creation call. Use 'default_create' instead.
-				l_creation_call := default_creation_call
-				l_name_position := an_expression.last_position
-				default_creation_call_name.set_position (l_name_position.line, l_name_position.column)
-				l_name := default_creation_call_name
-				l_seed := current_system.default_create_seed
+			l_name := an_expression.name
+			if an_expression.creation_call = Void then
+				l_name.set_seed (current_system.default_create_seed)
 			end
+			l_seed := l_name.seed
 			l_creation_type := an_expression.type
 			a_context.force_last (l_creation_type)
 			check_type_validity (l_creation_type)
@@ -5816,13 +6039,13 @@ feature {NONE} -- Expression validity
 				check_adapted_base_classes_validity (l_name, l_adapted_base_classes, a_context)
 			end
 			if has_fatal_error then
-				check_orphan_actual_arguments_validity (l_creation_call)
+				check_orphan_actual_arguments_validity (an_expression)
 			elseif l_seed = 0 then
 				l_adapted_base_class := l_adapted_base_classes.first
 				l_class := l_adapted_base_class.base_class
-				if l_creation_call = default_creation_call then
+				if an_expression.creation_call = Void then
 						-- There is no explicit creation call.
-					check_creation_procedure_call_expression_validity (an_expression, l_creation_call, Void, l_adapted_base_class, l_has_multiple_constraints, a_context)
+					check_creation_procedure_call_expression_validity (an_expression, Void, l_adapted_base_class, l_has_multiple_constraints, a_context)
 				elseif current_class_impl /= current_class then
 						-- We need to resolve `l_name' in the implementation
 						-- class of `current_feature_impl' first.
@@ -5832,27 +6055,27 @@ feature {NONE} -- Expression validity
 							-- the implementation feature.
 						error_handler.report_giaaa_error
 					end
-					check_orphan_actual_arguments_validity (l_creation_call)
+					check_orphan_actual_arguments_validity (an_expression)
 				elseif l_class.is_dotnet then
 						-- A class coming from a .NET assembly can contain overloaded
 						-- features (i.e. several features with the same name).
 						-- We have to be careful about that here.
-					check_dotnet_creation_procedure_call_expression_validity (an_expression, l_creation_call, l_adapted_base_class, l_has_multiple_constraints, a_context)
+					check_dotnet_creation_procedure_call_expression_validity (an_expression, l_adapted_base_class, l_has_multiple_constraints, a_context)
 				elseif attached l_adapted_base_class.named_procedure (l_name) as l_procedure then
 					l_seed := l_procedure.first_seed
 					l_name.set_seed (l_seed)
-					check_creation_procedure_call_expression_validity (an_expression, l_creation_call, l_procedure, l_adapted_base_class, l_has_multiple_constraints, a_context)
+					check_creation_procedure_call_expression_validity (an_expression, l_procedure, l_adapted_base_class, l_has_multiple_constraints, a_context)
 				elseif attached l_adapted_base_class.named_query (l_name) as l_query then
 						-- This is not a procedure.
 					set_fatal_error
 					error_handler.report_vgcc6b_error (current_class, l_name, l_query, l_class)
-					check_orphan_actual_arguments_validity (l_creation_call)
+					check_orphan_actual_arguments_validity (an_expression)
 				else
 					set_fatal_error
 						-- ISE Eiffel 5.4 reports this error as a VEEN,
 						-- but it is in fact a VUEX-2 (ETL2 p.368).
 					error_handler.report_vuex2a_error (current_class, l_name, l_class)
-					check_orphan_actual_arguments_validity (l_creation_call)
+					check_orphan_actual_arguments_validity (an_expression)
 				end
 			elseif l_adapted_base_classes.is_empty then
 					-- Internal error: the seed was already computed in a proper ancestor
@@ -5861,14 +6084,14 @@ feature {NONE} -- Expression validity
 					-- be a procedure for this seed.
 				set_fatal_error
 				error_handler.report_giaaa_error
-				check_orphan_actual_arguments_validity (l_creation_call)
+				check_orphan_actual_arguments_validity (an_expression)
 			else
 				nb := l_adapted_base_classes.count
 				from i := 1 until i > nb loop
 					l_adapted_base_class := l_adapted_base_classes.item (i)
 					l_class := l_adapted_base_class.base_class
 					if attached l_class.seeded_procedure (l_seed) as l_procedure then
-						check_creation_procedure_call_expression_validity (an_expression, l_creation_call, l_procedure, l_adapted_base_class, l_has_multiple_constraints, a_context)
+						check_creation_procedure_call_expression_validity (an_expression, l_procedure, l_adapted_base_class, l_has_multiple_constraints, a_context)
 					elseif l_class.is_none then
 -- TODO: "NONE" conforms to all reference types.
 						set_fatal_error
@@ -5891,7 +6114,7 @@ feature {NONE} -- Expression validity
 			free_adapted_base_classes (l_adapted_base_classes)
 		end
 
-	check_dotnet_creation_procedure_call_expression_validity (a_expression: ET_CREATION_EXPRESSION; a_creation_call: ET_CREATION_CALL; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_context: ET_NESTED_TYPE_CONTEXT)
+	check_dotnet_creation_procedure_call_expression_validity (a_expression: ET_CREATION_EXPRESSION; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check validity of `a_expression' with .NET creation type base class.
 			--
 			-- A class coming from a .NET assembly can contain overloaded
@@ -5899,7 +6122,6 @@ feature {NONE} -- Expression validity
 			-- We have to be careful about that here.
 			--
 			-- The validity of the type of the creation is assumed to have already been checked.
-			-- `a_creation_call' is the creation call in `current_class_impl'.
 			-- `a_context' represents the creation type of `a_expression'.
 			-- `a_adapted_base_class' is the base class (or the best possible constraint in case of multiple
 			-- constraint genericity) of the creation type.
@@ -5908,7 +6130,6 @@ feature {NONE} -- Expression validity
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
 			a_expression_not_void: a_expression /= Void
-			a_creation_call_not_void: a_creation_call /= Void
 			a_adapted_base_class_not_void: a_adapted_base_class /= Void
 			a_context_not_void: a_context /= Void
 			a_context_count: a_context.count = 1
@@ -5921,44 +6142,43 @@ feature {NONE} -- Expression validity
 		do
 			has_fatal_error := False
 			l_class := a_adapted_base_class.base_class
-			l_name := a_creation_call.name
+			l_name := a_expression.name
 			l_overloaded_procedures := new_overloaded_procedures
 			a_adapted_base_class.add_overloaded_procedures (l_name, l_overloaded_procedures)
 			if not l_overloaded_procedures.is_empty then
-				keep_best_overloaded_features (l_overloaded_procedures, adapted_name (l_name, a_adapted_base_class), a_creation_call.arguments, a_context, False, True)
+				keep_best_overloaded_features (l_overloaded_procedures, adapted_name (l_name, a_adapted_base_class), a_expression.arguments, a_context, False, True)
 				if has_fatal_error then
-					check_orphan_actual_arguments_validity (a_creation_call)
+					check_orphan_actual_arguments_validity (a_expression)
 				elseif l_overloaded_procedures.count = 1 then
 					l_procedure := l_overloaded_procedures.first
 					l_seed := l_procedure.first_seed
 					l_name.set_seed (l_seed)
-					check_creation_procedure_call_expression_validity (a_expression, a_creation_call, l_procedure, a_adapted_base_class, a_has_multiple_constraints, a_context)
+					check_creation_procedure_call_expression_validity (a_expression, l_procedure, a_adapted_base_class, a_has_multiple_constraints, a_context)
 				else
 					-- Ambiguity in overloaded procedures.
 -- TODO: report VIOF
 					set_fatal_error
 					error_handler.report_giaaa_error
-					check_orphan_actual_arguments_validity (a_creation_call)
+					check_orphan_actual_arguments_validity (a_expression)
 				end
 			elseif attached a_adapted_base_class.named_query (l_name) as l_query then
 					-- This is not a procedure.
 				set_fatal_error
 				error_handler.report_vgcc6b_error (current_class, l_name, l_query, l_class)
-				check_orphan_actual_arguments_validity (a_creation_call)
+				check_orphan_actual_arguments_validity (a_expression)
 			else
 				set_fatal_error
 					-- ISE Eiffel 5.4 reports this error as a VEEN,
 					-- but it is in fact a VUEX-2 (ETL2 p.368).
 				error_handler.report_vuex2a_error (current_class, l_name, l_class)
-				check_orphan_actual_arguments_validity (a_creation_call)
+				check_orphan_actual_arguments_validity (a_expression)
 			end
 			free_overloaded_procedures (l_overloaded_procedures)
 		end
 
-	check_creation_procedure_call_expression_validity (a_expression: ET_CREATION_EXPRESSION; a_creation_call: ET_CREATION_CALL; a_procedure: detachable ET_PROCEDURE; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_context: ET_NESTED_TYPE_CONTEXT)
+	check_creation_procedure_call_expression_validity (a_expression: ET_CREATION_EXPRESSION; a_procedure: detachable ET_PROCEDURE; a_adapted_base_class: ET_ADAPTED_CLASS; a_has_multiple_constraints: BOOLEAN; a_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check validity of `a_expression' with `a_procedure' as creation procedure.
 			-- The validity of the type of the creation is assumed to have already been checked.
-			-- `a_creation_call' is the creation call in `current_class_impl'.
 			-- `a_context' represents the creation type of `a_expression'.
 			-- `a_adapted_base_class' is the base class (or the best possible constraint in case of multiple
 			-- constraint genericity) of the creation type.
@@ -5967,8 +6187,7 @@ feature {NONE} -- Expression validity
 			-- Set `has_fatal_error' if a fatal error occurred.
 		require
 			a_expression_not_void: a_expression /= Void
-			a_creation_call_not_void: a_creation_call /= Void
-			no_call_if_not_procedure: a_procedure = Void implies a_creation_call = default_creation_call
+			no_call_if_not_procedure: a_procedure = Void implies a_expression.creation_call = Void
 			no_default_create_if_not_procedure: a_procedure = Void implies current_system.default_create_seed = 0
 			a_adapted_base_class_not_void: a_adapted_base_class /= Void
 			a_context_not_void: a_context /= Void
@@ -5992,19 +6211,19 @@ feature {NONE} -- Expression validity
 				had_error := has_fatal_error
 			end
 			if a_procedure = Void then
-				check_no_creation_procedure_call_validity (a_expression, a_creation_call, l_class, a_context)
+				check_no_creation_procedure_call_validity (a_expression, l_class, a_context)
 			elseif attached {ET_FORMAL_PARAMETER_TYPE} l_creation_named_type as l_formal_type then
 				if a_has_multiple_constraints then
 					l_creation_context := new_context (current_type)
 					l_creation_context.copy_type_context (a_context)
 					adapted_base_class_checker.reset_context_if_multiple_constraints (a_has_multiple_constraints, a_adapted_base_class, l_creation_context)
-					check_formal_creation_procedure_call_validity (a_expression, a_creation_call, a_procedure, l_class, l_formal_type, l_creation_context)
+					check_formal_creation_procedure_call_validity (a_expression, a_procedure, l_class, l_formal_type, l_creation_context)
 					free_context (l_creation_context)
 				else
-					check_formal_creation_procedure_call_validity (a_expression, a_creation_call, a_procedure, l_class, l_formal_type, a_context)
+					check_formal_creation_procedure_call_validity (a_expression, a_procedure, l_class, l_formal_type, a_context)
 				end
 			else
-				check_creation_procedure_call_validity (a_expression, a_creation_call, a_procedure, l_class, a_context)
+				check_creation_procedure_call_validity (a_expression, a_procedure, l_class, a_context)
 			end
 			reset_fatal_error (had_error or has_fatal_error)
 			if not has_fatal_error then
@@ -6019,6 +6238,10 @@ feature {NONE} -- Expression validity
 						a_context.force_last (tokens.attached_like_current)
 						l_creation_named_type := l_creation_named_type.type_with_type_mark (tokens.implicit_attached_type_mark)
 					end
+				end
+				set_index (a_expression)
+				if current_system.scoop_mode and not a_context.is_type_non_separate then
+					set_index (a_expression.separate_target)
 				end
 				report_creation_expression (a_expression, l_creation_named_type, a_procedure)
 			end
@@ -6042,6 +6265,7 @@ feature {NONE} -- Expression validity
 				if not a_context.is_type_attached then
 					a_context.force_last (tokens.attached_like_current)
 				end
+				set_index_to (an_expression, current_index)
 				report_current (an_expression)
 			end
 		end
@@ -6073,10 +6297,12 @@ feature {NONE} -- Expression validity
 					if not a_context.is_type_attached then
 						a_context.force_last (tokens.attached_like_current)
 					end
+					set_index (an_expression)
 					report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 					a_context.force_last (l_typed_pointer_type)
 				else
 						-- Use the ETL2 implementation: the type of '$Current' is POINTER.
+					set_pointer_index (an_expression)
 					l_pointer_type := current_universe_impl.pointer_type
 					a_context.force_last (l_pointer_type)
 					report_pointer_expression (an_expression, l_pointer_type)
@@ -6099,18 +6325,18 @@ feature {NONE} -- Expression validity
 			l_right_context: ET_NESTED_TYPE_CONTEXT
 			l_left_convert_expression: detachable ET_CONVERT_EXPRESSION
 			l_right_convert_expression: detachable ET_CONVERT_EXPRESSION
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			had_error: BOOLEAN
 		do
 			has_fatal_error := False
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			l_left_context := new_context (current_type)
 			l_right_context := new_context (current_type)
 			l_left_operand := an_expression.left
 			l_right_operand := an_expression.right
-			check_expression_validity (l_left_operand, l_left_context, l_detachable_any_type)
+			check_expression_validity (l_left_operand, l_left_context, l_detachable_separate_any_type)
 			if not has_fatal_error then
-				check_expression_validity (l_right_operand, l_right_context, l_detachable_any_type)
+				check_expression_validity (l_right_operand, l_right_context, l_detachable_separate_any_type)
 				if not has_fatal_error then
 					if current_class /= current_class_impl then
 						-- Possible convertibility should be resolved in the implementation class.
@@ -6152,13 +6378,14 @@ feature {NONE} -- Expression validity
 					end
 					if not has_fatal_error then
 						a_context.force_last (current_universe_impl.boolean_type)
+						set_boolean_index (an_expression)
 						report_equality_expression (an_expression)
 					end
 				end
 			else
 					-- The left expression is not valid. Check the right expression
 					-- anyway, and then restore `has_fatal_error' to True.
-				check_expression_validity (l_right_operand, l_right_context, l_detachable_any_type)
+				check_expression_validity (l_right_operand, l_right_context, l_detachable_separate_any_type)
 				set_fatal_error
 			end
 			free_context (l_right_context)
@@ -6177,18 +6404,19 @@ feature {NONE} -- Expression validity
 			l_typed_pointer_class: ET_NAMED_CLASS
 			l_typed_pointer_type: ET_CLASS_TYPE
 			l_pointer_type: ET_CLASS_TYPE
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			l_expression_context: ET_NESTED_TYPE_CONTEXT
 		do
 			has_fatal_error := False
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
 			l_typed_pointer_class := l_typed_pointer_type.named_base_class
 			if l_typed_pointer_class.actual_class.is_preparsed then
 					-- Class TYPED_POINTER has been found in the universe.
 					-- Use ISE's implementation: the type of '$(expr)' is 'TYPED_POINTER [<type-of-expr>]'.
-				check_expression_validity (an_expression.expression, a_context, l_detachable_any_type)
+				check_expression_validity (an_expression.expression, a_context, l_detachable_separate_any_type)
 				if not has_fatal_error then
+					set_index (an_expression)
 					report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 					a_context.force_last (l_typed_pointer_type)
 				end
@@ -6198,9 +6426,10 @@ feature {NONE} -- Expression validity
 					-- expression because we don't want it to be altered and we
 					-- don't need the type of 'expr'.
 				l_expression_context := new_context (current_type)
-				check_expression_validity (an_expression.expression, l_expression_context, l_detachable_any_type)
+				check_expression_validity (an_expression.expression, l_expression_context, l_detachable_separate_any_type)
 				free_context (l_expression_context)
 				if not has_fatal_error then
+					set_pointer_index (an_expression)
 					l_pointer_type := current_universe_impl.pointer_type
 					a_context.force_last (l_pointer_type)
 					report_pointer_expression (an_expression, l_pointer_type)
@@ -6222,6 +6451,7 @@ feature {NONE} -- Expression validity
 			has_fatal_error := False
 			l_type := current_universe_impl.boolean_type
 			a_context.force_last (l_type)
+			set_boolean_index (a_constant)
 			report_boolean_constant (a_constant, l_type)
 		end
 
@@ -6297,6 +6527,7 @@ feature {NONE} -- Expression validity
 									error_handler.report_veen8b_error (current_class, l_identifier)
 								end
 							else
+								set_index_to (l_identifier, l_object_test.name.index)
 								report_object_test_local (l_identifier, l_object_test)
 								l_seed := l_object_test.name.seed
 								l_identifier.set_seed (l_seed)
@@ -6317,11 +6548,13 @@ feature {NONE} -- Expression validity
 										set_fatal_error
 									else
 										a_context.copy_type_context (current_object_test_types.found_item)
+										set_index (an_expression)
 										report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 										a_context.force_last (l_typed_pointer_type)
 									end
 								else
 										-- Use the ETL2 implementation: the type of '$object_test_local' is POINTER.
+									set_pointer_index (an_expression)
 									l_pointer_type := current_universe_impl.pointer_type
 									a_context.force_last (l_pointer_type)
 									report_pointer_expression (an_expression, l_pointer_type)
@@ -6351,6 +6584,9 @@ feature {NONE} -- Expression validity
 									error_handler.report_veen9b_error (current_class, l_identifier)
 								end
 							else
+								if l_identifier /= l_iteration_component.unfolded_cursor_name then
+									set_index_to (l_identifier, l_iteration_component.item_name.index)
+								end
 								report_iteration_item (l_identifier, l_iteration_component)
 								l_seed := l_iteration_component.item_name.seed
 								l_identifier.set_seed (l_seed)
@@ -6371,11 +6607,70 @@ feature {NONE} -- Expression validity
 										set_fatal_error
 									else
 										a_context.copy_type_context (current_iteration_item_types.found_item)
+										set_index (an_expression)
 										report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 										a_context.force_last (l_typed_pointer_type)
 									end
 								else
-										-- Use the ETL2 implementation: the type of '$across_cursor' is POINTER.
+										-- Use the ETL2 implementation: the type of '$iteration_item' is POINTER.
+									set_pointer_index (an_expression)
+									l_pointer_type := current_universe_impl.pointer_type
+									a_context.force_last (l_pointer_type)
+									report_pointer_expression (an_expression, l_pointer_type)
+								end
+								already_checked := True
+							end
+						end
+					elseif l_name.is_inline_separate_argument then
+							-- We need to resolve `a_name' in the implementation
+							-- class of `current_feature_impl' first.
+						if current_class_impl /= current_class then
+							set_fatal_error
+							if not has_implementation_error (current_feature_impl) then
+									-- Internal error: `a_name' should have been resolved in
+									-- the implementation feature.
+								error_handler.report_giaaa_error
+							end
+						else
+							l_identifier := l_name.inline_separate_argument_name
+							if not attached current_inline_separate_argument_scope.inline_separate_argument (l_identifier) as l_inline_separate_argument then
+									-- Error: `l_identifier' is an inline separate argument that is used outside of its scope.
+								set_fatal_error
+								if current_feature_impl.is_feature then
+									error_handler.report_veen10a_error (current_class, l_identifier, current_feature_impl.as_feature)
+								else
+									error_handler.report_veen10b_error (current_class, l_identifier)
+								end
+							else
+								set_index_to (l_identifier, l_inline_separate_argument.name.index)
+								report_inline_separate_argument (l_identifier, l_inline_separate_argument)
+								l_seed := l_inline_separate_argument.name.seed
+								l_identifier.set_seed (l_seed)
+								l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
+								l_typed_pointer_class := l_typed_pointer_type.named_base_class
+								if l_typed_pointer_class.actual_class.is_preparsed then
+										-- Class TYPED_POINTER has been found in the universe.
+										-- Use ISE's implementation: the type of '$inline_separate_argument'
+										-- is 'TYPED_POINTER [<type-of-inline-separate-argument>]'.
+									current_inline_separate_argument_types.search (l_inline_separate_argument)
+									if not current_inline_separate_argument_types.found then
+											-- The type of the inline separate argument should have been determined
+											-- when processing the arguments of the inline separate instruction.
+											-- And this should have already been done since we are in the
+											-- scope of that inline separate argument (i.e the body of the inline
+											-- separate instruction). Here we don't have this type, which means that
+											-- an error had occurred (and had been reported) when processing
+											-- the argument expressions of the inline separate instruction.
+										set_fatal_error
+									else
+										a_context.copy_type_context (current_inline_separate_argument_types.found_item)
+										set_index (an_expression)
+										report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
+										a_context.force_last (l_typed_pointer_type)
+									end
+								else
+										-- Use the ETL2 implementation: the type of '$inline_separate_argument' is POINTER.
+									set_pointer_index (an_expression)
 									l_pointer_type := current_universe_impl.pointer_type
 									a_context.force_last (l_pointer_type)
 									report_pointer_expression (an_expression, l_pointer_type)
@@ -6393,6 +6688,7 @@ feature {NONE} -- Expression validity
 						report_procedure_address (an_expression, l_procedure)
 							-- $feature_name is of type POINTER, even
 							-- in ISE and its TYPED_POINTER support.
+						set_pointer_index (an_expression)
 						l_pointer_type := current_universe_impl.pointer_type
 						a_context.force_last (l_pointer_type)
 						report_pointer_expression (an_expression, l_pointer_type)
@@ -6418,6 +6714,7 @@ feature {NONE} -- Expression validity
 									l_type := l_query.type
 									if l_type.is_base_type or current_class = current_type then
 										a_context.force_last (l_type)
+										set_index (an_expression)
 										report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 										a_context.force_last (l_typed_pointer_type)
 											-- No need to check validity in the context of `current_type' again.
@@ -6425,6 +6722,7 @@ feature {NONE} -- Expression validity
 									end
 								else
 										-- Use the ETL2 implementation: the type of '$attribute' is POINTER.
+									set_pointer_index (an_expression)
 									l_pointer_type := current_universe_impl.pointer_type
 									a_context.force_last (l_pointer_type)
 									report_pointer_expression (an_expression, l_pointer_type)
@@ -6436,6 +6734,7 @@ feature {NONE} -- Expression validity
 							report_function_address (an_expression, l_query)
 								-- $feature_name is of type POINTER, even
 								-- in ISE and its TYPED_POINTER support.
+							set_pointer_index (an_expression)
 							l_pointer_type := current_universe_impl.pointer_type
 							a_context.force_last (l_pointer_type)
 							report_pointer_expression (an_expression, l_pointer_type)
@@ -6444,9 +6743,8 @@ feature {NONE} -- Expression validity
 						end
 					else
 						set_fatal_error
-							-- ISE Eiffel 5.4 reports this error as a VEEN,
-							-- but it is in fact a VUAR-4 (ETL2 p.369).
-						error_handler.report_vuar4a_error (current_class_impl, l_name)
+							-- It used to be a validity error VUAR-4 (ETL2 p.369).
+						error_handler.report_veen11a_error (current_class_impl, l_name)
 					end
 				end
 			end
@@ -6497,6 +6795,7 @@ feature {NONE} -- Expression validity
 						else
 							l_argument := l_arguments.formal_argument (l_seed)
 							l_identifier := l_name.argument_name.identifier
+							set_index_to (l_identifier, l_argument.index)
 							report_formal_argument (l_identifier, False, l_argument)
 							l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
 							l_typed_pointer_class := l_typed_pointer_type.named_base_class
@@ -6505,10 +6804,12 @@ feature {NONE} -- Expression validity
 									-- Use ISE's implementation: the type of '$argument' is 'TYPED_POINTER [<type-of-argument>]'.
 								l_type := l_argument.type
 								a_context.force_last (l_type)
+								set_index (an_expression)
 								report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 								a_context.force_last (l_typed_pointer_type)
 							else
 									-- Use the ETL2 implementation: the type of '$argument' is POINTER.
+								set_pointer_index (an_expression)
 								l_pointer_type := current_universe_impl.pointer_type
 								a_context.force_last (l_pointer_type)
 								report_pointer_expression (an_expression, l_pointer_type)
@@ -6555,6 +6856,7 @@ feature {NONE} -- Expression validity
 						else
 							l_local := l_locals.local_variable (l_seed)
 							l_identifier := l_name.local_name.identifier
+							set_index_to (l_identifier, l_local.index)
 							report_local_variable (l_identifier, False, l_local)
 							l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
 							l_typed_pointer_class := l_typed_pointer_type.named_base_class
@@ -6563,10 +6865,12 @@ feature {NONE} -- Expression validity
 									-- Use ISE's implementation: the type of '$local' is 'TYPED_POINTER [<type-of-local>]'.
 								l_type := l_local.type
 								a_context.force_last (l_type)
+								set_index (an_expression)
 								report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 								a_context.force_last (l_typed_pointer_type)
 							else
 									-- Use the ETL2 implementation: the type of '$local' is POINTER.
+								set_pointer_index (an_expression)
 								l_pointer_type := current_universe_impl.pointer_type
 								a_context.force_last (l_pointer_type)
 								report_pointer_expression (an_expression, l_pointer_type)
@@ -6586,6 +6890,7 @@ feature {NONE} -- Expression validity
 					else
 						l_object_test := l_object_tests.object_test (l_seed)
 						l_identifier := l_name.object_test_local_name.identifier
+						set_index_to (l_identifier, l_object_test.name.index)
 						report_object_test_local (l_identifier, l_object_test)
 						l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
 						l_typed_pointer_class := l_typed_pointer_type.named_base_class
@@ -6603,11 +6908,13 @@ feature {NONE} -- Expression validity
 								error_handler.report_giaaa_error
 							else
 								a_context.copy_type_context (current_object_test_types.found_item)
+								set_index (an_expression)
 								report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 								a_context.force_last (l_typed_pointer_type)
 							end
 						else
 								-- Use the ETL2 implementation: the type of '$object_test_local' is POINTER.
+							set_pointer_index (an_expression)
 							l_pointer_type := current_universe_impl.pointer_type
 							a_context.force_last (l_pointer_type)
 							report_pointer_expression (an_expression, l_pointer_type)
@@ -6626,6 +6933,9 @@ feature {NONE} -- Expression validity
 					else
 						l_iteration_component := l_iteration_components.iteration_component (l_seed)
 						l_identifier := l_name.iteration_item_name
+						if l_identifier /= l_iteration_component.unfolded_cursor_name then
+							set_index_to (l_identifier, l_iteration_component.item_name.index)
+						end
 						report_iteration_item (l_identifier, l_iteration_component)
 						l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
 						l_typed_pointer_class := l_typed_pointer_type.named_base_class
@@ -6644,11 +6954,13 @@ feature {NONE} -- Expression validity
 								error_handler.report_giaaa_error
 							else
 								a_context.copy_type_context (current_iteration_item_types.found_item)
+								set_index (an_expression)
 								report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 								a_context.force_last (l_typed_pointer_type)
 							end
 						else
 								-- Use the ETL2 implementation: the type of '$iteration_item' is POINTER.
+							set_pointer_index (an_expression)
 							l_pointer_type := current_universe_impl.pointer_type
 							a_context.force_last (l_pointer_type)
 							report_pointer_expression (an_expression, l_pointer_type)
@@ -6662,6 +6974,7 @@ feature {NONE} -- Expression validity
 					report_procedure_address (an_expression, l_procedure)
 						-- $feature_name is of type POINTER, even
 						-- in ISE and its TYPED_POINTER support.
+					set_pointer_index (an_expression)
 					l_pointer_type := current_universe_impl.pointer_type
 					a_context.force_last (l_pointer_type)
 					report_pointer_expression (an_expression, l_pointer_type)
@@ -6682,10 +6995,12 @@ feature {NONE} -- Expression validity
 									-- Use ISE's implementation: the type of '$attribute' is 'TYPED_POINTER [<type-of-attribute>]'.
 								l_type := l_query.type
 								a_context.force_last (l_type)
+								set_index (an_expression)
 								report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 								a_context.force_last (l_typed_pointer_type)
 							else
 									-- Use the ETL2 implementation: the type of '$attribute' is POINTER.
+								set_pointer_index (an_expression)
 								l_pointer_type := current_universe_impl.pointer_type
 								a_context.force_last (l_pointer_type)
 								report_pointer_expression (an_expression, l_pointer_type)
@@ -6695,6 +7010,7 @@ feature {NONE} -- Expression validity
 						report_function_address (an_expression, l_query)
 							-- $feature_name is of type POINTER, even
 							-- in ISE and its TYPED_POINTER support.
+						set_pointer_index (an_expression)
 						l_pointer_type := current_universe_impl.pointer_type
 						a_context.force_last (l_pointer_type)
 						report_pointer_expression (an_expression, l_pointer_type)
@@ -6778,6 +7094,27 @@ feature {NONE} -- Expression validity
 							l_is_attached := True
 						end
 					end
+					if current_system.scoop_mode then
+						if not a_context.is_type_non_separate then
+							a_context.force_last (tokens.controlled_type_modifier)
+						end
+					end
+					if a_name.index /= 0 then
+							-- Already set.
+							-- Make sure that `l_is_attached' is consistent with the index.
+							-- This is needed when the type of the formal argument is a
+							-- formal generic parameter and the actual generic parameter
+							-- is attached. In that case the index was set to `attached_index'
+							-- when processing with the formal generic parameter (because
+							-- `l_is_attached' was True at that time). But because the actual
+							-- generic parameter is attached then `l_is_attached' is False.
+							-- So we need to force it to True.
+						l_is_attached := (a_name.index = l_formal.attached_index)
+					elseif l_is_attached then
+						a_name.set_index (l_formal.attached_index)
+					else
+						a_name.set_index (l_formal.index)
+					end
 					report_formal_argument (a_name, l_is_attached, l_formal)
 				end
 			end
@@ -6819,6 +7156,8 @@ feature {NONE} -- Expression validity
 			l_expression_context: ET_NESTED_TYPE_CONTEXT
 			l_result_context_list: DS_ARRAYED_LIST [ET_NESTED_TYPE_CONTEXT]
 			l_old_result_context_list_count: INTEGER
+			l_is_controlled: BOOLEAN
+			l_is_separate: BOOLEAN
 		do
 			has_fatal_error := False
 			boolean_type := current_universe_impl.boolean_type
@@ -6858,6 +7197,18 @@ feature {NONE} -- Expression validity
 				had_error := True
 				free_context (l_expression_context)
 			else
+				if current_system.scoop_mode then
+					l_is_controlled := True
+					if not l_expression_context.is_type_non_separate then
+						l_is_separate := True
+						if not l_expression_context.is_controlled then
+							l_is_controlled := False
+						else
+								-- Remove 'controlled' type modifier.
+							l_expression_context.remove_last
+						end
+					end
+				end
 				update_common_ancestor_type_list (l_expression_context, l_result_context_list, l_old_result_context_list_count)
 			end
 			current_object_test_scope.keep_object_tests (l_old_object_test_scope)
@@ -6895,6 +7246,17 @@ feature {NONE} -- Expression validity
 						had_error := True
 						free_context (l_expression_context)
 					else
+						if current_system.scoop_mode then
+							if not l_expression_context.is_type_non_separate then
+								l_is_separate := True
+								if not l_expression_context.is_controlled then
+									l_is_controlled := False
+								else
+										-- Remove 'controlled' type modifier.
+									l_expression_context.remove_last
+								end
+							end
+						end
 						update_common_ancestor_type_list (l_expression_context, l_result_context_list, l_old_result_context_list_count)
 					end
 					current_object_test_scope.keep_object_tests (l_old_elseif_object_test_scope)
@@ -6912,6 +7274,17 @@ feature {NONE} -- Expression validity
 				had_error := True
 				free_context (l_expression_context)
 			else
+				if current_system.scoop_mode then
+					if not l_expression_context.is_type_non_separate then
+						l_is_separate := True
+						if not l_expression_context.is_controlled then
+							l_is_controlled := False
+						else
+								-- Remove 'controlled' type modifier.
+							l_expression_context.remove_last
+						end
+					end
+				end
 				update_common_ancestor_type_list (l_expression_context, l_result_context_list, l_old_result_context_list_count)
 			end
 			current_object_test_scope.keep_object_tests (l_old_object_test_scope)
@@ -6933,6 +7306,12 @@ feature {NONE} -- Expression validity
 					update_common_ancestor_type_list (l_expression_context, l_result_context_list, l_old_result_context_list_count)
 				end
 				a_context.copy_type_context (l_result_context_list.last)
+				if current_system.scoop_mode then
+					if l_is_separate and l_is_controlled then
+						a_context.force_last (tokens.controlled_type_modifier)
+					end
+				end
+				set_index (a_expression)
 				report_if_expression (a_expression, tokens.identity_type, a_context)
 			end
 			free_common_ancestor_types (l_result_context_list, l_old_result_context_list_count)
@@ -6951,7 +7330,7 @@ feature {NONE} -- Expression validity
 		do
 			check_expression_validity (an_expression.expression, a_context, current_target_type)
 			if not has_fatal_error then
-				an_expression.set_index (an_expression.expression.index)
+				set_index_to (an_expression, an_expression.expression.index)
 				l_target_type := an_expression.type
 				a_context.reset (current_type)
 				a_context.force_last (l_target_type)
@@ -6975,6 +7354,225 @@ feature {NONE} -- Expression validity
 			check_qualified_call_expression_validity (an_expression, a_context, l_call_info)
 			free_call_info (l_call_info)
 			free_context (l_target_context)
+		end
+
+	check_inline_separate_argument_validity (a_name: ET_IDENTIFIER; a_context: ET_NESTED_TYPE_CONTEXT)
+			-- Check validity of inline separate argument `a_name'.
+			-- `a_context' represents the type in which `a_name' appears.
+			-- It will be altered on exit to represent the type of `a_name'.
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_name_not_void: a_name /= Void
+			a_name_inline_separate_argument: a_name.is_inline_separate_argument
+			a_context_not_void: a_context /= Void
+		local
+			l_seed: INTEGER
+			l_inline_separate_argument: detachable ET_INLINE_SEPARATE_ARGUMENT
+		do
+			has_fatal_error := False
+			l_seed := a_name.seed
+			if l_seed = 0 then
+					-- We need to resolve `a_name' in the implementation
+					-- class of `current_feature_impl' first.
+				if current_class_impl /= current_class then
+					set_fatal_error
+					if not has_implementation_error (current_feature_impl) then
+							-- Internal error: `a_name' should have been resolved in
+							-- the implementation feature.
+						error_handler.report_giaaa_error
+					end
+				else
+					l_inline_separate_argument := current_inline_separate_argument_scope.inline_separate_argument (a_name)
+					if l_inline_separate_argument = Void then
+							-- Error: `a_name' is the name of an inline separate argument that is used outside of its scope.
+						set_fatal_error
+						if current_feature_impl.is_feature then
+							error_handler.report_veen10a_error (current_class, a_name, current_feature_impl.as_feature)
+						else
+							error_handler.report_veen10b_error (current_class, a_name)
+						end
+					else
+						l_seed := l_inline_separate_argument.name.seed
+						a_name.set_seed (l_seed)
+						current_inline_separate_argument_types.search (l_inline_separate_argument)
+						if not current_inline_separate_argument_types.found then
+								-- The type of the inline separate argument should have been determined
+								-- when processing the arguments of the inline separate instruction.
+								-- And this should have already been done since we are in the
+								-- scope of that inline separate argument (i.e the body of the inline
+								-- separate instruction). Here we don't have this type, which means that
+								-- an error had occurred (and had been reported) when processing
+								-- the argument expressions of the inline separate instruction.
+							set_fatal_error
+						else
+							a_context.copy_type_context (current_inline_separate_argument_types.found_item)
+							if current_system.scoop_mode then
+								if not a_context.is_type_non_separate then
+									a_context.force_last (tokens.controlled_type_modifier)
+								end
+							end
+							set_index_to (a_name, l_inline_separate_argument.name.index)
+							report_inline_separate_argument (a_name, l_inline_separate_argument)
+						end
+					end
+				end
+			else
+				if not attached current_closure_impl.inline_separate_arguments as l_inline_separate_arguments then
+						-- Internal error.
+					set_fatal_error
+					error_handler.report_giaaa_error
+				elseif l_seed < 1 or l_seed > l_inline_separate_arguments.count then
+						-- Internal error.
+					set_fatal_error
+					error_handler.report_giaaa_error
+				else
+					l_inline_separate_argument := l_inline_separate_arguments.argument (l_seed)
+					current_inline_separate_argument_types.search (l_inline_separate_argument)
+					if not current_inline_separate_argument_types.found then
+							-- Internal error: the type of the inline separate argument should
+							-- have been determined when processing the arguments of the
+							-- inline separate instruction. And this should have already been
+							-- done since we are in the scope of that inline separate argument
+							-- (i.e the body of the inline separate instruction).
+						set_fatal_error
+						error_handler.report_giaaa_error
+					else
+						a_context.copy_type_context (current_inline_separate_argument_types.found_item)
+						if current_system.scoop_mode then
+							if not a_context.is_type_non_separate then
+								a_context.force_last (tokens.controlled_type_modifier)
+							end
+						end
+						set_index_to (a_name, l_inline_separate_argument.name.index)
+						report_inline_separate_argument (a_name, l_inline_separate_argument)
+					end
+				end
+			end
+		end
+
+	check_inline_separate_arguments_validity (a_arguments: ET_INLINE_SEPARATE_ARGUMENTS)
+			-- Check validity of `a_arguments'.
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_arguments_not_void: a_arguments /= Void
+		local
+			had_error: BOOLEAN
+			i, j, nb: INTEGER
+			l_argument: ET_INLINE_SEPARATE_ARGUMENT
+			l_other_argument: ET_INLINE_SEPARATE_ARGUMENT
+			l_expression_context: ET_NESTED_TYPE_CONTEXT
+			l_name: ET_IDENTIFIER
+			l_enclosing_agent: ET_INLINE_AGENT
+		do
+			has_fatal_error := False
+			nb := a_arguments.count
+			from i := 1 until i > nb loop
+				l_argument := a_arguments.argument (i)
+				l_expression_context := new_context (current_type)
+				check_expression_validity (l_argument.expression, l_expression_context, current_system.detachable_separate_any_type)
+				if not has_fatal_error then
+						-- Check inline separate argument type (see V1SE-G3).
+					if l_expression_context.is_type_non_separate and current_class = current_type then
+							-- The type of the inline separate argument needs to be separate.
+						set_fatal_error
+						error_handler.report_v1se3ga_error (current_class, current_class_impl, l_argument, l_expression_context.named_type)
+					end
+				end
+					-- Check inline separate argument name clashes (see V1SE-G1 and V1SE-G2).
+				if current_class = current_class_impl then
+					l_name := l_argument.name
+					from j := 1 until j >= i loop
+						l_other_argument := a_arguments.argument (j)
+						if l_other_argument.name.same_identifier (l_name) then
+								-- Two inline separate arguments with the same name.
+							set_fatal_error
+							error_handler.report_v1se1ga_error (current_class, l_other_argument, l_argument)
+						end
+						j := j + 1
+					end
+					if attached current_class.named_feature (l_name) as l_feature then
+							-- This inline separate argument has the same name as the
+							-- final name of a feature in `current_class'.
+						set_fatal_error
+						error_handler.report_v1se2ga_error (current_class, l_argument, l_feature)
+					end
+					if attached current_inline_agent as l_current_inline_agent then
+						enclosing_inline_agents.force_last (l_current_inline_agent)
+						nb := enclosing_inline_agents.count
+						from i := 1 until i > nb loop
+							l_enclosing_agent := enclosing_inline_agents.item (i)
+							if attached l_enclosing_agent.formal_arguments as args then
+								j := args.index_of (l_name)
+								if j /= 0 then
+										-- This inline separate argument has the same name as a formal
+										-- argument of an enclosing inline agent.
+									set_fatal_error
+									error_handler.report_v1se2gb_error (current_class, l_argument, args.formal_argument (j))
+								end
+							end
+							if attached l_enclosing_agent.locals as l_locals then
+								j := l_locals.index_of (l_name)
+								if j /= 0 then
+										-- This inline separate argument has the same name as a
+										-- local variable of an enclosing inline agent.
+									set_fatal_error
+									error_handler.report_v1se2gc_error (current_class, l_argument, l_locals.local_variable (j))
+								end
+							end
+							i := i + 1
+						end
+						enclosing_inline_agents.remove_last
+					end
+					if attached current_feature.arguments as args then
+						j := args.index_of (l_name)
+						if j /= 0 then
+								-- This inline separate argument has the same name as a formal
+								-- argument of the enclosing feature.
+							set_fatal_error
+							error_handler.report_v1se2gb_error (current_class, l_argument, args.formal_argument (j))
+						end
+					end
+					if attached current_feature.locals as l_locals then
+						j := l_locals.index_of (l_name)
+						if j /= 0 then
+								-- This inline separate argument has the same name as a
+								-- local variable of the enclosing feature.
+							set_fatal_error
+							error_handler.report_v1se2gc_error (current_class, l_argument, l_locals.local_variable (j))
+						end
+					end
+					if attached current_object_test_scope.object_test (l_name) as l_object_test then
+							-- This inline separate argument appears in the scope of a
+							-- object-test local with the same name.
+						set_fatal_error
+						error_handler.report_v1se2gd_error (current_class, l_argument, l_object_test)
+					end
+					if attached current_iteration_item_scope.iteration_component (l_name) as l_iteration_component then
+							-- This inline separate argument appears in the scope of an iteration
+							-- item with the same name.
+						set_fatal_error
+						error_handler.report_v1se2ge_error (current_class, l_argument, l_iteration_component)
+					end
+					if attached current_inline_separate_argument_scope.inline_separate_argument (l_name) as l_other_inline_separate_argument then
+							-- This inline separate argument appears in the scope of
+							-- another inline separate argument with the same name.
+						set_fatal_error
+						error_handler.report_v1se2gf_error (current_class, l_argument, l_other_inline_separate_argument)
+					end
+				end
+				if not has_fatal_error then
+					set_index (l_argument.name)
+					current_inline_separate_argument_types.force_last (l_expression_context, l_argument)
+					report_inline_separate_argument_declaration (l_argument, l_expression_context)
+				else
+					free_context (l_expression_context)
+					had_error := True
+				end
+				i := i + 1
+			end
+			if had_error then
+				set_fatal_error
+			end
 		end
 
 	check_integer_constant_validity (a_constant: ET_INTEGER_CONSTANT; a_context: ET_NESTED_TYPE_CONTEXT)
@@ -7042,6 +7640,7 @@ feature {NONE} -- Expression validity
 				-- Do nothing.
 			elseif current_universe_impl.integer_8_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_integer_8 then
+					set_integer_8_index (a_constant)
 					l_type := current_universe_impl.integer_8_type
 					report_integer_8_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7050,6 +7649,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.integer_16_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_integer_16 then
+					set_integer_16_index (a_constant)
 					l_type := current_universe_impl.integer_16_type
 					report_integer_16_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7058,6 +7658,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.integer_32_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_integer_32 then
+					set_integer_32_index (a_constant)
 					l_type := current_universe_impl.integer_32_type
 					report_integer_32_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7066,6 +7667,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.integer_64_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_integer_64 then
+					set_integer_64_index (a_constant)
 					l_type := current_universe_impl.integer_64_type
 					report_integer_64_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7074,6 +7676,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.natural_8_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_natural_8 then
+					set_natural_8_index (a_constant)
 					l_type := current_universe_impl.natural_8_type
 					report_natural_8_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7082,6 +7685,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.natural_16_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_natural_16 then
+					set_natural_16_index (a_constant)
 					l_type := current_universe_impl.natural_16_type
 					report_natural_16_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7090,6 +7694,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.natural_32_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_natural_32 then
+					set_natural_32_index (a_constant)
 					l_type := current_universe_impl.natural_32_type
 					report_natural_32_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7098,6 +7703,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.natural_64_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 				if a_constant.is_natural_64 then
+					set_natural_64_index (a_constant)
 					l_type := current_universe_impl.natural_64_type
 					report_natural_64_constant (a_constant, l_type)
 				elseif l_explicit_type /= Void then
@@ -7122,9 +7728,11 @@ feature {NONE} -- Expression validity
 						--   i := 0xFFFFFFFF
 						-- as valid (and mean -1), when appearing without an integer type
 						-- context, then its type is INTEGER_64 and its value is 4294967295.
+					set_integer_64_index (a_constant)
 					l_type := current_universe_impl.integer_64_type
 					report_integer_64_constant (a_constant, l_type)
 				else
+					set_integer_32_index (a_constant)
 					l_type := current_universe_impl.integer_32_type
 					report_integer_32_constant (a_constant, l_type)
 				end
@@ -7137,13 +7745,16 @@ feature {NONE} -- Expression validity
 						--   i := 0xFFFFFFFFFFFFFFFF
 						-- as valid (and mean -1), when appearing without an integer type
 						-- context, then its type is NATURAL_64 and its value is 18446744073709551615.
+					set_natural_64_index (a_constant)
 					l_type := current_universe_impl.natural_64_type
 					report_natural_64_constant (a_constant, l_type)
 				else
+					set_integer_64_index (a_constant)
 					l_type := current_universe_impl.integer_64_type
 					report_integer_64_constant (a_constant, l_type)
 				end
 			elseif a_constant.is_natural_64 then
+				set_natural_64_index (a_constant)
 				l_type := current_universe_impl.natural_64_type
 				report_natural_64_constant (a_constant, l_type)
 			else
@@ -7177,7 +7788,7 @@ feature {NONE} -- Expression validity
 			had_value_error: BOOLEAN
 			l_value_context: ET_NESTED_TYPE_CONTEXT
 			l_value_type: ET_TYPE
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			l_value_named_type: ET_NAMED_TYPE
 			l_choices: ET_CHOICE_LIST
 			l_choice: ET_CHOICE
@@ -7186,17 +7797,17 @@ feature {NONE} -- Expression validity
 			l_choice_named_type: ET_NAMED_TYPE
 			j, nb2: INTEGER
 			l_constant: detachable ET_CONSTANT
-			l_cast_type: detachable ET_TARGET_TYPE
-			l_index: INTEGER
 			l_expression_context: ET_NESTED_TYPE_CONTEXT
 			l_result_context_list: DS_ARRAYED_LIST [ET_NESTED_TYPE_CONTEXT]
 			l_old_result_context_list_count: INTEGER
+			l_is_controlled: BOOLEAN
+			l_is_separate: BOOLEAN
 		do
 			has_fatal_error := False
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			l_value_context := new_context (current_type)
 			l_expression := a_expression.conditional.expression
-			check_expression_validity (l_expression, l_value_context, l_detachable_any_type)
+			check_expression_validity (l_expression, l_value_context, l_detachable_separate_any_type)
 			if has_fatal_error then
 				had_error := True
 			elseif l_value_context.same_named_type (current_universe_impl.integer_8_type, current_class_impl) then
@@ -7251,45 +7862,9 @@ feature {NONE} -- Expression validity
 							elseif not had_value_error then
 								if l_choice_context.same_named_type (l_value_type, l_value_context) then
 									-- OK.
-								elseif attached {ET_INTEGER_CONSTANT} l_constant as l_integer_constant then
-										-- If we use the same object for the constant attribute
-										-- when analyzing different client features, each feature
-										-- will assign its own index to this object. That's why
-										-- we need to reset the index so that the index does not
-										-- get corrupted.
-									l_index := l_integer_constant.index
-									l_integer_constant.set_index (0)
-									l_cast_type := l_integer_constant.cast_type
-									l_integer_constant.set_cast_type (Void)
+								elseif l_constant.is_integer_constant or l_constant.is_character_constant then
 									l_choice_context.wipe_out
-									check_expression_validity (l_integer_constant, l_choice_context, l_value_context)
-									l_integer_constant.set_cast_type (l_cast_type)
-									l_integer_constant.set_index (l_index)
-									if has_fatal_error then
-										had_error := True
-									elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
-										-- OK.
-									else
-										had_error := True
-										set_fatal_error
-										l_value_named_type := l_value_context.named_type
-										l_choice_named_type := l_choice_context.named_type
-										error_handler.report_vomb2a_error (current_class, current_class_impl, l_choice_constant, l_choice_named_type, l_value_named_type)
-									end
-								elseif attached {ET_CHARACTER_CONSTANT} l_constant as l_character_constant then
-										-- If we use the same object for the constant attribute
-										-- when analyzing different client features, each feature
-										-- will assign its own index to this object. That's why
-										-- we need to reset the index so that the index does not
-										-- get corrupted.
-									l_index := l_character_constant.index
-									l_character_constant.set_index (0)
-									l_cast_type := l_character_constant.cast_type
-									l_character_constant.set_cast_type (Void)
-									l_choice_context.wipe_out
-									check_expression_validity (l_character_constant, l_choice_context, l_value_context)
-									l_character_constant.set_cast_type (l_cast_type)
-									l_character_constant.set_index (l_index)
+									check_expression_validity (l_constant, l_choice_context, l_value_context)
 									if has_fatal_error then
 										had_error := True
 									elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
@@ -7325,45 +7900,9 @@ feature {NONE} -- Expression validity
 								elseif not had_value_error then
 									if l_choice_context.same_named_type (l_value_type, l_value_context) then
 										-- OK.
-									elseif attached {ET_INTEGER_CONSTANT} l_constant as l_integer_constant2 then
-											-- If we use the same object for the constant attribute
-											-- when analyzing different client features, each feature
-											-- will assign its own index to this object. That's why
-											-- we need to reset the index so that the index does not
-											-- get corrupted.
-										l_index := l_integer_constant2.index
-										l_integer_constant2.set_index (0)
-										l_cast_type := l_integer_constant2.cast_type
-										l_integer_constant2.set_cast_type (Void)
+									elseif l_constant.is_integer_constant or l_constant.is_character_constant then
 										l_choice_context.wipe_out
-										check_expression_validity (l_integer_constant2, l_choice_context, l_value_context)
-										l_integer_constant2.set_cast_type (l_cast_type)
-										l_integer_constant2.set_index (l_index)
-										if has_fatal_error then
-											had_error := True
-										elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
-											-- OK.
-										else
-											had_error := True
-											set_fatal_error
-											l_value_named_type := l_value_context.named_type
-											l_choice_named_type := l_choice_context.named_type
-											error_handler.report_vomb2a_error (current_class, current_class_impl, l_choice_constant, l_choice_named_type, l_value_named_type)
-										end
-									elseif attached {ET_CHARACTER_CONSTANT} l_constant as l_character_constant2 then
-											-- If we use the same object for the constant attribute
-											-- when analyzing different client features, each feature
-											-- will assign its own index to this object. That's why
-											-- we need to reset the index so that the index does not
-											-- get corrupted.
-										l_index := l_character_constant2.index
-										l_character_constant2.set_index (0)
-										l_cast_type := l_character_constant2.cast_type
-										l_character_constant2.set_cast_type (Void)
-										l_choice_context.wipe_out
-										check_expression_validity (l_character_constant2, l_choice_context, l_value_context)
-										l_character_constant2.set_cast_type (l_cast_type)
-										l_character_constant2.set_index (l_index)
+										check_expression_validity (l_constant, l_choice_context, l_value_context)
 										if has_fatal_error then
 											had_error := True
 										elseif l_choice_context.same_named_type (l_value_type, l_value_context) then
@@ -7393,6 +7932,7 @@ feature {NONE} -- Expression validity
 				end
 				free_context (l_choice_context)
 				free_context (l_value_context)
+				l_is_controlled := True
 				from i := 1 until i > nb loop
 					l_when_part := l_when_parts.item (i)
 					l_expression_context := new_context (current_type)
@@ -7401,6 +7941,17 @@ feature {NONE} -- Expression validity
 						had_error := True
 						free_context (l_expression_context)
 					else
+						if current_system.scoop_mode then
+							if not l_expression_context.is_type_non_separate then
+								l_is_separate := True
+								if not l_expression_context.is_controlled then
+									l_is_controlled := False
+								else
+										-- Remove 'controlled' type modifier.
+									l_expression_context.remove_last
+								end
+							end
+						end
 						update_common_ancestor_type_list (l_expression_context, l_result_context_list, l_old_result_context_list_count)
 					end
 					i := i + 1
@@ -7415,6 +7966,17 @@ feature {NONE} -- Expression validity
 					had_error := True
 					free_context (l_expression_context)
 				else
+					if current_system.scoop_mode then
+						if not l_expression_context.is_type_non_separate then
+							l_is_separate := True
+							if not l_expression_context.is_controlled then
+								l_is_controlled := False
+							else
+									-- Remove 'controlled' type modifier.
+								l_expression_context.remove_last
+							end
+						end
+					end
 					update_common_ancestor_type_list (l_expression_context, l_result_context_list, l_old_result_context_list_count)
 				end
 			end
@@ -7435,6 +7997,12 @@ feature {NONE} -- Expression validity
 					update_common_ancestor_type_list (l_expression_context, l_result_context_list, l_old_result_context_list_count)
 				end
 				a_context.copy_type_context (l_result_context_list.last)
+				if current_system.scoop_mode then
+					if l_is_separate and l_is_controlled then
+						a_context.force_last (tokens.controlled_type_modifier)
+					end
+				end
+				set_index (a_expression)
 				report_inspect_expression (a_expression, tokens.identity_type, a_context)
 			end
 			free_common_ancestor_types (l_result_context_list, l_old_result_context_list_count)
@@ -7471,8 +8039,13 @@ feature {NONE} -- Expression validity
 				l_had_error := True
 				l_had_iterable_error := True
 				set_fatal_error
-				l_named_type := l_expression_context.named_type
-				error_handler.report_voit1a_error (current_class, current_class_impl, l_iterable_expression, l_named_type)
+				if l_expression_context.named_type_has_class_with_ancestors_not_built_successfully then
+					-- An error has already been reported about the classes
+					-- involved into this conformance check.
+				else
+					l_named_type := l_expression_context.named_type
+					error_handler.report_voit1a_error (current_class, current_class_impl, l_iterable_expression, l_named_type)
+				end
 			end
 			free_context (l_expression_context)
 				-- Check iteration item name clashes (see VOIT-2).
@@ -7565,11 +8138,12 @@ feature {NONE} -- Expression validity
 			if not l_had_iterable_error then
 				l_expression_context := new_context (current_type)
 				a_iteration_component.new_cursor_expression.name.set_seed (current_system.iterable_new_cursor_seed)
-				check_expression_validity (a_iteration_component.new_cursor_expression, l_expression_context, current_system.detachable_any_type)
+				check_expression_validity (a_iteration_component.new_cursor_expression, l_expression_context, current_system.detachable_separate_any_type)
 				if has_fatal_error then
 					l_had_error := True
 					free_context (l_expression_context)
 				else
+					set_index_to (a_iteration_component.unfolded_cursor_name, a_iteration_component.new_cursor_expression.index)
 					report_iteration_cursor_declaration (a_iteration_component.unfolded_cursor_name, a_iteration_component)
 					current_iteration_cursor_types.force_last (l_expression_context, a_iteration_component)
 						-- Record the type of the iteration cursor in `current_iteration_item_types' even
@@ -7607,13 +8181,16 @@ feature {NONE} -- Expression validity
 					if not a_iteration_component.has_cursor_name then
 						a_iteration_component.cursor_item_expression.name.set_seed (current_system.iteration_cursor_item_seed)
 						l_item_context := new_context (current_type)
-						check_expression_validity (a_iteration_component.cursor_item_expression, l_item_context, current_system.detachable_any_type)
+						check_expression_validity (a_iteration_component.cursor_item_expression, l_item_context, current_system.detachable_separate_any_type)
 						if has_fatal_error then
 							l_had_error := True
 						end
 							-- From now on, use the correct type of the iteration item (and not the
 							-- type of the iteration cursor as explained above).
 						current_iteration_item_types.force_last (l_item_context, a_iteration_component)
+						set_index_to (l_item_name, a_iteration_component.cursor_item_expression.index)
+					else
+						set_index_to (l_item_name, a_iteration_component.new_cursor_expression.index)
 					end
 					report_iteration_item_declaration (l_item_name, a_iteration_component)
 					current_iteration_item_scope.remove_iteration_components (1)
@@ -7682,6 +8259,7 @@ feature {NONE} -- Expression validity
 							set_fatal_error
 						else
 							a_context.copy_type_context (current_iteration_cursor_types.found_item)
+							set_index_to (a_iteration_cursor, l_iteration_component.unfolded_cursor_name.index)
 							report_iteration_cursor (a_iteration_cursor, l_iteration_component)
 						end
 					end
@@ -7707,6 +8285,7 @@ feature {NONE} -- Expression validity
 						error_handler.report_giaaa_error
 					else
 						a_context.copy_type_context (current_iteration_cursor_types.found_item)
+						set_index_to (a_iteration_cursor, l_iteration_component.unfolded_cursor_name.index)
 						report_iteration_cursor (a_iteration_cursor, l_iteration_component)
 					end
 				end
@@ -7762,6 +8341,9 @@ feature {NONE} -- Expression validity
 							set_fatal_error
 						else
 							a_context.copy_type_context (current_iteration_item_types.found_item)
+							if a_name /= l_iteration_component.unfolded_cursor_name then
+								set_index_to (a_name, l_iteration_component.item_name.index)
+							end
 							report_iteration_item (a_name, l_iteration_component)
 						end
 					end
@@ -7787,6 +8369,9 @@ feature {NONE} -- Expression validity
 						error_handler.report_giaaa_error
 					else
 						a_context.copy_type_context (current_iteration_item_types.found_item)
+						if a_name /= l_iteration_component.unfolded_cursor_name then
+							set_index_to (a_name, l_iteration_component.item_name.index)
+						end
 						report_iteration_item (a_name, l_iteration_component)
 					end
 				end
@@ -7908,6 +8493,7 @@ feature {NONE} -- Expression validity
 			end
 			if not has_fatal_error then
 				a_context.force_last (l_boolean_type)
+				set_boolean_index (an_expression)
 				report_iteration_expression (an_expression)
 			end
 		end
@@ -7993,6 +8579,22 @@ feature {NONE} -- Expression validity
 								error_handler.report_vevi0a_error (current_class, current_class_impl, a_name, l_local)
 							end
 						end
+					end
+					if a_name.index /= 0 then
+							-- Already set.
+							-- Make sure that `l_is_attached' is consistent with the index.
+							-- This is needed when the type of the local variable is a
+							-- formal generic parameter and the actual generic parameter
+							-- is attached. In that case the index was set to `attached_index'
+							-- when processing with the formal generic parameter (because
+							-- `l_is_attached' was True at that time). But because the actual
+							-- generic parameter is attached then `l_is_attached' is False.
+							-- So we need to force it to True.
+						l_is_attached := (a_name.index = l_local.attached_index)
+					elseif l_is_attached then
+						a_name.set_index (l_local.attached_index)
+					else
+						a_name.set_index (l_local.index)
 					end
 					report_local_variable (a_name, l_is_attached, l_local)
 				end
@@ -8104,6 +8706,7 @@ feature {NONE} -- Expression validity
 				if l_had_error then
 					set_fatal_error
 				else
+					set_index (a_expression)
 					a_context.force_last (l_type)
 					report_manifest_array (a_expression, tokens.attached_like_current, a_context)
 					a_context.force_last (tokens.attached_like_current)
@@ -8162,7 +8765,7 @@ feature {NONE} -- Expression validity
 		do
 			has_fatal_error := False
 			l_use_target_type := True
-			l_item_target_context := current_system.detachable_any_type
+			l_item_target_context := current_system.detachable_separate_any_type
 				-- Try to find out whether the manifest array is the source of
 				-- an attachment whose target is of type "ARRAY [T]". If this is
 				-- the case then the expected type for the items of the manifest
@@ -8195,6 +8798,7 @@ feature {NONE} -- Expression validity
 						-- Its type is 'ARRAY [NONE]'.
 					a_context.force_last (current_system.none_type)
 				end
+				set_index (a_expression)
 				l_array_type := current_system.array_identity_type
 				report_manifest_array (a_expression, l_array_type, a_context)
 				a_context.force_last (l_array_type)
@@ -8235,6 +8839,12 @@ feature {NONE} -- Expression validity
 								else
 									l_item_conversion_aborted := True
 								end
+							end
+						end
+						if current_system.scoop_mode then
+							if not l_item_context.is_type_non_separate and l_item_context.is_controlled then
+									-- Remove 'controlled' type modifier.
+								l_item_context.remove_last
 							end
 						end
 						update_common_ancestor_type_list (l_item_context, l_result_context_list, l_old_result_context_list_count)
@@ -8290,6 +8900,7 @@ feature {NONE} -- Expression validity
 						update_common_ancestor_type_list (l_item_context, l_result_context_list, l_old_result_context_list_count)
 						a_context.copy_type_context (l_result_context_list.last)
 					end
+					set_index (a_expression)
 					l_array_type := current_system.array_identity_type
 					report_manifest_array (a_expression, l_array_type, a_context)
 					a_context.force_last (l_array_type)
@@ -8365,6 +8976,7 @@ feature {NONE} -- Expression validity
 				-- Do nothing.
 			elseif current_universe_impl.string_8_type.same_named_type_with_type_marks (l_expected_type, tokens.implicit_attached_type_mark, l_expected_type_context, tokens.implicit_attached_type_mark, current_class_impl) then
 				if a_string.is_string_8 then
+					set_string_8_index (a_string)
 					l_type := current_universe_impl.string_8_type
 					report_string_8_constant (a_string, l_type)
 				else
@@ -8373,6 +8985,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.immutable_string_8_type.same_named_type_with_type_marks (l_expected_type, tokens.implicit_attached_type_mark, l_expected_type_context, tokens.implicit_attached_type_mark, current_class_impl) then
 				if a_string.is_string_8 then
+					set_immutable_string_8_index (a_string)
 					l_type := current_universe_impl.immutable_string_8_type
 					report_immutable_string_8_constant (a_string, l_type)
 				else
@@ -8381,6 +8994,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.string_32_type.same_named_type_with_type_marks (l_expected_type, tokens.implicit_attached_type_mark, l_expected_type_context, tokens.implicit_attached_type_mark, current_class_impl) then
 				if a_string.is_string_32 then
+					set_string_32_index (a_string)
 					l_type := current_universe_impl.string_32_type
 					report_string_32_constant (a_string, l_type)
 				else
@@ -8389,6 +9003,7 @@ feature {NONE} -- Expression validity
 				end
 			elseif current_universe_impl.immutable_string_32_type.same_named_type_with_type_marks (l_expected_type, tokens.implicit_attached_type_mark, l_expected_type_context, tokens.implicit_attached_type_mark, current_class_impl) then
 				if a_string.is_string_32 then
+					set_immutable_string_32_index (a_string)
 					l_type := current_universe_impl.string_32_type
 					report_immutable_string_32_constant (a_string, l_type)
 				else
@@ -8405,9 +9020,11 @@ feature {NONE} -- Expression validity
 				set_fatal_error
 				error_handler.report_vwmq0d_error (current_class, current_class_impl, a_string)
 			elseif a_string.is_string_8 then
+				set_string_8_index (a_string)
 				l_type := current_universe_impl.string_8_type
 				report_string_8_constant (a_string, l_type)
 			elseif a_string.is_string_32 then
+				set_string_32_index (a_string)
 				l_type := current_universe_impl.string_32_type
 				report_string_32_constant (a_string, l_type)
 			else
@@ -8435,7 +9052,7 @@ feature {NONE} -- Expression validity
 			l_tuple_parameters: detachable ET_ACTUAL_PARAMETERS
 			l_expression_context: ET_NESTED_TYPE_CONTEXT
 			l_parameter_context: ET_NESTED_TYPE_CONTEXT
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			l_tuple_type: ET_TUPLE_TYPE
 		do
 			has_fatal_error := False
@@ -8454,9 +9071,10 @@ feature {NONE} -- Expression validity
 					nb2 := l_tuple_parameters.count
 				end
 			end
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			nb := an_expression.count
 			if nb = 0 then
+				set_index (an_expression)
 				l_tuple_type := current_universe_impl.tuple_type
 				report_manifest_tuple (an_expression, l_tuple_type, a_context)
 				a_context.force_last (l_tuple_type)
@@ -8475,9 +9093,16 @@ feature {NONE} -- Expression validity
 					check_expression_validity (an_expression.expression (1), a_context, l_parameter_context)
 					free_context (l_parameter_context)
 				else
-					check_expression_validity (an_expression.expression (1), a_context, l_detachable_any_type)
+					check_expression_validity (an_expression.expression (1), a_context, l_detachable_separate_any_type)
 				end
 				if not has_fatal_error then
+					if current_system.scoop_mode then
+						if not a_context.is_type_non_separate and a_context.is_controlled then
+								-- Remove 'controlled' type modifier.
+							a_context.remove_last
+						end
+					end
+					set_index (an_expression)
 					l_tuple_type := current_universe_impl.tuple_identity_type
 					report_manifest_tuple (an_expression, l_tuple_type, a_context)
 					a_context.force_last (l_tuple_type)
@@ -8487,7 +9112,7 @@ feature {NONE} -- Expression validity
 				create l_actuals.make_with_capacity (nb)
 				from i := nb until i <= nb2 loop
 						-- There is no matching tuple item type.
-					check_expression_validity (an_expression.expression (i), l_expression_context, l_detachable_any_type)
+					check_expression_validity (an_expression.expression (i), l_expression_context, l_detachable_separate_any_type)
 					if has_fatal_error then
 						had_error := True
 					else
@@ -8524,6 +9149,7 @@ feature {NONE} -- Expression validity
 				if had_error then
 					set_fatal_error
 				else
+					set_index (an_expression)
 					create l_tuple_type.make (tokens.implicit_attached_type_mark, l_actuals, current_universe_impl.tuple_type.named_base_class)
 					report_manifest_tuple (an_expression, l_tuple_type, a_context)
 					a_context.force_last (l_tuple_type)
@@ -8547,6 +9173,7 @@ feature {NONE} -- Expression validity
 			l_type := an_expression.type
 			check_type_validity (l_type)
 			if not has_fatal_error then
+				set_index (an_expression)
 				a_context.force_last (l_type)
 				l_type_type := current_universe_impl.type_identity_type
 				report_manifest_type (an_expression, l_type_type, a_context)
@@ -8569,6 +9196,7 @@ feature {NONE} -- Expression validity
 			i, j, nb: INTEGER
 			l_enclosing_agent: ET_INLINE_AGENT
 			l_type_kept: BOOLEAN
+			l_is_controlled: BOOLEAN
 		do
 			has_fatal_error := False
 			l_expression_context := new_context (current_type)
@@ -8578,21 +9206,31 @@ feature {NONE} -- Expression validity
 						-- The type is not valid. We will consider that it is of
 						-- type 'detachable ANY' when checking the validity of the expression.
 					l_had_error := True
-					check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_any_type)
+					check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_separate_any_type)
+					l_is_controlled := l_expression_context.is_controlled
 					has_fatal_error := has_fatal_error or l_had_error
 				else
 					l_expression_context.force_last (l_type)
 					check_expression_validity (an_expression.expression, a_context, l_expression_context)
+					l_is_controlled := a_context.is_controlled
 					a_context.reset (current_type)
 				end
 			else
-				check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_any_type)
+				check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_separate_any_type)
+				l_is_controlled := l_expression_context.is_controlled
 			end
 			if current_system.attachment_type_conformance_mode then
 				if not l_expression_context.is_type_attached then
 						-- The type of the object-test local is attached even
 						-- when not explicitly declared as attached.
 					l_expression_context.force_last (tokens.attached_like_current)
+				end
+			end
+			if current_system.scoop_mode then
+				if l_is_controlled and not l_expression_context.is_type_non_separate and not l_expression_context.is_controlled then
+						-- If expression is controlled and the type is separate
+						-- then the object-test local is controlled as well.
+					l_expression_context.force_last (tokens.controlled_type_modifier)
 				end
 			end
 			if not has_fatal_error then
@@ -8661,9 +9299,15 @@ feature {NONE} -- Expression validity
 				end
 				if attached current_iteration_item_scope.iteration_component (l_name) as l_iteration_component then
 						-- This object-test appears in the scope of an iteration
-						-- cursor with the same name.
+						-- item with the same name.
 					set_fatal_error
 					error_handler.report_vuot1e_error (current_class, an_expression, l_iteration_component)
+				end
+				if attached current_inline_separate_argument_scope.inline_separate_argument (l_name) as l_inline_separate_argument then
+						-- This object-test appears in the scope of an inline separate
+						-- argument with the same name.
+					set_fatal_error
+					error_handler.report_vuot1f_error (current_class, an_expression, l_inline_separate_argument)
 				end
 				if system_processor.older_ise_version (ise_6_3_7_5660) then
 						-- ISE did not support object-tests in preconditions before 6.3.7.5660.
@@ -8685,6 +9329,8 @@ feature {NONE} -- Expression validity
 				-- of an infix or prefix boolean operator.
 			a_context.force_last (current_universe_impl.boolean_type)
 			if not has_fatal_error then
+				set_boolean_index (an_expression)
+				set_index (an_expression.name)
 				report_named_object_test (an_expression, l_expression_context)
 			end
 			if not l_type_kept then
@@ -8707,21 +9353,21 @@ feature {NONE} -- Expression validity
 			l_right_context: ET_NESTED_TYPE_CONTEXT
 			l_left_convert_expression: detachable ET_CONVERT_EXPRESSION
 			l_right_convert_expression: detachable ET_CONVERT_EXPRESSION
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			l_target_type_context: ET_TYPE_CONTEXT
 			had_error: BOOLEAN
 		do
 			has_fatal_error := False
 			an_expression.name.set_seed (current_system.is_equal_seed)
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			l_left_context := new_context (current_type)
 			l_right_context := new_context (current_type)
 			l_left_operand := an_expression.left
 			l_right_operand := an_expression.right
-			check_expression_validity (l_left_operand, l_left_context, l_detachable_any_type)
+			check_expression_validity (l_left_operand, l_left_context, l_detachable_separate_any_type)
 			l_target_type_context := l_left_context
 			if not has_fatal_error then
-				check_expression_validity (l_right_operand, l_right_context, l_detachable_any_type)
+				check_expression_validity (l_right_operand, l_right_context, l_detachable_separate_any_type)
 				if not has_fatal_error then
 					if current_class /= current_class_impl then
 						-- Possible convertibility should be resolved in the implementation class.
@@ -8764,13 +9410,14 @@ feature {NONE} -- Expression validity
 					end
 					if not has_fatal_error then
 						a_context.force_last (current_universe_impl.boolean_type)
+						set_boolean_index (an_expression)
 						report_object_equality_expression (an_expression, l_target_type_context)
 					end
 				end
 			else
 					-- The left expression is not valid. Check the right expression
 					-- anyway, and then restore `has_fatal_error' to True.
-				check_expression_validity (l_right_operand, l_right_context, l_detachable_any_type)
+				check_expression_validity (l_right_operand, l_right_context, l_detachable_separate_any_type)
 				set_fatal_error
 			end
 			free_context (l_right_context)
@@ -8797,7 +9444,7 @@ feature {NONE} -- Expression validity
 						-- The type is not valid. We will consider that it is of
 						-- type 'detachable ANY' when checking the validity of the expression.
 					l_had_error := True
-					check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_any_type)
+					check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_separate_any_type)
 					has_fatal_error := has_fatal_error or l_had_error
 				else
 					report_object_test_type (an_expression, l_type, a_context)
@@ -8806,11 +9453,12 @@ feature {NONE} -- Expression validity
 					a_context.reset (current_type)
 				end
 			else
-				check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_any_type)
+				check_expression_validity (an_expression.expression, l_expression_context, current_system.detachable_separate_any_type)
 			end
 			free_context (l_expression_context)
 			if not has_fatal_error then
 				a_context.force_last (current_universe_impl.boolean_type)
+				set_boolean_index (an_expression)
 				report_object_test (an_expression)
 			end
 		end
@@ -8864,6 +9512,7 @@ feature {NONE} -- Expression validity
 							set_fatal_error
 						else
 							a_context.copy_type_context (current_object_test_types.found_item)
+							set_index_to (a_name, l_object_test.name.index)
 							report_object_test_local (a_name, l_object_test)
 						end
 					end
@@ -8890,6 +9539,7 @@ feature {NONE} -- Expression validity
 						set_fatal_error
 					else
 						a_context.copy_type_context (current_object_test_types.found_item)
+						set_index_to (a_name, l_object_test.name.index)
 						report_object_test_local (a_name, l_object_test)
 					end
 				end
@@ -8922,7 +9572,7 @@ feature {NONE} -- Expression validity
 				-- Check VAOL-2 (ETL2 p.124).
 			l_expression := an_expression.expression
 			check_expression_validity (l_expression, a_context, current_target_type)
-			an_expression.set_index (l_expression.index)
+			set_index_to (an_expression, l_expression.index)
 			if not in_postcondition then
 					-- Check VAOL-1 (ETL2 p.124).
 				set_fatal_error
@@ -8951,7 +9601,7 @@ feature {NONE} -- Expression validity
 		do
 			l_string := an_expression.manifest_string
 			check_expression_validity (l_string, a_context, current_target_type)
-			an_expression.set_index (l_string.index)
+			set_index_to (an_expression, l_string.index)
 		end
 
 	check_parenthesized_expression_validity (an_expression: ET_PARENTHESIZED_EXPRESSION; a_context: ET_NESTED_TYPE_CONTEXT)
@@ -8967,7 +9617,7 @@ feature {NONE} -- Expression validity
 		do
 			l_expression := an_expression.expression
 			check_expression_validity (l_expression, a_context, current_target_type)
-			an_expression.set_index (l_expression.index)
+			set_index_to (an_expression, l_expression.index)
 		end
 
 	check_precursor_expression_validity (an_expression: ET_PRECURSOR_EXPRESSION; a_context: ET_NESTED_TYPE_CONTEXT)
@@ -9064,7 +9714,7 @@ feature {NONE} -- Expression validity
 						if current_class = current_class_impl then
 							check_precursor_parenthesis_call_validity (an_expression, l_query, l_class, l_parent_type, a_context)
 							if not has_fatal_error and then attached an_expression.parenthesis_call as l_parenthesis_call then
-								an_expression.set_index (l_parenthesis_call.index)
+								set_index_to (an_expression, l_parenthesis_call.index)
 								l_has_parenthesis_call := True
 							end
 						end
@@ -9119,6 +9769,7 @@ feature {NONE} -- Expression validity
 -- TODO: like argument.
 				l_type := a_parent_query.type
 				a_context.force_last (l_type)
+				set_index (an_expression)
 				report_precursor_expression (an_expression, a_parent_type, a_parent_query)
 				if attached precursor_queries as l_precursor_queries then
 					l_precursor_queries.force_last (a_parent_query)
@@ -9170,7 +9821,7 @@ feature {NONE} -- Expression validity
 			l_target := a_call.target
 			l_name := a_call.name
 			l_seed := l_name.seed
-			check_expression_validity (l_target, a_context, current_system.detachable_any_type)
+			check_expression_validity (l_target, a_context, current_system.detachable_separate_any_type)
 			l_context_count := a_context.count
 			l_adapted_base_classes := new_adapted_base_classes
 			if not has_fatal_error then
@@ -9222,7 +9873,7 @@ feature {NONE} -- Expression validity
 					if has_fatal_error then
 						-- Do nothing.
 					elseif attached a_call.parenthesis_call as l_parenthesis_call then
-						a_call.set_index (l_parenthesis_call.index)
+						set_index_to (a_call, l_parenthesis_call.index)
 					else
 						check_qualified_query_call_expression_validity (a_call, l_query, l_class, a_context, a_call_info)
 					end
@@ -9243,7 +9894,7 @@ feature {NONE} -- Expression validity
 							if has_fatal_error then
 								-- Do nothing.
 							elseif attached a_call.parenthesis_call as l_parenthesis_call then
-								a_call.set_index (l_parenthesis_call.index)
+								set_index_to (a_call, l_parenthesis_call.index)
 							else
 								check_qualified_tuple_label_call_expression_validity (a_call, l_class, a_context, a_call_info)
 							end
@@ -9380,7 +10031,7 @@ feature {NONE} -- Expression validity
 					if has_fatal_error then
 						-- Do nothing.
 					elseif attached a_call.parenthesis_call as l_parenthesis_call then
-						a_call.set_index (l_parenthesis_call.index)
+						set_index_to (a_call, l_parenthesis_call.index)
 					else
 						check_qualified_query_call_expression_validity (a_call, l_query, l_class, a_context, a_call_info)
 					end
@@ -9433,6 +10084,14 @@ feature {NONE} -- Expression validity
 						-- Error: the target of the call is not attached.
 					set_fatal_error
 					error_handler.report_vuta2a_error (current_class, current_class_impl, l_name, a_feature, a_context.named_type)
+				end
+			end
+				-- Check that the target of the call is controlled.
+			if current_system.scoop_mode then
+				if not a_context.is_type_non_separate and then not a_context.is_controlled then
+						-- Error: the target of the call is not controlled.
+					set_fatal_error
+					error_handler.report_vuta4ga_error (current_class, current_class_impl, l_name, a_feature, a_context.named_type)
 				end
 			end
 				-- Check export status.
@@ -9520,6 +10179,7 @@ feature {NONE} -- Expression validity
 					l_query := l_call_query
 					a_context.copy_type_context (a_call_info.target_context)
 				end
+				set_index (a_call)
 				report_qualified_call_expression (a_call, a_context, l_query)
 				l_had_error := has_fatal_error
 					-- Update `a_context' so that it represents the type of `a_call'.
@@ -9549,6 +10209,7 @@ feature {NONE} -- Expression validity
 			l_name: ET_CALL_NAME
 			l_type: ET_TYPE
 			l_seed: INTEGER
+			l_is_target_separate: BOOLEAN
 		do
 			has_fatal_error := False
 			l_name := a_call.name
@@ -9564,6 +10225,14 @@ feature {NONE} -- Expression validity
 						-- Error: the target of the call is not attached.
 					set_fatal_error
 					error_handler.report_vuta2b_error (current_class, current_class_impl, l_name, a_context.named_type)
+				end
+			end
+				-- Check that the target of the call is controlled.
+			if current_system.scoop_mode then
+				if not a_context.is_type_non_separate and then not a_context.is_controlled then
+						-- Error: the target of the call is not controlled.
+					set_fatal_error
+					error_handler.report_vuta4gb_error (current_class, current_class_impl, l_name, a_context.named_type)
 				end
 			end
 			if a_call.arguments_count > 0 then
@@ -9587,8 +10256,26 @@ feature {NONE} -- Expression validity
 				error_handler.report_giaaa_error
 			elseif not has_fatal_error then
 				l_type := a_class.formal_parameter_type (l_seed)
+				set_index (a_call)
 				report_tuple_label_expression (a_call, a_context)
-				a_context.force_last (l_type)
+				if current_system.scoop_mode then
+					if a_call.target /= Void then
+						l_is_target_separate := not a_context.is_type_non_separate
+					end
+					a_context.force_last (l_type)
+					if l_is_target_separate then
+						if not l_type.is_type_separate (a_context.base_class) then
+								-- If the target of the call is separate, then the type of the call
+								-- is separate as well, even if the declared type of the query is not.
+								-- It is controlled as well because the target itself is supposed to
+								-- be controlled.
+							a_context.force_last (tokens.separate_type_modifier)
+							a_context.force_last (tokens.controlled_type_modifier)
+						end
+					end
+				else
+					a_context.force_last (l_type)
+				end
 			end
 		end
 
@@ -9618,15 +10305,21 @@ feature {NONE} -- Expression validity
 			l_actual: ET_EXPRESSION
 			l_formal_context: ET_NESTED_TYPE_CONTEXT
 			l_class: ET_CLASS
+			l_is_target_separate: BOOLEAN
 		do
 			has_fatal_error := False
+			if current_system.scoop_mode then
+				if a_call.target /= Void then
+					l_is_target_separate := not a_context.is_type_non_separate
+				end
+			end
 			l_type := a_query.type
+			l_class := a_context.base_class
 -- TODO: like argument (the following is just a workaround
 -- which works only in a limited number of cases, in particular
 -- for ANY.clone).
 			if attached {ET_LIKE_FEATURE} l_type as l_like and then l_like.is_like_argument then
 				if attached a_call.arguments as l_actuals and then l_actuals.count = 1 and then attached a_query.arguments as l_query_arguments then
-					l_class := a_context.base_class
 					l_formal_context := new_context (current_type)
 					l_formal_context.copy_type_context (a_context)
 					l_formal_context.force_last (l_query_arguments.formal_argument (1).type)
@@ -9642,15 +10335,24 @@ feature {NONE} -- Expression validity
 									-- then the converted version can still be chained with a conformance to
 									-- `current_target_type'.
 								a_context.reset (current_type)
-								a_context.force_last (l_builtin.type)
+								l_type := l_builtin.type
 							end
 						end
 					end
-				else
-					a_context.force_last (l_type)
 				end
-			else
-				a_context.force_last (l_type)
+			end
+			a_context.force_last (l_type)
+			if current_system.scoop_mode then
+				if l_is_target_separate then
+					if not l_type.is_type_separate (a_context.base_class) then
+							-- If the target of the call is separate, then the type of the call
+							-- is separate as well, even if the declared type of the query is not.
+							-- It is controlled as well because the target itself is supposed to
+							-- be controlled.
+						a_context.force_last (tokens.separate_type_modifier)
+						a_context.force_last (tokens.controlled_type_modifier)
+					end
+				end
 			end
 		end
 
@@ -9691,10 +10393,12 @@ feature {NONE} -- Expression validity
 				-- Do nothing.
 			elseif current_universe_impl.real_32_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 -- TODO: check that the value is representable as a "REAL_32".
+				set_real_32_index (a_constant)
 				l_type := current_universe_impl.real_32_type
 				report_real_32_constant (a_constant, l_type)
 			elseif current_universe_impl.real_64_type.same_named_type (l_expected_type, l_expected_type_context, current_class_impl) then
 -- TODO: check that the value is representable as a "REAL_64".
+				set_real_64_index (a_constant)
 				l_type := current_universe_impl.real_64_type
 				report_real_64_constant (a_constant, l_type)
 			end
@@ -9709,6 +10413,7 @@ feature {NONE} -- Expression validity
 			else
 -- TODO: according to ECMA it should be of type REAL, but ISE
 -- treats it as being REAL_64.
+				set_real_64_index (a_constant)
 				l_type := current_universe_impl.real_64_type
 				report_real_64_constant (a_constant, l_type)
 			end
@@ -9765,6 +10470,8 @@ feature {NONE} -- Expression validity
 		local
 			l_type: detachable ET_TYPE
 			l_is_attached: BOOLEAN
+			l_result_index: INTEGER
+			l_attached_result_index: INTEGER
 		do
 			has_fatal_error := False
 			if current_inline_agent = Void and in_precondition then
@@ -9871,6 +10578,29 @@ feature {NONE} -- Expression validity
 							end
 						end
 					end
+					if attached current_inline_agent as l_current_inline_agent then
+						l_result_index := l_current_inline_agent.result_index
+						l_attached_result_index := l_current_inline_agent.attached_result_index
+					else
+						l_result_index := result_index
+						l_attached_result_index := attached_result_index
+					end
+					if an_expression.index /= 0 then
+							-- Already set.
+							-- Make sure that `l_is_attached' is consistent with the index.
+							-- This is needed when the type of the Result is a
+							-- formal generic parameter and the actual generic parameter
+							-- is attached. In that case the index was set to `attached_index'
+							-- when processing with the formal generic parameter (because
+							-- `l_is_attached' was True at that time). But because the actual
+							-- generic parameter is attached then `l_is_attached' is False.
+							-- So we need to force it to True.
+						l_is_attached := (an_expression.index = l_attached_result_index)
+					elseif l_is_attached then
+						an_expression.set_index (l_attached_result_index)
+					else
+						an_expression.set_index (l_result_index)
+					end
 					report_result (an_expression, l_is_attached)
 				end
 			end
@@ -9974,10 +10704,12 @@ feature {NONE} -- Expression validity
 							-- Class TYPED_POINTER has been found in the universe.
 							-- Use ISE's implementation: the type of '$Result' is 'TYPED_POINTER [<type-of-result>]'.
 						a_context.force_last (l_type)
+						set_index (an_expression)
 						report_typed_pointer_expression (an_expression, l_typed_pointer_type, a_context)
 						a_context.force_last (l_typed_pointer_type)
 					else
 							-- Use the ETL2 implementation: the type of '$argument' is POINTER.
+						set_pointer_index (an_expression)
 						l_pointer_type := current_universe_impl.pointer_type
 						a_context.force_last (l_pointer_type)
 						report_pointer_expression (an_expression, l_pointer_type)
@@ -10063,7 +10795,7 @@ feature {NONE} -- Expression validity
 					if has_fatal_error then
 						-- Do nothing.
 					elseif attached an_expression.parenthesis_call as l_parenthesis_call then
-						an_expression.set_index (l_parenthesis_call.index)
+						set_index_to (an_expression, l_parenthesis_call.index)
 					else
 						check_static_query_call_expression_validity (an_expression, l_query, l_class, a_context)
 					end
@@ -10177,7 +10909,7 @@ feature {NONE} -- Expression validity
 					if has_fatal_error then
 						-- Do nothing.
 					elseif attached a_call.parenthesis_call as l_parenthesis_call then
-						a_call.set_index (l_parenthesis_call.index)
+						set_index_to (a_call, l_parenthesis_call.index)
 					else
 						check_static_query_call_expression_validity (a_call, l_query, l_class, a_context)
 					end
@@ -10247,6 +10979,7 @@ feature {NONE} -- Expression validity
 -- TODO: like argument.
 				l_result_type := a_query.type
 				a_context.force_last (l_result_type)
+				set_index (a_call)
 				report_static_call_expression (a_call, l_type, a_query)
 			end
 		end
@@ -10389,6 +11122,7 @@ feature {NONE} -- Expression validity
 				i := i + 1
 			end
 			if not has_fatal_error then
+				set_index (an_expression)
 				report_strip_expression (an_expression, current_system.array_detachable_any_type, a_context)
 				a_context.force_last (current_system.array_detachable_any_type)
 			end
@@ -10408,6 +11142,7 @@ feature {NONE} -- Expression validity
 			has_fatal_error := False
 			l_type := current_universe_impl.boolean_type
 			a_context.force_last (l_type)
+			set_boolean_index (a_constant)
 			report_boolean_constant (a_constant, l_type)
 		end
 
@@ -10461,6 +11196,9 @@ feature {NONE} -- Expression validity
 				elseif l_identifier.is_iteration_item then
 					check_unqualified_iteration_item_call_expression_validity (a_call, l_identifier, a_context)
 					l_checked := True
+				elseif l_identifier.is_inline_separate_argument then
+					check_unqualified_inline_separate_argument_call_expression_validity (a_call, l_identifier, a_context)
+					l_checked := True
 				elseif l_identifier.is_object_test_local then
 					check_unqualified_object_test_local_call_expression_validity (a_call, l_identifier, a_context)
 					l_checked := True
@@ -10489,7 +11227,7 @@ feature {NONE} -- Expression validity
 					if has_fatal_error then
 						-- Do nothing.
 					elseif attached a_call.parenthesis_call as l_parenthesis_call then
-						a_call.set_index (l_parenthesis_call.index)
+						set_index_to (a_call, l_parenthesis_call.index)
 					else
 						check_unqualified_query_call_expression_validity (a_call, l_query, a_context)
 					end
@@ -10548,7 +11286,7 @@ feature {NONE} -- Expression validity
 				if has_fatal_error then
 					-- Do nothing.
 				elseif attached a_call.parenthesis_call as l_parenthesis_call then
-					a_call.set_index (l_parenthesis_call.index)
+					set_index_to (a_call, l_parenthesis_call.index)
 				else
 						-- Syntax error: a formal argument cannot have arguments.
 					set_fatal_error
@@ -10558,6 +11296,52 @@ feature {NONE} -- Expression validity
 						error_handler.report_gvuaa0a_error (current_class, a_name, current_feature_impl.as_feature)
 					else
 							-- Internal error: invariants don't have arguments.
+						error_handler.report_giaaa_error
+					end
+					check_orphan_actual_arguments_validity (a_call)
+				end
+			end
+		end
+
+	check_unqualified_inline_separate_argument_call_expression_validity (a_call: ET_UNQUALIFIED_FEATURE_CALL_EXPRESSION; a_name: ET_IDENTIFIER; a_context: ET_NESTED_TYPE_CONTEXT)
+			-- Check validity of unqualified call `a_call' whose name `a_name'
+			-- appears to be the name of an argument of an inline separate instruction.
+			-- `a_context' represents the type in which `a_call' appears.
+			-- It will be altered on exit to represent the type of `a_call'.
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_call_not_void: a_call /= Void
+			a_name_not_void: a_name /= Void
+			is_inline_separate_argument: a_name.is_inline_separate_argument
+			a_context_not_void: a_context /= Void
+		do
+			has_fatal_error := False
+			if a_call.arguments = Void then
+				check_inline_separate_argument_validity (a_name, a_context)
+			elseif current_class_impl /= current_class then
+				set_fatal_error
+				if not has_implementation_error (current_feature_impl) then
+						-- Internal error: `a_name' should have been resolved in
+						-- the implementation feature.
+					error_handler.report_giaaa_error
+				end
+				check_orphan_actual_arguments_validity (a_call)
+			else
+				check_inline_separate_argument_parenthesis_call_validity (a_call, a_name, a_context)
+				if has_fatal_error then
+					-- Do nothing.
+				elseif attached a_call.parenthesis_call as l_parenthesis_call then
+					set_index_to (a_call, l_parenthesis_call.index)
+				else
+						-- Syntax error: an inline separate argument cannot have arguments.
+					set_fatal_error
+					if attached current_inline_agent as l_current_inline_agent then
+						error_handler.report_gvuas0b_error (current_class, a_name, l_current_inline_agent)
+					elseif current_feature_impl.is_feature then
+						error_handler.report_gvuas0a_error (current_class, a_name, current_feature_impl.as_feature)
+					elseif current_feature_impl.is_invariants then
+						error_handler.report_gvuas0c_error (current_class, a_name, current_feature_impl.as_invariants)
+					else
 						error_handler.report_giaaa_error
 					end
 					check_orphan_actual_arguments_validity (a_call)
@@ -10593,9 +11377,9 @@ feature {NONE} -- Expression validity
 				if has_fatal_error then
 					-- Do nothing.
 				elseif attached a_call.parenthesis_call as l_parenthesis_call then
-					a_call.set_index (l_parenthesis_call.index)
+					set_index_to (a_call, l_parenthesis_call.index)
 				else
-						-- Syntax error: an across cursor cannot have arguments.
+						-- Syntax error: an iteration item cannot have arguments.
 					set_fatal_error
 					if attached current_inline_agent as l_current_inline_agent then
 						error_handler.report_gvuac0b_error (current_class, a_name, l_current_inline_agent)
@@ -10639,7 +11423,7 @@ feature {NONE} -- Expression validity
 				if has_fatal_error then
 					-- Do nothing.
 				elseif attached a_call.parenthesis_call as l_parenthesis_call then
-					a_call.set_index (l_parenthesis_call.index)
+					set_index_to (a_call, l_parenthesis_call.index)
 				else
 						-- Syntax error: a local variable cannot have arguments.
 					set_fatal_error
@@ -10684,7 +11468,7 @@ feature {NONE} -- Expression validity
 				if has_fatal_error then
 					-- Do nothing.
 				elseif attached a_call.parenthesis_call as l_parenthesis_call then
-					a_call.set_index (l_parenthesis_call.index)
+					set_index_to (a_call, l_parenthesis_call.index)
 				else
 						-- Syntax error: an object-test local cannot have arguments.
 					set_fatal_error
@@ -10732,6 +11516,7 @@ feature {NONE} -- Expression validity
 			check_actual_arguments_validity (a_call, a_context, a_query, Void, Void)
 			reset_fatal_error (l_had_error or has_fatal_error)
 			if not has_fatal_error then
+				set_index (a_call)
 				report_unqualified_call_expression (a_call, a_query)
 				l_had_error := has_fatal_error
 					-- Update `a_context' so that it represents the type of `a_call'.
@@ -10772,6 +11557,7 @@ feature {NONE} -- Expression validity
 		do
 			has_fatal_error := False
 			a_context.force_last (current_system.detachable_none_type)
+			set_void_index (an_expression)
 			report_void_constant (an_expression)
 		end
 
@@ -10823,6 +11609,13 @@ feature {NONE} -- Expression validity
 							end
 						end
 					end
+					if l_result.index /= 0 then
+						-- Already set.
+					elseif attached current_inline_agent as l_current_inline_agent then
+						l_result.set_index (l_current_inline_agent.result_index)
+					else
+						l_result.set_index (result_index)
+					end
 					report_result_assignment_target (l_result)
 				end
 			elseif attached {ET_IDENTIFIER} a_writable as l_identifier then
@@ -10849,6 +11642,7 @@ feature {NONE} -- Expression validity
 								end
 							end
 						end
+						set_index_to (l_identifier, l_local.index)
 						report_local_assignment_target (l_identifier, l_local)
 					end
 				elseif l_identifier.is_argument then
@@ -10896,6 +11690,7 @@ feature {NONE} -- Expression validity
 							set_fatal_error
 							error_handler.report_vucr0c_error (current_class, current_class_impl, l_identifier, l_attribute)
 						else
+							set_index (a_writable)
 							report_attribute_assignment_target (a_writable, l_attribute)
 						end
 					end
@@ -10922,6 +11717,7 @@ feature {NONE} -- Expression validity
 								set_fatal_error
 								error_handler.report_vucr0c_error (current_class, current_class_impl, l_identifier, l_attribute)
 							else
+								set_index (a_writable)
 								report_attribute_assignment_target (a_writable, l_attribute)
 							end
 						else
@@ -11058,7 +11854,8 @@ feature {NONE} -- Expression validity
 	check_actual_arguments_validity (a_call: ET_CALL_WITH_ACTUAL_ARGUMENTS; a_context: ET_NESTED_TYPE_CONTEXT; a_feature: ET_FEATURE; a_class: detachable ET_CLASS; a_call_info: detachable like new_call_info)
 			-- Check actual arguments validity of `a_call' when calling `a_feature'
 			-- in context of its target `a_context'. `a_class' is the base class of the
-			-- target, or void in case of an unqualified call.
+			-- target (or the parent class of a precursor call), or void in case of
+			-- an unqualified call.
 			--
 			-- `a_call_info', if provided, is information requested by the caller of this routine
 			-- to get information about the routine called, its target class and context.
@@ -11069,6 +11866,7 @@ feature {NONE} -- Expression validity
 			a_context_not_void: a_context /= Void
 			a_feature_not_void: a_feature /= Void
 		local
+			l_is_target_type_separate: BOOLEAN
 			l_actuals: detachable ET_ACTUAL_ARGUMENTS
 			l_name: ET_CALL_NAME
 			l_actual: ET_EXPRESSION
@@ -11083,6 +11881,7 @@ feature {NONE} -- Expression validity
 			had_error: BOOLEAN
 			l_tuple_argument_position: INTEGER
 			l_is_not_compatible: BOOLEAN
+			l_to_be_reprocessed: BOOLEAN
 			l_old_target: ET_EXPRESSION
 			l_class: detachable ET_CLASS
 		do
@@ -11166,6 +11965,12 @@ feature {NONE} -- Expression validity
 					end
 				end
 			else
+				if current_system.scoop_mode then
+					if a_class /= Void and not l_name.is_precursor then
+							-- Qualified call.
+						l_is_target_type_separate := not a_context.is_type_non_separate
+					end
+				end
 				l_tuple_argument_position := -1
 				l_actual_context := new_context (current_type)
 				l_formal_context := a_context
@@ -11179,6 +11984,7 @@ feature {NONE} -- Expression validity
 					l_formal_context.force_last (l_formal.type)
 					check_actual_argument_validity (l_actual, l_actual_context, l_formal_context, a_call, a_class)
 					l_is_not_compatible := False
+					l_to_be_reprocessed := False
 					if has_fatal_error then
 						had_error := True
 					elseif l_actual_context.conforms_to_context (l_formal_context, system_processor) then
@@ -11234,6 +12040,7 @@ feature {NONE} -- Expression validity
 							l_call.set_arguments (l_actual_list)
 								-- Reprocess this actual argument now that it has been
 								-- converted to a Tuple argument.
+							l_to_be_reprocessed := True
 							i := i - 1
 						else
 							l_is_not_compatible := True
@@ -11252,6 +12059,25 @@ feature {NONE} -- Expression validity
 							end
 						else
 							error_handler.report_vuar2b_error (current_class, current_class_impl, l_name, a_feature, i, l_actual_named_type, l_formal_named_type)
+						end
+					elseif not l_to_be_reprocessed then
+						if l_is_target_type_separate then
+							if not l_actual_context.is_type_expanded and not l_formal_context.is_type_separate then
+									-- Error: It's a separate call (qualified call with a target of separate type),
+									-- the actual argument has a reference type (potentially, if it a formal generic
+									-- parameter, hence the test 'not is_type_expanded' instead of just
+									-- 'is_type_reference'), but the type of the formal argument is not separate.
+								had_error := True
+								set_fatal_error
+								l_actual_named_type := l_actual_context.named_type
+								l_formal_named_type := l_formal_context.named_type
+								l_class := a_class
+									-- Use a local variable because ISE does not support
+									-- this CAP (i.e. considering `l_class' as attached
+									-- after the check-instruction) for formal arguments!
+								check qualified_call: l_class /= Void then end
+								error_handler.report_vuar3ga_error (current_class, current_class_impl, l_name, a_feature, l_class, i, l_actual_named_type, l_formal_named_type)
+							end
 						end
 					end
 					l_formal_context.remove_last
@@ -11274,15 +12100,15 @@ feature {NONE} -- Expression validity
 			has_fatal_error: has_fatal_error
 		local
 			l_context: ET_NESTED_TYPE_CONTEXT
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			i, nb: INTEGER
 		do
 			if attached a_call.arguments as l_actuals and then not l_actuals.is_empty then
-				l_detachable_any_type := current_system.detachable_any_type
+				l_detachable_separate_any_type := current_system.detachable_separate_any_type
 				l_context := new_context (current_type)
 				nb := l_actuals.count
 				from i := 1 until i > nb loop
-					check_expression_validity (l_actuals.actual_argument (i), l_context, l_detachable_any_type)
+					check_expression_validity (l_actuals.actual_argument (i), l_context, l_detachable_separate_any_type)
 					l_context.wipe_out
 					i := i + 1
 				end
@@ -11533,7 +12359,8 @@ feature {NONE} -- Parenthesis call validity
 
 	check_identifier_parenthesis_call_validity (a_call: ET_REGULAR_FEATURE_CALL; a_name: ET_IDENTIFIER; a_actuals: ET_ACTUAL_ARGUMENT_LIST; a_context: ET_NESTED_TYPE_CONTEXT)
 			-- Check whether `a_call', whose name `a_name' might be a formal argument, a local
-			-- variable, an across cursor or an object-test local, is in fact a parenthesis call.
+			-- variable, an iteration item, the name of the argument of an inline separate instruction
+			-- or an object-test local, is in fact a parenthesis call.
 			-- For example, if `a_name' is 'foo' and `a_call' is 'foo (args)', a parenthesis
 			-- call will be 'foo.g (args)' where 'g' is declared as 'g alias "()"'.
 			-- If it's indeed a parenthesis call, check its validity and set
@@ -11600,6 +12427,44 @@ feature {NONE} -- Parenthesis call validity
 						error_handler.report_giaaa_error
 						check_orphan_actual_arguments_validity (a_call)
 					end
+				end
+			end
+		end
+
+	check_inline_separate_argument_parenthesis_call_validity (a_call: ET_FEATURE_CALL; a_name: ET_IDENTIFIER; a_context: ET_NESTED_TYPE_CONTEXT)
+			-- Check whether `a_call', whose name `a_name' appears to be the name of
+			-- the argument of an inline separate instruction, is in fact a parenthesis call.
+			-- For example, if `a_name' is 'foo' and `a_call' is 'foo (args)', a parenthesis
+			-- call will be 'foo.g (args)' where 'g' is declared as 'g alias "()"'.
+			-- If it's indeed a parenthesis call, check its validity and set
+			-- `a_call.parenthesis_call' to its unfolded form.
+			--
+			-- `a_context' represents the type in which `a_call' appears.
+			-- If `a_call' is a parenthesis call, it will be altered on exit
+			-- to represent the type of `a_call'. Otherwise, it will be
+			-- altered on exit to represent the type of the inline separate argument
+			-- name.
+			--
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_call_not_void: a_call /= Void
+			unqualified_call: not a_call.is_qualified_call
+			a_name_not_void: a_name /= Void
+			is_inline_separate_argument: a_name.is_inline_separate_argument
+			a_context_not_void: a_context /= Void
+			in_implementation_class: current_class_impl = current_class
+		do
+			has_fatal_error := False
+			if not attached {ET_REGULAR_FEATURE_CALL} a_call as l_regular_call then
+				-- Do nothing.
+			elseif not attached l_regular_call.arguments as l_actuals or else l_actuals.is_empty then
+				-- Do nothing.
+			else
+				check_inline_separate_argument_validity (a_name, a_context)
+				if has_fatal_error then
+					check_orphan_actual_arguments_validity (a_call)
+				else
+					check_identifier_parenthesis_call_validity (l_regular_call, a_name, l_actuals, a_context)
 				end
 			end
 		end
@@ -12227,6 +13092,7 @@ feature {NONE} -- Agent validity
 					a_parameters.put_first (a_tuple_type)
 					create an_agent_type.make_generic (tokens.implicit_attached_type_mark, an_agent_class.name, a_parameters, an_agent_class)
 				end
+				set_call_agent_indexes (an_expression)
 				report_unqualified_query_call_agent (an_expression, a_query, an_agent_type, a_context)
 				a_context.force_last (an_agent_type)
 			end
@@ -12273,6 +13139,7 @@ feature {NONE} -- Agent validity
 				end
 				a_context.force_last (a_tuple_type)
 				an_agent_type := current_universe_impl.procedure_identity_type
+				set_call_agent_indexes (an_expression)
 				report_unqualified_procedure_call_agent (an_expression, a_procedure, an_agent_type, a_context)
 				a_context.force_last (an_agent_type)
 			end
@@ -12306,7 +13173,7 @@ feature {NONE} -- Agent validity
 			has_fatal_error := False
 			a_name := an_expression.name
 			a_seed := a_name.seed
-			check_expression_validity (a_target, a_context, current_system.detachable_any_type)
+			check_expression_validity (a_target, a_context, current_system.detachable_separate_any_type)
 			l_context_count := a_context.count
 			l_adapted_base_classes := new_adapted_base_classes
 			if not has_fatal_error then
@@ -12494,6 +13361,13 @@ feature {NONE} -- Agent validity
 					error_handler.report_vuta2a_error (current_class, current_class_impl, a_name, a_query, a_context.named_type)
 				end
 			end
+			if current_system.scoop_mode then
+				if not a_context.is_type_non_separate and then not a_context.is_controlled then
+						-- Error: the target of the call is not controlled.
+					set_fatal_error
+					error_handler.report_vuta4ga_error (current_class, current_class_impl, a_name, a_query, a_context.named_type)
+				end
+			end
 			if not a_query.is_exported_to (current_class, system_processor) then
 					-- The feature is not exported to `current_class'.
 				set_fatal_error
@@ -12526,6 +13400,7 @@ feature {NONE} -- Agent validity
 					a_parameters.put_first (a_tuple_type)
 					create an_agent_type.make_generic (tokens.implicit_attached_type_mark, an_agent_class.name, a_parameters, an_agent_class)
 				end
+				set_call_agent_indexes (an_expression)
 				report_qualified_query_call_agent (an_expression, a_query, an_agent_type, a_context)
 				a_context.force_last (an_agent_type)
 			end
@@ -12561,6 +13436,13 @@ feature {NONE} -- Agent validity
 					error_handler.report_vuta2a_error (current_class, current_class_impl, a_name, a_procedure, a_context.named_type)
 				end
 			end
+			if current_system.scoop_mode then
+				if not a_context.is_type_non_separate and then not a_context.is_controlled then
+						-- Error: the target of the call is not controlled.
+					set_fatal_error
+					error_handler.report_vuta4ga_error (current_class, current_class_impl, a_name, a_procedure, a_context.named_type)
+				end
+			end
 			if not a_procedure.is_exported_to (current_class, system_processor) then
 					-- The feature is not exported to `current_class'.
 				set_fatal_error
@@ -12586,6 +13468,7 @@ feature {NONE} -- Agent validity
 				end
 				a_context.force_last (a_tuple_type)
 				an_agent_type := current_universe_impl.procedure_identity_type
+				set_call_agent_indexes (an_expression)
 				report_qualified_procedure_call_agent (an_expression, a_procedure, an_agent_type, a_context)
 				a_context.force_last (an_agent_type)
 			end
@@ -12621,6 +13504,13 @@ feature {NONE} -- Agent validity
 					error_handler.report_vuta2b_error (current_class, current_class_impl, l_name, a_context.named_type)
 				end
 			end
+			if current_system.scoop_mode then
+				if not a_context.is_type_non_separate and then not a_context.is_controlled then
+						-- Error: the target of the call is not controlled.
+					set_fatal_error
+					error_handler.report_vuta4gb_error (current_class, current_class_impl, l_name, a_context.named_type)
+				end
+			end
 			if attached an_expression.arguments as l_actuals and then not l_actuals.is_empty then
 					-- A call to a Tuple label cannot have arguments.
 				set_fatal_error
@@ -12650,6 +13540,7 @@ feature {NONE} -- Agent validity
 					l_parameters.put_first (current_universe_impl.tuple_type)
 					create l_agent_type.make_generic (tokens.implicit_attached_type_mark, l_agent_class.name, l_parameters, l_agent_class)
 				end
+				set_call_agent_indexes (an_expression)
 				report_tuple_label_call_agent (an_expression, l_agent_type, a_context)
 				a_context.force_last (l_agent_type)
 			end
@@ -12902,6 +13793,7 @@ feature {NONE} -- Agent validity
 					a_parameters.put_first (a_tuple_type)
 					create an_agent_type.make_generic (tokens.implicit_attached_type_mark, an_agent_class.name, a_parameters, an_agent_class)
 				end
+				set_call_agent_indexes (an_expression)
 				report_qualified_query_call_agent (an_expression, a_query, an_agent_type, a_context)
 				a_context.force_last (an_agent_type)
 			end
@@ -12958,6 +13850,7 @@ feature {NONE} -- Agent validity
 				end
 				a_context.force_last (a_tuple_type)
 				an_agent_type := current_universe_impl.procedure_identity_type
+				set_call_agent_indexes (an_expression)
 				report_qualified_procedure_call_agent (an_expression, a_procedure, an_agent_type, a_context)
 				a_context.force_last (an_agent_type)
 			end
@@ -13018,6 +13911,7 @@ feature {NONE} -- Agent validity
 					l_parameters.put_first (l_tuple_type)
 					create l_agent_type.make_generic (tokens.implicit_attached_type_mark, l_agent_class.name, l_parameters, l_agent_class)
 				end
+				set_call_agent_indexes (an_expression)
 				report_tuple_label_call_agent (an_expression, l_agent_type, a_context)
 				a_context.force_last (l_agent_type)
 			end
@@ -13034,6 +13928,7 @@ feature {NONE} -- Agent validity
 			l_compound: detachable ET_COMPOUND
 			l_old_hidden_object_test_scope: INTEGER
 			l_old_hidden_iteration_item_scope: INTEGER
+			l_old_hidden_inline_separate_argument_scope: INTEGER
 			l_old_attachment_scope: like current_attachment_scope
 			l_old_initialization_scope: like current_initialization_scope
 			had_error: BOOLEAN
@@ -13057,6 +13952,10 @@ feature {NONE} -- Agent validity
 				-- in an enclosing feature or inline agent.
 			l_old_hidden_iteration_item_scope := current_iteration_item_scope.hidden_count
 			current_iteration_item_scope.hide_iteration_components (current_iteration_item_scope.count)
+				-- Make sure that we do not use separate arguments declared
+				-- in an enclosing feature or inline agent.
+			l_old_hidden_inline_separate_argument_scope := current_inline_separate_argument_scope.hidden_count
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (current_inline_separate_argument_scope.count)
 			l_old_initialization_scope := current_initialization_scope
 			l_old_attachment_scope := current_attachment_scope
 			if current_system.attachment_type_conformance_mode then
@@ -13077,6 +13976,7 @@ feature {NONE} -- Agent validity
 			l_type := an_expression.type
 			check_signature_type_validity (l_type)
 			if not has_fatal_error then
+				set_inline_agent_result_indexes (an_expression)
 				report_inline_agent_result_declaration (l_type)
 				report_inline_agent_result_supplier (l_type, current_class, current_feature)
 			end
@@ -13155,6 +14055,9 @@ feature {NONE} -- Agent validity
 				-- Restore the scope iteration items declared
 				-- in the enclosing feature or inline agent.
 			current_iteration_item_scope.hide_iteration_components (l_old_hidden_iteration_item_scope)
+				-- Restore the scope inline separate arguments declared
+				-- in the enclosing feature or inline agent.
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (l_old_hidden_inline_separate_argument_scope)
 			if current_system.attachment_type_conformance_mode then
 				free_attachment_scope (current_initialization_scope)
 				current_initialization_scope := l_old_initialization_scope
@@ -13183,6 +14086,7 @@ feature {NONE} -- Agent validity
 			l_compound: detachable ET_COMPOUND
 			l_old_hidden_object_test_scope: INTEGER
 			l_old_hidden_iteration_item_scope: INTEGER
+			l_old_hidden_inline_separate_argument_scope: INTEGER
 			l_old_attachment_scope: like current_attachment_scope
 			l_old_initialization_scope: like current_initialization_scope
 			had_error: BOOLEAN
@@ -13206,6 +14110,10 @@ feature {NONE} -- Agent validity
 				-- in an enclosing feature or inline agent.
 			l_old_hidden_iteration_item_scope := current_iteration_item_scope.hidden_count
 			current_iteration_item_scope.hide_iteration_components (current_iteration_item_scope.count)
+				-- Make sure that we do not use inline separate arguments declared
+				-- in an enclosing feature or inline agent.
+			l_old_hidden_inline_separate_argument_scope := current_inline_separate_argument_scope.hidden_count
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (current_inline_separate_argument_scope.count)
 			l_old_initialization_scope := current_initialization_scope
 			l_old_attachment_scope := current_attachment_scope
 			if current_system.attachment_type_conformance_mode then
@@ -13279,6 +14187,9 @@ feature {NONE} -- Agent validity
 				-- Restore the scope iteration items declared
 				-- in the enclosing feature or inline agent.
 			current_iteration_item_scope.hide_iteration_components (l_old_hidden_iteration_item_scope)
+				-- Restore the scope inline separate arguments declared
+				-- in the enclosing feature or inline agent.
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (l_old_hidden_inline_separate_argument_scope)
 			if current_system.attachment_type_conformance_mode then
 				free_attachment_scope (current_initialization_scope)
 				current_initialization_scope := l_old_initialization_scope
@@ -13307,6 +14218,7 @@ feature {NONE} -- Agent validity
 			l_type: ET_TYPE
 			l_old_hidden_object_test_scope: INTEGER
 			l_old_hidden_iteration_item_scope: INTEGER
+			l_old_hidden_inline_separate_argument_scope: INTEGER
 			l_old_attachment_scope: like current_attachment_scope
 			l_old_initialization_scope: like current_initialization_scope
 			had_error: BOOLEAN
@@ -13325,6 +14237,10 @@ feature {NONE} -- Agent validity
 				-- in an enclosing feature or inline agent.
 			l_old_hidden_iteration_item_scope := current_iteration_item_scope.hidden_count
 			current_iteration_item_scope.hide_iteration_components (current_iteration_item_scope.count)
+				-- Make sure that we do not use inline separate arguments declared
+				-- in an enclosing feature or inline agent.
+			l_old_hidden_inline_separate_argument_scope := current_inline_separate_argument_scope.hidden_count
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (current_inline_separate_argument_scope.count)
 			l_old_initialization_scope := current_initialization_scope
 			l_old_attachment_scope := current_attachment_scope
 			if current_system.attachment_type_conformance_mode then
@@ -13345,6 +14261,7 @@ feature {NONE} -- Agent validity
 			l_type := an_expression.type
 			check_signature_type_validity (l_type)
 			if not has_fatal_error then
+				set_inline_agent_result_indexes (an_expression)
 				report_inline_agent_result_declaration (l_type)
 				report_inline_agent_result_supplier (l_type, current_class, current_feature)
 			end
@@ -13363,6 +14280,9 @@ feature {NONE} -- Agent validity
 				-- Restore the scope iteration items declared
 				-- in the enclosing feature or inline agent.
 			current_iteration_item_scope.hide_iteration_components (l_old_hidden_iteration_item_scope)
+				-- Restore the scope inline separate arguments declared
+				-- in the enclosing feature or inline agent.
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (l_old_hidden_inline_separate_argument_scope)
 			if current_system.attachment_type_conformance_mode then
 				free_attachment_scope (current_initialization_scope)
 				current_initialization_scope := l_old_initialization_scope
@@ -13395,6 +14315,7 @@ feature {NONE} -- Agent validity
 		local
 			l_old_hidden_object_test_scope: INTEGER
 			l_old_hidden_iteration_item_scope: INTEGER
+			l_old_hidden_inline_separate_argument_scope: INTEGER
 			l_old_attachment_scope: like current_attachment_scope
 			l_old_initialization_scope: like current_initialization_scope
 			had_error: BOOLEAN
@@ -13413,6 +14334,10 @@ feature {NONE} -- Agent validity
 				-- in an enclosing feature or inline agent.
 			l_old_hidden_iteration_item_scope := current_iteration_item_scope.hidden_count
 			current_iteration_item_scope.hide_iteration_components (current_iteration_item_scope.count)
+				-- Make sure that we do not use inline separate arguments declared
+				-- in an enclosing feature or inline agent.
+			l_old_hidden_inline_separate_argument_scope := current_inline_separate_argument_scope.hidden_count
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (current_inline_separate_argument_scope.count)
 			l_old_initialization_scope := current_initialization_scope
 			l_old_attachment_scope := current_attachment_scope
 			if current_system.attachment_type_conformance_mode then
@@ -13444,6 +14369,9 @@ feature {NONE} -- Agent validity
 				-- Restore the scope iteration items declared
 				-- in the enclosing feature or inline agent.
 			current_iteration_item_scope.hide_iteration_components (l_old_hidden_iteration_item_scope)
+				-- Restore the scope inline separate arguments declared
+				-- in the enclosing feature or inline agent.
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (l_old_hidden_inline_separate_argument_scope)
 			if current_system.attachment_type_conformance_mode then
 				free_attachment_scope (current_initialization_scope)
 				current_initialization_scope := l_old_initialization_scope
@@ -13478,6 +14406,7 @@ feature {NONE} -- Agent validity
 			l_compound: detachable ET_COMPOUND
 			l_old_hidden_object_test_scope: INTEGER
 			l_old_hidden_iteration_item_scope: INTEGER
+			l_old_hidden_inline_separate_argument_scope: INTEGER
 			l_old_attachment_scope: like current_attachment_scope
 			l_old_initialization_scope: like current_initialization_scope
 			had_key_error: BOOLEAN
@@ -13502,6 +14431,10 @@ feature {NONE} -- Agent validity
 				-- in an enclosing feature or inline agent.
 			l_old_hidden_iteration_item_scope := current_iteration_item_scope.hidden_count
 			current_iteration_item_scope.hide_iteration_components (current_iteration_item_scope.count)
+				-- Make sure that we do not use inline separate arguments declared
+				-- in an enclosing feature or inline agent.
+			l_old_hidden_inline_separate_argument_scope := current_inline_separate_argument_scope.hidden_count
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (current_inline_separate_argument_scope.count)
 			l_old_initialization_scope := current_initialization_scope
 			l_old_attachment_scope := current_attachment_scope
 			if current_system.attachment_type_conformance_mode then
@@ -13522,6 +14455,7 @@ feature {NONE} -- Agent validity
 			l_type := an_expression.type
 			check_signature_type_validity (l_type)
 			if not has_fatal_error then
+				set_inline_agent_result_indexes (an_expression)
 				report_inline_agent_result_declaration (l_type)
 				report_inline_agent_result_supplier (l_type, current_class, current_feature)
 			end
@@ -13538,7 +14472,7 @@ feature {NONE} -- Agent validity
 				check_inline_agent_locals_validity (l_locals, an_expression)
 				had_error := had_error or has_fatal_error
 			end
-			check_once_keys_validity (an_expression.keys, an_expression.first_indexing)
+			check_once_keys_validity (an_expression.keys, an_expression.first_note)
 			had_key_error := has_fatal_error
 			if not had_error then
 				l_compound := an_expression.compound
@@ -13602,6 +14536,9 @@ feature {NONE} -- Agent validity
 				-- Restore the scope iteration items declared
 				-- in the enclosing feature or inline agent.
 			current_iteration_item_scope.hide_iteration_components (l_old_hidden_iteration_item_scope)
+				-- Restore the scope inline_ separate arguments declared
+				-- in the enclosing feature or inline agent.
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (l_old_hidden_inline_separate_argument_scope)
 			if current_system.attachment_type_conformance_mode then
 				free_attachment_scope (current_initialization_scope)
 				current_initialization_scope := l_old_initialization_scope
@@ -13635,6 +14572,7 @@ feature {NONE} -- Agent validity
 			l_compound: detachable ET_COMPOUND
 			l_old_hidden_object_test_scope: INTEGER
 			l_old_hidden_iteration_item_scope: INTEGER
+			l_old_hidden_inline_separate_argument_scope: INTEGER
 			l_old_attachment_scope: like current_attachment_scope
 			l_old_initialization_scope: like current_initialization_scope
 			had_key_error: BOOLEAN
@@ -13659,6 +14597,10 @@ feature {NONE} -- Agent validity
 				-- in an enclosing feature or inline agent.
 			l_old_hidden_iteration_item_scope := current_iteration_item_scope.hidden_count
 			current_iteration_item_scope.hide_iteration_components (current_iteration_item_scope.count)
+				-- Make sure that we do not use inline separate arguments declared
+				-- in an enclosing feature or inline agent.
+			l_old_hidden_inline_separate_argument_scope := current_inline_separate_argument_scope.hidden_count
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (current_inline_separate_argument_scope.count)
 			l_old_initialization_scope := current_initialization_scope
 			l_old_attachment_scope := current_attachment_scope
 			if current_system.attachment_type_conformance_mode then
@@ -13688,7 +14630,7 @@ feature {NONE} -- Agent validity
 				check_inline_agent_locals_validity (l_locals, an_expression)
 				had_error := had_error or has_fatal_error
 			end
-			check_once_keys_validity (an_expression.keys, an_expression.first_indexing)
+			check_once_keys_validity (an_expression.keys, an_expression.first_note)
 			had_key_error := has_fatal_error
 			if not had_error then
 				l_compound := an_expression.compound
@@ -13734,6 +14676,9 @@ feature {NONE} -- Agent validity
 				-- Restore the scope iteration items declared
 				-- in the enclosing feature or inline agent.
 			current_iteration_item_scope.hide_iteration_components (l_old_hidden_iteration_item_scope)
+				-- Restore the scope inline separate arguments declared
+				-- in the enclosing feature or inline agent.
+			current_inline_separate_argument_scope.hide_inline_separate_arguments (l_old_hidden_inline_separate_argument_scope)
 			if current_system.attachment_type_conformance_mode then
 				free_attachment_scope (current_initialization_scope)
 				current_initialization_scope := l_old_initialization_scope
@@ -13799,6 +14744,7 @@ feature {NONE} -- Agent validity
 						a_parameters.put_first (a_tuple_type)
 						create an_agent_type.make_generic (tokens.implicit_attached_type_mark, an_agent_class.name, a_parameters, an_agent_class)
 					end
+					set_inline_agent_indexes (an_expression)
 					report_query_inline_agent (an_expression, an_agent_type, a_context)
 					a_context.force_last (an_agent_type)
 				end
@@ -13836,6 +14782,7 @@ feature {NONE} -- Agent validity
 				end
 				a_context.force_last (a_tuple_type)
 				an_agent_type := current_universe_impl.procedure_identity_type
+				set_inline_agent_indexes (an_expression)
 				report_procedure_inline_agent (an_expression, an_agent_type, a_context)
 				a_context.force_last (an_agent_type)
 			end
@@ -14201,6 +15148,10 @@ feature {NONE} -- Conversion
 									-- or features with statically satisfied preconditions (see VYEC, ECMA-367, 3-36,
 									-- section 8.15.14, page 91).
 								if not has_fatal_error then
+									set_index (l_convert_from_expression)
+									if current_system.scoop_mode and not a_target_type.is_type_non_separate then
+										set_index (l_convert_from_expression.separate_target)
+									end
 									report_creation_expression (l_convert_from_expression, l_convert_from_expression.type, l_conversion_procedure)
 									Result := l_convert_from_expression
 								end
@@ -14237,6 +15188,7 @@ feature {NONE} -- Conversion
 									-- or features with statically satisfied preconditions (see VYEC, ECMA-367, 3-36,
 									-- section 8.15.14, page 91).
 								if not has_fatal_error then
+									set_index (l_convert_to_expression)
 									report_qualified_call_expression (l_convert_to_expression, a_source_type, l_conversion_query)
 									Result := l_convert_to_expression
 								end
@@ -14251,6 +15203,7 @@ feature {NONE} -- Conversion
 							-- Built-in conversion.
 						l_target_named_type := a_target_type.named_type
 						create l_convert_builtin_expression.make (l_target_named_type, l_convert_feature, a_source)
+						set_index (l_convert_builtin_expression)
 						report_builtin_conversion (l_convert_builtin_expression, l_target_named_type)
 						Result := l_convert_builtin_expression
 					end
@@ -14524,6 +15477,26 @@ feature {NONE} -- Event handling
 		require
 			no_error: not has_fatal_error
 			a_type_not_void: a_type /= Void
+		do
+		end
+
+	report_inline_separate_argument (a_name: ET_IDENTIFIER; a_inline_separate_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Report that a call to inline separate argument `a_name' has been processed.
+		require
+			no_error: not has_fatal_error
+			a_name_not_void: a_name /= Void
+			a_inline_separate_argument_not_void: a_inline_separate_argument /= Void
+		do
+		end
+
+	report_inline_separate_argument_declaration (a_inline_separate_argument: ET_INLINE_SEPARATE_ARGUMENT; a_type: ET_TYPE_CONTEXT)
+			-- Report that the declaration of inline separate argument `a_inline_separate_argument'
+			-- of type `a_type' has been processed.
+		require
+			no_error: not has_fatal_error
+			a_inline_separate_argument_not_void: a_inline_separate_argument /= Void
+			a_type_not_void: a_type /= Void
+			a_type_valid: a_type.is_valid_context
 		do
 		end
 
@@ -15554,6 +16527,8 @@ feature {ET_AST_NODE} -- Processing
 				check_object_test_local_validity (an_identifier, current_context)
 			elseif an_identifier.is_iteration_item then
 				check_iteration_item_validity (an_identifier, current_context)
+			elseif an_identifier.is_inline_separate_argument then
+				check_inline_separate_argument_validity (an_identifier, current_context)
 			else
 					-- Internal error: invalid kind of identifier.
 				set_fatal_error
@@ -15583,6 +16558,12 @@ feature {ET_AST_NODE} -- Processing
 			-- Process `an_expression'.
 		do
 			check_infix_expression_validity (an_expression, current_context)
+		end
+
+	process_inline_separate_instruction (a_instruction: ET_INLINE_SEPARATE_INSTRUCTION)
+			-- Process `a_instruction'.
+		do
+			check_inline_separate_instruction_validity (a_instruction)
 		end
 
 	process_inspect_expression (a_expression: ET_INSPECT_EXPRESSION)
@@ -15716,7 +16697,7 @@ feature {ET_AST_NODE} -- Processing
 		do
 			if attached an_expression.parenthesis_call as l_parenthesis_call then
 				check_qualified_call_expression_validity (l_parenthesis_call, current_context, Void)
-				an_expression.set_index (l_parenthesis_call.index)
+				set_index_to (an_expression, l_parenthesis_call.index)
 			else
 				check_precursor_expression_validity (an_expression, current_context)
 			end
@@ -15743,7 +16724,7 @@ feature {ET_AST_NODE} -- Processing
 		do
 			if attached an_expression.parenthesis_call as l_parenthesis_call then
 				check_qualified_call_expression_validity (l_parenthesis_call, current_context, Void)
-				an_expression.set_index (l_parenthesis_call.index)
+				set_index_to (an_expression, l_parenthesis_call.index)
 			else
 				check_qualified_call_expression_validity (an_expression, current_context, Void)
 			end
@@ -15824,7 +16805,7 @@ feature {ET_AST_NODE} -- Processing
 		do
 			if attached an_expression.parenthesis_call as l_parenthesis_call then
 				check_qualified_call_expression_validity (l_parenthesis_call, current_context, Void)
-				an_expression.set_index (l_parenthesis_call.index)
+				set_index_to (an_expression, l_parenthesis_call.index)
 			else
 				check_static_call_expression_validity (an_expression, current_context)
 			end
@@ -15875,7 +16856,7 @@ feature {ET_AST_NODE} -- Processing
 		do
 			if attached an_expression.parenthesis_call as l_parenthesis_call then
 				check_qualified_call_expression_validity (l_parenthesis_call, current_context, Void)
-				an_expression.set_index (l_parenthesis_call.index)
+				set_index_to (an_expression, l_parenthesis_call.index)
 			else
 				check_unqualified_call_expression_validity (an_expression, current_context)
 			end
@@ -16016,6 +16997,14 @@ feature {NONE} -- Iteration components
 	current_iteration_item_scope: ET_ITERATION_ITEM_SCOPE
 			-- Iteration components for which we are currently in the
 			-- scope of their iteration items
+
+feature {NONE} -- Inline separate arguments
+
+	current_inline_separate_argument_types: DS_HASH_TABLE [ET_NESTED_TYPE_CONTEXT, ET_INLINE_SEPARATE_ARGUMENT]
+			-- Types of inline separate arguments (in inline separate instructions)
+
+	current_inline_separate_argument_scope: ET_INLINE_SEPARATE_ARGUMENT_SCOPE
+			-- Inline separate arguments for which we are currently in their scope
 
 feature {NONE} -- Attachments
 
@@ -16268,10 +17257,10 @@ feature {NONE} -- Choice constants
 			integer_choice_constant_not_void: Result /= Void
 		end
 
-feature {NONE} -- Indexing
+feature {NONE} -- Note clauses
 
-	indexing_term_list: DS_ARRAYED_LIST [ET_INDEXING_TERM]
-			-- List to store indexing terms
+	note_term_list: DS_ARRAYED_LIST [ET_NOTE_TERM]
+			-- List to store note terms
 
 feature {NONE} -- Overloading (useful in .NET)
 
@@ -16758,6 +17747,9 @@ feature {NONE} -- Common ancestor type
 			i, nb: INTEGER
 			l_add_type: BOOLEAN
 			l_other_type: ET_NESTED_TYPE_CONTEXT
+			l_type_modifier: ET_LIKE_CURRENT
+			j: INTEGER
+			l_done: BOOLEAN
 		do
 			l_add_type := True
 			from
@@ -16776,23 +17768,45 @@ feature {NONE} -- Common ancestor type
 					a_list.remove (i)
 					nb := nb - 1
 				else
-						-- Try with different attachment marks.
--- TODO: do the same thing with separateness marks.
-					l_other_type.force_last (tokens.detachable_like_current)
-					if a_type.conforms_to_context (l_other_type, system_processor) then
-						l_add_type := False
-							-- Jump out of the loop.
-						i := nb + 1
-					else
-						l_other_type.remove_last
-						a_type.force_last (tokens.detachable_like_current)
-						if l_other_type.conforms_to_context (a_type, system_processor) then
-							free_context (l_other_type)
-							a_list.remove (i)
-							nb := nb - 1
+						-- Try with different attachment and separateness marks.
+					from
+						j := 1
+						l_type_modifier := tokens.detachable_type_modifier
+						l_done := False
+					until
+						l_done or j > 3
+					loop
+						l_other_type.force_last (l_type_modifier)
+						if a_type.conforms_to_context (l_other_type, system_processor) then
+							l_add_type := False
+							l_done := True
+								-- Jump out of the loop.
+							i := nb + 1
 						else
-							a_type.remove_last
-							i := i + 1
+							l_other_type.remove_last
+							a_type.force_last (l_type_modifier)
+							if l_other_type.conforms_to_context (a_type, system_processor) then
+								free_context (l_other_type)
+								a_list.remove (i)
+								l_done := True
+								nb := nb - 1
+							else
+								a_type.remove_last
+								if current_system.scoop_mode then
+									j := j + 1
+									if j = 2 then
+										l_type_modifier := tokens.separate_type_modifier
+									else
+										l_type_modifier := tokens.detachable_separate_type_modifier
+									end
+								else
+									j := 4
+								end
+								if j > 3 then
+									l_done := True
+									i := i + 1
+								end
+							end
 						end
 					end
 				end
@@ -16839,13 +17853,633 @@ feature {NONE} -- Common ancestor type
 			-- Note: For more details about Common Ancestor Type, see:
 			-- https://www.eiffel.org/doc/version/trunk/eiffel/Types#Common_ancestor_types
 
-feature {NONE} -- Default creation call
+feature {NONE} -- Indexes
 
-	default_creation_call: ET_QUALIFIED_CALL
-			-- Creation call to 'default_create'
+	index_count: INTEGER
+			-- Number of indexes of dynamic type sets used so far
 
-	default_creation_call_name: ET_IDENTIFIER
-			-- Call name of `default_creation_call'
+	current_index: INTEGER
+			-- Index of dynamic type set of 'Current'
+
+	result_index: INTEGER
+			-- Index of dynamic type set of 'Result'
+
+	attached_result_index: INTEGER
+			-- Index of attached version (with a CAP, Certified Attachment Pattern)
+			-- of 'Result'
+
+	void_index: INTEGER
+			-- Index of dynamic type set of 'Void' expressions
+
+	boolean_index: INTEGER
+			-- Index of dynamic type set of expressions of type "BOOLEAN"
+
+	character_8_index: INTEGER
+			-- Index of dynamic type set of expressions of type "CHARACTER_8"
+
+	character_32_index: INTEGER
+			-- Index of dynamic type set of expressions of type "CHARACTER_32"
+
+	integer_8_index: INTEGER
+			-- Index of dynamic type set of expressions of type "INTEGER_8"
+
+	integer_16_index: INTEGER
+			-- Index of dynamic type set of expressions of type "INTEGER_16"
+
+	integer_32_index: INTEGER
+			-- Index of dynamic type set of expressions of type "INTEGER_32"
+
+	integer_64_index: INTEGER
+			-- Index of dynamic type set of expressions of type "INTEGER_64"
+
+	natural_8_index: INTEGER
+			-- Index of dynamic type set of expressions of type "NATURAL_8"
+
+	natural_16_index: INTEGER
+			-- Index of dynamic type set of expressions of type "NATURAL_16"
+
+	natural_32_index: INTEGER
+			-- Index of dynamic type set of expressions of type "NATURAL_32"
+
+	natural_64_index: INTEGER
+			-- Index of dynamic type set of expressions of type "NATURAL_64"
+
+	pointer_index: INTEGER
+			-- Index of dynamic type set of expressions of type "POINTER"
+
+	real_32_index: INTEGER
+			-- Index of dynamic type set of expressions of type "REAL_32"
+
+	real_64_index: INTEGER
+			-- Index of dynamic type set of expressions of type "REAL_64"
+
+	string_8_index: INTEGER
+			-- Index of dynamic type set of expressions of type "STRING_8"
+
+	string_32_index: INTEGER
+			-- Index of dynamic type set of expressions of type "STRING_32"
+
+	immutable_string_8_index: INTEGER
+			-- Index of dynamic type set of expressions of type "IMMUTABLE_STRING_8"
+
+	immutable_string_32_index: INTEGER
+			-- Index of dynamic type set of expressions of type "IMMUTABLE_STRING_32"
+
+	initialize_indexes (a_feature: ET_STANDALONE_CLOSURE)
+			-- Initialize indexes for `a_feature'.
+		require
+			a_feature_not_void: a_feature /= Void
+		do
+			index_count := 2 * a_feature.arguments_count
+			if a_feature.type /= Void then
+				result_index := index_count + 1
+				attached_result_index := result_index + 1
+				index_count := attached_result_index
+			end
+			current_index := index_count + 1
+			index_count := current_index
+			boolean_index := 0
+			character_8_index := 0
+			character_32_index := 0
+			integer_8_index := 0
+			integer_16_index := 0
+			integer_32_index := 0
+			integer_64_index := 0
+			natural_8_index := 0
+			natural_16_index := 0
+			natural_32_index := 0
+			natural_64_index := 0
+			pointer_index := 0
+			real_32_index := 0
+			real_64_index := 0
+			string_8_index := 0
+			string_32_index := 0
+			immutable_string_8_index := 0
+			immutable_string_32_index := 0
+			void_index := 0
+		ensure
+			boolean_index_reset: boolean_index = 0
+			character_8_index_reset: character_8_index = 0
+			character_32_index_reset: character_32_index = 0
+			integer_8_index_reset: integer_8_index = 0
+			integer_16_index_reset: integer_16_index = 0
+			integer_32_index_reset: integer_32_index = 0
+			integer_64_index_reset: integer_64_index = 0
+			natural_8_index_reset: natural_8_index = 0
+			natural_16_index_reset: natural_16_index = 0
+			natural_32_index_reset: natural_32_index = 0
+			natural_64_index_reset: natural_64_index = 0
+			pointer_index_reset: pointer_index = 0
+			real_32_index_reset: real_32_index = 0
+			real_64_index_reset: real_64_index = 0
+			string_8_index_reset: string_8_index = 0
+			string_32_index_reset: string_32_index = 0
+			immutable_string_8_index_reset: immutable_string_8_index = 0
+			immutable_string_32_index_reset: immutable_string_32_index = 0
+			void_index_reset: void_index = 0
+		end
+
+	reset_indexes
+			-- Reset all indexes to 0.
+		do
+			index_count := 0
+			result_index := 0
+			attached_result_index := 0
+			current_index := 0
+			boolean_index := 0
+			character_8_index := 0
+			character_32_index := 0
+			integer_8_index := 0
+			integer_16_index := 0
+			integer_32_index := 0
+			integer_64_index := 0
+			natural_8_index := 0
+			natural_16_index := 0
+			natural_32_index := 0
+			natural_64_index := 0
+			pointer_index := 0
+			real_32_index := 0
+			real_64_index := 0
+			string_8_index := 0
+			string_32_index := 0
+			immutable_string_8_index := 0
+			immutable_string_32_index := 0
+			void_index := 0
+		ensure
+			index_count_reset: index_count = 0
+			result_index_reset: result_index = 0
+			attached_result_index_reset: attached_result_index = 0
+			current_index_reset: current_index = 0
+			boolean_index_reset: boolean_index = 0
+			character_8_index_reset: character_8_index = 0
+			character_32_index_reset: character_32_index = 0
+			integer_8_index_reset: integer_8_index = 0
+			integer_16_index_reset: integer_16_index = 0
+			integer_32_index_reset: integer_32_index = 0
+			integer_64_index_reset: integer_64_index = 0
+			natural_8_index_reset: natural_8_index = 0
+			natural_16_index_reset: natural_16_index = 0
+			natural_32_index_reset: natural_32_index = 0
+			natural_64_index_reset: natural_64_index = 0
+			pointer_index_reset: pointer_index = 0
+			real_32_index_reset: real_32_index = 0
+			real_64_index_reset: real_64_index = 0
+			string_8_index_reset: string_8_index = 0
+			string_32_index_reset: string_32_index = 0
+			immutable_string_8_index_reset: immutable_string_8_index = 0
+			immutable_string_32_index_reset: immutable_string_32_index = 0
+			void_index_reset: void_index = 0
+		end
+
+	set_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to the next available index
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				index_count := index_count + 1
+				a_operand.set_index (index_count)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies index_count = old index_count + 1 and a_operand.index = index_count
+			not_set: old (a_operand.index) /= 0 implies index_count = old index_count and a_operand.index = old (a_operand.index)
+		end
+
+	set_index_to (a_operand: ET_OPERAND; a_index: INTEGER)
+			-- Set index of `a_operand' to `a_index'.
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				a_operand.set_index (a_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies a_operand.index = a_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_boolean_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `boolean_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if boolean_index = 0 then
+					index_count := index_count + 1
+					boolean_index := index_count
+				end
+				a_operand.set_index (boolean_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies boolean_index /= 0 and a_operand.index = boolean_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_character_8_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `character_8_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if character_8_index = 0 then
+					index_count := index_count + 1
+					character_8_index := index_count
+				end
+				a_operand.set_index (character_8_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies character_8_index /= 0 and a_operand.index = character_8_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_character_32_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `character_32_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if character_32_index = 0 then
+					index_count := index_count + 1
+					character_32_index := index_count
+				end
+				a_operand.set_index (character_32_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies character_32_index /= 0 and a_operand.index = character_32_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_integer_8_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `integer_8_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if integer_8_index = 0 then
+					index_count := index_count + 1
+					integer_8_index := index_count
+				end
+				a_operand.set_index (integer_8_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies integer_8_index /= 0 and a_operand.index = integer_8_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_integer_16_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `integer_16_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if integer_16_index = 0 then
+					index_count := index_count + 1
+					integer_16_index := index_count
+				end
+				a_operand.set_index (integer_16_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies integer_16_index /= 0 and a_operand.index = integer_16_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_integer_32_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `integer_32_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if integer_32_index = 0 then
+					index_count := index_count + 1
+					integer_32_index := index_count
+				end
+				a_operand.set_index (integer_32_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies integer_32_index /= 0 and a_operand.index = integer_32_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_integer_64_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `integer_64_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if integer_64_index = 0 then
+					index_count := index_count + 1
+					integer_64_index := index_count
+				end
+				a_operand.set_index (integer_64_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies integer_64_index /= 0 and a_operand.index = integer_64_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_natural_8_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `natural_8_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if natural_8_index = 0 then
+					index_count := index_count + 1
+					natural_8_index := index_count
+				end
+				a_operand.set_index (natural_8_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies natural_8_index /= 0 and a_operand.index = natural_8_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_natural_16_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `natural_16_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if natural_16_index = 0 then
+					index_count := index_count + 1
+					natural_16_index := index_count
+				end
+				a_operand.set_index (natural_16_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies natural_16_index /= 0 and a_operand.index = natural_16_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_natural_32_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `natural_32_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if natural_32_index = 0 then
+					index_count := index_count + 1
+					natural_32_index := index_count
+				end
+				a_operand.set_index (natural_32_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies natural_32_index /= 0 and a_operand.index = natural_32_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_natural_64_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `natural_64_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if natural_64_index = 0 then
+					index_count := index_count + 1
+					natural_64_index := index_count
+				end
+				a_operand.set_index (natural_64_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies natural_64_index /= 0 and a_operand.index = natural_64_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_real_32_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `real_32_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if real_32_index = 0 then
+					index_count := index_count + 1
+					real_32_index := index_count
+				end
+				a_operand.set_index (real_32_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies real_32_index /= 0 and a_operand.index = real_32_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_real_64_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `real_64_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if real_64_index = 0 then
+					index_count := index_count + 1
+					real_64_index := index_count
+				end
+				a_operand.set_index (real_64_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies real_64_index /= 0 and a_operand.index = real_64_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_string_8_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `string_8_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if string_8_index = 0 then
+					index_count := index_count + 1
+					string_8_index := index_count
+				end
+				a_operand.set_index (string_8_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies string_8_index /= 0 and a_operand.index = string_8_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_string_32_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `string_32_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if string_32_index = 0 then
+					index_count := index_count + 1
+					string_32_index := index_count
+				end
+				a_operand.set_index (string_32_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies string_32_index /= 0 and a_operand.index = string_32_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_immutable_string_8_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `immutable_string_8_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if immutable_string_8_index = 0 then
+					index_count := index_count + 1
+					immutable_string_8_index := index_count
+				end
+				a_operand.set_index (immutable_string_8_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies immutable_string_8_index /= 0 and a_operand.index = immutable_string_8_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_immutable_string_32_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `immutable_string_32_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if immutable_string_32_index = 0 then
+					index_count := index_count + 1
+					immutable_string_32_index := index_count
+				end
+				a_operand.set_index (immutable_string_32_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies immutable_string_32_index /= 0 and a_operand.index = immutable_string_32_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_pointer_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `pointer_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if pointer_index = 0 then
+					index_count := index_count + 1
+					pointer_index := index_count
+				end
+				a_operand.set_index (pointer_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies pointer_index /= 0 and a_operand.index = pointer_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_void_index (a_operand: ET_OPERAND)
+			-- Set index of `a_operand' to `void_index'
+			-- if not set yet. Do nothing if already set.
+		require
+			a_operand_not_void: a_operand /= Void
+		do
+			if a_operand.index = 0 then
+				if void_index = 0 then
+					index_count := index_count + 1
+					void_index := index_count
+				end
+				a_operand.set_index (void_index)
+			end
+		ensure
+			set: old (a_operand.index) = 0 implies void_index /= 0 and a_operand.index = void_index
+			not_set: old (a_operand.index) /= 0 implies a_operand.index = old (a_operand.index)
+		end
+
+	set_inline_agent_indexes (a_expression: ET_INLINE_AGENT)
+			-- Set indexes of `a_expression' to the next available indexes
+			-- if not set yet. Do nothing if already set.
+		require
+			a_expression_not_void: a_expression /= Void
+		local
+			l_actuals: detachable ET_AGENT_ARGUMENT_OPERANDS
+			l_actual: ET_AGENT_ARGUMENT_OPERAND
+			i, nb: INTEGER
+		do
+			set_index (a_expression)
+			set_index_to (a_expression.target, current_index)
+			l_actuals := a_expression.actual_arguments
+			if l_actuals /= Void then
+				nb := l_actuals.count
+				from i := 1 until i > nb loop
+					l_actual := l_actuals.actual_argument (i)
+					if not attached {ET_EXPRESSION} l_actual then
+						set_index (l_actual)
+					end
+					i := i + 1
+				end
+			end
+		end
+
+	set_inline_agent_result_indexes (a_expression: ET_INLINE_AGENT)
+			-- Set indexes of result of `a_expression' to the next available indexes
+			-- if not set yet. Do nothing if already set.
+		require
+			a_expression_not_void: a_expression /= Void
+		local
+			l_index: INTEGER
+		do
+			if attached a_expression.implicit_result as l_implicit_result then
+				if l_implicit_result.index = 0 then
+					l_index := index_count + 1
+					l_implicit_result.set_index (l_index)
+					a_expression.set_result_index (l_index)
+					l_index := l_index + 1
+					a_expression.set_attached_result_index (l_index)
+					index_count := l_index
+				end
+			end
+		end
+
+	set_call_agent_indexes (a_expression: ET_CALL_AGENT)
+			-- Set indexes of `a_expression' to the next available indexes
+			-- if not set yet. Do nothing if already set.
+		require
+			a_expression_not_void: a_expression /= Void
+		local
+			l_target: ET_AGENT_TARGET
+			l_actuals: detachable ET_AGENT_ARGUMENT_OPERANDS
+			l_actual: ET_AGENT_ARGUMENT_OPERAND
+			i, nb: INTEGER
+		do
+			set_index (a_expression)
+			l_target := a_expression.target
+			if not a_expression.is_qualified_call then
+				set_index_to (l_target, current_index)
+			elseif not attached {ET_EXPRESSION} l_target then
+				set_index (l_target)
+			end
+			l_actuals := a_expression.arguments
+			if l_actuals /= Void then
+				nb := l_actuals.count
+				from i := 1 until i > nb loop
+					l_actual := l_actuals.actual_argument (i)
+					if not attached {ET_EXPRESSION} l_actual then
+						set_index (l_actual)
+					end
+					i := i + 1
+				end
+			end
+			if attached a_expression.implicit_result as l_implicit_result then
+				set_index (l_implicit_result)
+			end
+		end
 
 feature {NONE} -- Feature checker
 
@@ -16887,8 +18521,8 @@ invariant
 	current_class_impl_definition: current_class_impl = current_feature_impl.implementation_class
 	-- implementation_checked: if inherited, then the code being analyzed has already been checked in implementation class of `current_feature_impl'
 	type_checker_not_void: type_checker /= Void
-	indexing_term_list_not_void: indexing_term_list /= Void
-	no_void_indexing_term: not indexing_term_list.has_void
+	note_term_list_not_void: note_term_list /= Void
+	no_void_note_term: not note_term_list.has_void
 	unused_overloaded_procedures_list_not_void: unused_overloaded_procedures_list /= Void
 	no_void_unused_overloaded_procedures: not unused_overloaded_procedures_list.has_void
 	-- SE 1.2r7 crashes when compiling this line:
@@ -16905,9 +18539,6 @@ invariant
 	unused_contexts_not_void: unused_contexts /= Void
 	no_void_unused_context: not unused_contexts.has_void
 	current_target_type_not_void: current_target_type /= Void
-	default_creation_call_not_void: default_creation_call /= Void
-	default_creation_call_name_not_void: default_creation_call_name /= Void
-	default_creation_call_name_definition: default_creation_call_name = default_creation_call.name
 		-- Object-tests.
 	current_object_test_types_not_void: current_object_test_types /= Void
 	no_void_object_test_type: not current_object_test_types.has_void_item
@@ -16921,6 +18552,11 @@ invariant
 	no_void_iteration_item_type: not current_iteration_item_types.has_void_item
 	no_void_item_type_iteration_component: not current_iteration_item_types.has_void
 	current_iteration_item_scope_not_void: current_iteration_item_scope /= Void
+		-- Inline separate arguments.
+	current_inline_separate_argument_types_not_void: current_inline_separate_argument_types /= Void
+	no_void_inline_separate_argument_type: not current_inline_separate_argument_types.has_void_item
+	no_void_inline_separate_argument: not current_inline_separate_argument_types.has_void
+	current_inline_separate_argument_scope_not_void: current_inline_separate_argument_scope /= Void
 		-- Attachments.
 	current_initialization_scope_not_void: current_initialization_scope /= Void
 	current_attachment_scope_not_void: current_attachment_scope /= Void

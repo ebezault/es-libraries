@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel class invariants"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2016, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_INVARIANTS
 
@@ -23,6 +21,8 @@ inherit
 		end
 
 	ET_STANDALONE_CLOSURE
+		rename
+			name as invariant_keyword
 		redefine
 			is_invariants,
 			as_invariants
@@ -86,7 +86,7 @@ feature -- Access
 			Result := tokens.invariant_keyword_name
 		end
 
-	invariant_keyword: ET_KEYWORD
+	invariant_keyword: ET_INVARIANT_KEYWORD
 			-- 'invariant' keyword
 
 	first_precursor: detachable ET_INVARIANTS
@@ -126,8 +126,12 @@ feature -- Access
 			-- current node in source code
 		do
 			Result := invariant_keyword.position
-			if Result.is_null and not is_empty then
-				Result := first.position
+			if Result.is_null then
+				if not is_empty then
+					Result := first.position
+				elseif attached first_semicolon as l_first_semicolon then
+					Result := l_first_semicolon.position
+				end
 			end
 		end
 
@@ -142,6 +146,8 @@ feature -- Access
 		do
 			if not is_empty then
 				Result := last.last_leaf
+			elseif attached first_semicolon as l_first_semicolon then
+				Result := l_first_semicolon.last_leaf
 			else
 				Result := invariant_keyword
 			end

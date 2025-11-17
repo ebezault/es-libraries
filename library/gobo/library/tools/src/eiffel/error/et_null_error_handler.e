@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
-		"Null error handlers"
+		"Eiffel null error handlers"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_NULL_ERROR_HANDLER
 
@@ -24,10 +22,10 @@ inherit
 			reportable_gcpro_error,
 			reportable_gcscm_error,
 			reportable_gvknl1_error,
-			reportable_gvsrc3_error,
-			reportable_gvsrc4_error,
-			reportable_gvsrc5_error,
-			reportable_gvsrc6_error,
+			reportable_v1ea1g_error,
+			reportable_v1se1g_error,
+			reportable_v1se2g_error,
+			reportable_v1se3g_error,
 			reportable_vaol1_error,
 			reportable_vape1_error,
 			reportable_vape2_error,
@@ -62,6 +60,8 @@ inherit
 			reportable_veen2_error,
 			reportable_veen8_error,
 			reportable_veen9_error,
+			reportable_veen10_error,
+			reportable_veen11_error,
 			reportable_vevi_error,
 			reportable_vfac1_error,
 			reportable_vfac2_error,
@@ -74,6 +74,7 @@ inherit
 			reportable_vfav5_error,
 			reportable_vffd4_error,
 			reportable_vffd7_error,
+			reportable_vffd11g_error,
 			reportable_vgcc1_error,
 			reportable_vgcc3_error,
 			reportable_vgcc5_error,
@@ -97,6 +98,8 @@ inherit
 			reportable_vjrv_error,
 			reportable_vkcn1_error,
 			reportable_vkcn2_error,
+			reportable_vkex4g_error,
+			reportable_vkin5g_error,
 			reportable_vlel1_error,
 			reportable_vlel2_error,
 			reportable_vlel3_error,
@@ -131,8 +134,14 @@ inherit
 			reportable_vrle2_error,
 			reportable_vrlv1_error,
 			reportable_vrlv2_error,
-			reportable_vscn_error,
-			reportable_vsrc1_error,
+			reportable_vsci_error,
+			reportable_vsrp1_error,
+			reportable_vsrp2_error,
+			reportable_vsrp3_error,
+			reportable_vsrt0_error,
+			reportable_vsrt1_error,
+			reportable_vsrt2_error,
+			reportable_vsrt4_error,
 			reportable_vtat1_error,
 			reportable_vtat2_error,
 			reportable_vtcg3_error,
@@ -142,7 +151,7 @@ inherit
 			reportable_vtug2_error,
 			reportable_vuar1_error,
 			reportable_vuar2_error,
-			reportable_vuar4_error,
+			reportable_vuar3g_error,
 			reportable_vucr_error,
 			reportable_vuex1_error,
 			reportable_vuex2_error,
@@ -182,10 +191,12 @@ inherit
 			reportable_gvuac_error,
 			reportable_gvual_error,
 			reportable_gvuao_error,
+			reportable_gvuas_error,
 			reportable_gvuia_error,
 			reportable_gvuic_error,
 			reportable_gvuil_error,
 			reportable_gvuio_error,
+			reportable_gvuis_error,
 			reportable_gvwmc2_error
 		end
 
@@ -232,8 +243,8 @@ feature -- Cluster error status
 
 feature -- Universe error status
 
-	reportable_vscn_error (a_universe: ET_UNIVERSE): BOOLEAN
-			-- Can a VSCN error be reported when it
+	reportable_vsci_error (a_universe: ET_UNIVERSE): BOOLEAN
+			-- Can a VSCI error be reported when it
 			-- appears in `a_universe'?
 		do
 			Result := False
@@ -257,8 +268,44 @@ feature -- .NET assembly error status
 
 feature -- System error status
 
-	reportable_vsrc1_error: BOOLEAN
-			-- Can a VSRC-1 error be reported?
+	reportable_vsrp1_error: BOOLEAN
+			-- Can a VSRP-1 error be reported?
+		do
+			Result := False
+		end
+
+	reportable_vsrp2_error: BOOLEAN
+			-- Can a VSRP-2 error be reported?
+		do
+			Result := False
+		end
+
+	reportable_vsrp3_error: BOOLEAN
+			-- Can a VSRP-3 error be reported?
+		do
+			Result := False
+		end
+
+	reportable_vsrt0_error: BOOLEAN
+			-- Can a VSRT-0 error be reported?
+		do
+			Result := False
+		end
+
+	reportable_vsrt1_error: BOOLEAN
+			-- Can a VSRT-1 error be reported?
+		do
+			Result := False
+		end
+
+	reportable_vsrt2_error: BOOLEAN
+			-- Can a VSRT-2 error be reported?
+		do
+			Result := False
+		end
+
+	reportable_vsrt4_error: BOOLEAN
+			-- Can a VSRT-4 error be reported?
 		do
 			Result := False
 		end
@@ -269,31 +316,35 @@ feature -- System error status
 			Result := False
 		end
 
-	reportable_gvsrc3_error: BOOLEAN
-			-- Can a GVSRC-3 error be reported?
-		do
-			Result := False
-		end
-
-	reportable_gvsrc4_error: BOOLEAN
-			-- Can a GVSRC-4 error be reported?
-		do
-			Result := False
-		end
-
-	reportable_gvsrc5_error: BOOLEAN
-			-- Can a GVSRC-5 error be reported?
-		do
-			Result := False
-		end
-
-	reportable_gvsrc6_error: BOOLEAN
-			-- Can a GVSRC-6 error be reported?
-		do
-			Result := False
-		end
-
 feature -- Validity error status
+
+	reportable_v1ea1g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a V1EA-1G error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_v1se1g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a V1SE-1G error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_v1se2g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a V1SE-2G error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_v1se3g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a V1SE-3G error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
 
 	reportable_vaol1_error (a_class: ET_CLASS): BOOLEAN
 			-- Can a VAOL-1 error be reported when it
@@ -533,6 +584,20 @@ feature -- Validity error status
 			Result := False
 		end
 
+	reportable_veen10_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a VEEN-10 error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_veen11_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a VEEN-11 error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
 	reportable_vevi_error (a_class: ET_CLASS): BOOLEAN
 			-- Can a VEVI error be reported when it
 			-- appears in `a_class'?
@@ -612,6 +677,13 @@ feature -- Validity error status
 
 	reportable_vffd7_error (a_class: ET_CLASS): BOOLEAN
 			-- Can a VFFD-7 error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_vffd11g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a VFFD-11G error be reported when it
 			-- appears in `a_class'?
 		do
 			Result := False
@@ -773,6 +845,20 @@ feature -- Validity error status
 
 	reportable_vkcn2_error (a_class: ET_CLASS): BOOLEAN
 			-- Can a VKCN-2 error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_vkex4g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a VKEX-4G error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_vkin5g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a VKIN-5G error be reported when it
 			-- appears in `a_class'?
 		do
 			Result := False
@@ -1079,8 +1165,8 @@ feature -- Validity error status
 			Result := False
 		end
 
-	reportable_vuar4_error (a_class: ET_CLASS): BOOLEAN
-			-- Can a VUAR-4 error be reported when it
+	reportable_vuar3g_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a VUAR-3G error be reported when it
 			-- appears in `a_class'?
 		do
 			Result := False
@@ -1359,6 +1445,13 @@ feature -- Validity error status
 			Result := False
 		end
 
+	reportable_gvuas_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a GVUAS error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
 	reportable_gvuia_error (a_class: ET_CLASS): BOOLEAN
 			-- Can a GVUIA error be reported when it
 			-- appears in `a_class'?
@@ -1382,6 +1475,13 @@ feature -- Validity error status
 
 	reportable_gvuio_error (a_class: ET_CLASS): BOOLEAN
 			-- Can a GVUIO error be reported when it
+			-- appears in `a_class'?
+		do
+			Result := False
+		end
+
+	reportable_gvuis_error (a_class: ET_CLASS): BOOLEAN
+			-- Can a GVUIS error be reported when it
 			-- appears in `a_class'?
 		do
 			Result := False

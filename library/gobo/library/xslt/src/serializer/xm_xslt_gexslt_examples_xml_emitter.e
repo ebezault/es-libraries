@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel XSLT Library"
 	copyright: "Copyright (c) 2004-2015, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class XM_XSLT_GEXSLT_EXAMPLES_XML_EMITTER
 
@@ -23,7 +21,7 @@ inherit
 		-- This is identical to the normal xml method, except that
 		--  it permits the user to write the internal subset of the DTD.
 		-- This is done by examing the value of the extension attribute:
-		-- {http://www.gobosoft.com/eiffel/gobo/gexslt/extension/examples}internal-subset
+		-- {https://www.gobosoft.com/eiffel/gobo/tool/gexslt/doc/extension/examples}internal-subset
 		-- Not the namespace URI. This is not the normal gexslt namespace.
 		-- It could have been, but the XSLT library treats this namespace specially,
 		--  in that only known extension attributes are permitted.
@@ -50,7 +48,7 @@ feature {NONE} -- Initialization
 
 feature {NONE} -- Implementation
 
-	extension_attribute_expanded_name: STRING = "http://www.gobosoft.com/eiffel/gobo/gexslt/extension/example#internal-subset"
+	extension_attribute_expanded_name: STRING = "https://www.gobosoft.com/eiffel/gobo/tool/gexslt/doc/extension/example#internal-subset"
 			-- Name of extension attribute specifying DTD internal subset to be written
 
 	dtd_internal_subset: detachable STRING

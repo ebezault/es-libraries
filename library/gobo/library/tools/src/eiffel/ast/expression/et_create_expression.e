@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel create expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_CREATE_EXPRESSION
 
@@ -17,7 +15,8 @@ inherit
 	ET_CREATION_EXPRESSION
 		redefine
 			reset,
-			is_instance_free
+			is_instance_free,
+			is_scoop_region_passive
 		end
 
 create
@@ -44,9 +43,16 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor
 			type.reset
 			if attached creation_call as l_creation_call then
 				l_creation_call.reset
+			end
+			if attached default_create_name as l_default_create_name then
+				l_default_create_name.reset
+			end
+			if attached internal_separate_target as l_internal_separate_target then
+				l_internal_separate_target.reset
 			end
 		end
 
@@ -69,22 +75,6 @@ feature -- Access
 
 	creation_call: detachable ET_QUALIFIED_CALL
 			-- Call to creation procedure
-
-	name: detachable ET_FEATURE_NAME
-			-- Creation procedure name
-		do
-			if attached creation_call as l_creation_call then
-				Result := l_creation_call.name
-			end
-		end
-
-	arguments: detachable ET_ACTUAL_ARGUMENT_LIST
-			-- Arguments of creation call
-		do
-			if attached creation_call as l_creation_call then
-				Result := l_creation_call.arguments
-			end
-		end
 
 	position: ET_POSITION
 			-- Position of first character of
@@ -129,6 +119,12 @@ feature -- Status report
 			-- or not.
 		do
 			Result := attached arguments as l_arguments implies l_arguments.is_instance_free
+		end
+
+	is_scoop_region_passive: BOOLEAN
+			-- Is the SCOOP region created by the current creation (if any) a passive region?
+		do
+			Result := attached creation_region as l_creation_region and then l_creation_region.class_name.same_class_name (tokens.none_class_name)
 		end
 
 feature -- Setting

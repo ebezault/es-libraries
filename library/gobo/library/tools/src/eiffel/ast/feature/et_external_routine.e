@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel external routines"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_EXTERNAL_ROUTINE
 
@@ -23,7 +21,8 @@ inherit
 		rename
 			implementation_closure as implementation_feature
 		undefine
-			first_indexing,
+			first_note,
+			is_static,
 			implementation_feature
 		end
 
@@ -48,7 +47,7 @@ feature -- Status report
 			-- possible to have assertions provided that they do not involve "Current" or
 			-- unqualified calls (see ECMA VUNO-3), the case of Precursors not being mentioned.
 		do
-			Result := Precursor or is_implicitly_static
+			Result := Precursor {ET_ROUTINE} or is_implicitly_static
 		end
 
 	is_implicitly_static: BOOLEAN

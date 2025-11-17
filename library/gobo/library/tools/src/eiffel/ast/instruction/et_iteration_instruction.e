@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 	"[
@@ -6,10 +6,8 @@ note
 		or repeat instructions).
 	]"
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2019-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_ITERATION_INSTRUCTION
 
@@ -17,15 +15,21 @@ inherit
 
 	ET_ITERATION_COMPONENT
 		redefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
 			reset
 		end
 
-	ET_INSTRUCTION
+	ET_REPETITION_INSTRUCTION
 		redefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
 			reset
 		end
-
-	ET_LOOP_COMPONENT
 
 feature -- Initialization
 
@@ -39,6 +43,40 @@ feature -- Initialization
 				l_loop_compound.reset
 			end
 			precursor {ET_ITERATION_COMPONENT}
+		end
+
+feature -- Status report
+
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current iteration instruction
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_result or
+				precursor {ET_REPETITION_INSTRUCTION}
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current iteration instruction
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_address_expression or
+				precursor {ET_REPETITION_INSTRUCTION}
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current iteration instruction
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_agent or
+				precursor {ET_REPETITION_INSTRUCTION}
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current iteration instruction
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_typed_object_test or
+				precursor {ET_REPETITION_INSTRUCTION}
 		end
 
 end

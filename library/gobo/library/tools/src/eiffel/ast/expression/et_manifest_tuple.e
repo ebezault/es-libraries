@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel manifest tuples"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_MANIFEST_TUPLE
 
@@ -16,15 +14,22 @@ inherit
 
 	ET_EXPRESSION
 		undefine
-			reset,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		redefine
+			reset,
 			is_never_void
 		end
 
 	ET_EXPRESSION_LIST
 		redefine
-			make, make_with_capacity
+			make,
+			make_with_capacity,
+			reset
 		end
 
 create
@@ -47,6 +52,15 @@ feature {NONE} -- Initialization
 			left_symbol := tokens.left_bracket_symbol
 			right_symbol := tokens.right_bracket_symbol
 			precursor (nb)
+		end
+
+feature -- Initialization
+
+	reset
+			-- Reset expressions as they were when they were last parsed.
+		do
+			precursor {ET_EXPRESSION}
+			precursor {ET_EXPRESSION_LIST}
 		end
 
 feature -- Status report

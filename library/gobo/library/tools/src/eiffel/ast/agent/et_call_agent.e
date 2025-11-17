@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel call agents"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_CALL_AGENT
 
@@ -71,6 +69,7 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor
 			name.reset
 			implicit_result := Void
 			target.reset

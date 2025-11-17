@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Equality testers between strings that can be polymorphically unicode strings"
 
 	library: "Gobo Eiffel Kernel Library"
-	copyright: "Copyright (c) 2004, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2022, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class KL_STRING_EQUALITY_TESTER
 
@@ -45,7 +43,7 @@ feature -- Status report
 					until
 						i > nb
 					loop
-						if v.item_code (i) /= u.item_code (i) then
+						if v.code (i) /= u.code (i) then
 							Result := False
 								-- Jump out of the loop.
 							i := nb + 1

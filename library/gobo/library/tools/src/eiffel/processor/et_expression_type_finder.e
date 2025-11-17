@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel expression type finders"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2008-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2008-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_EXPRESSION_TYPE_FINDER
 
@@ -664,7 +662,7 @@ feature {NONE} -- Expression processing
 			if l_typed_pointer_class.actual_class.is_preparsed then
 					-- Class TYPED_POINTER has been found in the universe.
 					-- Use ISE's implementation: the type of '$(expr)' is 'TYPED_POINTER [<type-of-expr>]'.
-				find_expression_type (an_expression.expression, a_context, current_system.detachable_any_type)
+				find_expression_type (an_expression.expression, a_context, current_system.detachable_separate_any_type)
 				if not has_fatal_error then
 					a_context.force_last (l_typed_pointer_type)
 				end
@@ -698,16 +696,9 @@ feature {NONE} -- Expression processing
 			l_query: detachable ET_QUERY
 			l_name: ET_FEATURE_NAME
 			l_seed: INTEGER
-			l_arguments: detachable ET_FORMAL_ARGUMENT_LIST
-			l_argument: ET_FORMAL_ARGUMENT
 			l_type: detachable ET_TYPE
-			l_locals: detachable ET_LOCAL_VARIABLE_LIST
-			l_local: ET_LOCAL_VARIABLE
 			l_typed_pointer_class: ET_NAMED_CLASS
 			l_typed_pointer_type: ET_CLASS_TYPE
-			l_object_test: ET_NAMED_OBJECT_TEST
-			l_object_tests: detachable ET_OBJECT_TEST_LIST
-			l_class_impl: ET_CLASS
 		do
 			reset_fatal_error (False)
 			l_name := an_expression.name
@@ -719,157 +710,20 @@ feature {NONE} -- Expression processing
 				if internal_error_enabled or not current_class.has_implementation_error then
 					error_handler.report_giaaa_error
 				end
-			elseif l_name.is_argument then
-					-- This is of the form '$argument'.
-				if attached current_inline_agent as l_current_inline_agent then
-					l_arguments := l_current_inline_agent.formal_arguments
-					l_class_impl := current_class_impl
-				else
-						-- Use arguments of `current_feature' instead of `current_feature_impl'
-						-- because when processing inherited assertions the types of signature
-						-- should be those of the version of the feature in the current class.
-						-- For example:
-						--    deferred class A
-						--    feature
-						--       f (a: ANY)
-						--           require
-						--               pre: g ($a)
-						--           deferred
-						--           end
-						--      g (a: TYPED_POINTER [ANY]): BOOLEAN deferred end
-						--    end
-						--    class B
-						--    inherit
-						--        A
-						--    feature
-						--        f (a: STRING) do ... end
-						--        g (a: TYPED_POINTER [STRING]): BOOLEAN do ... end
-						--    end
-						-- `a' in the inherited precondition "pre" should be considered
-						-- of type STRING (and not ANY) is class B.
-						--
-						-- Use arguments of implementation feature because the types
-						-- of the signature of `current_feature' might not have been
-						-- resolved for `current_class' (when processing precursors
-						-- in the context of current class).
-					l_arguments := current_feature.implementation_feature.arguments
-					l_class_impl := current_feature.implementation_class
-				end
-				if l_arguments = Void then
-						-- Internal error.
-						-- This error should have already been reported when checking
-						-- `current_feature' (using ET_FEATURE_CHECKER for example).
-					set_fatal_error
-					if internal_error_enabled or not current_class.has_implementation_error then
-						error_handler.report_giaaa_error
-					end
-				elseif l_seed < 1 or l_seed > l_arguments.count then
-						-- Internal error.
-						-- This error should have already been reported when checking
-						-- `current_feature' (using ET_FEATURE_CHECKER for example).
-					set_fatal_error
-					if internal_error_enabled or not current_class.has_implementation_error then
-						error_handler.report_giaaa_error
-					end
-				else
-					l_argument := l_arguments.formal_argument (l_seed)
-					l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
-					l_typed_pointer_class := l_typed_pointer_type.named_base_class
-					if l_typed_pointer_class.actual_class.is_preparsed then
-							-- Class TYPED_POINTER has been found in the universe.
-							-- Use ISE's implementation: the type of '$argument' is 'TYPED_POINTER [<type-of-argument>]'.
-						l_type := l_argument.type
-						a_context.force_last (l_type)
-						a_context.force_last (l_typed_pointer_type)
-					else
-							-- Use the ETL2 implementation: the type of '$argument' is POINTER.
-						a_context.force_last (current_universe_impl.pointer_type)
-					end
-				end
-			elseif l_name.is_local then
-					-- This is of the form '$local'.
-				l_locals := current_closure_impl.locals
-				if l_locals = Void then
-						-- Internal error.
-						-- This error should have already been reported when checking
-						-- `current_feature' (using ET_FEATURE_CHECKER for example).
-					set_fatal_error
-					if internal_error_enabled or not current_class.has_implementation_error then
-						error_handler.report_giaaa_error
-					end
-				elseif l_seed < 1 or l_seed > l_locals.count then
-						-- Internal error.
-						-- This error should have already been reported when checking
-						-- `current_feature' (using ET_FEATURE_CHECKER for example).
-					set_fatal_error
-					if internal_error_enabled or not current_class.has_implementation_error then
-						error_handler.report_giaaa_error
-					end
-				else
-					l_local := l_locals.local_variable (l_seed)
-					l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
-					l_typed_pointer_class := l_typed_pointer_type.named_base_class
-					if l_typed_pointer_class.actual_class.is_preparsed then
-							-- Class TYPED_POINTER has been found in the universe.
-							-- Use ISE's implementation: the type of '$local' is 'TYPED_POINTER [<type-of-local>]'.
-						l_type := l_local.type
-						a_context.force_last (l_type)
-						a_context.force_last (l_typed_pointer_type)
-					else
-							-- Use the ETL2 implementation: the type of '$local' is POINTER.
-						a_context.force_last (current_universe_impl.pointer_type)
-					end
-				end
-			elseif l_name.is_object_test_local then
-				l_object_tests := current_closure_impl.object_tests
-				if l_object_tests = Void then
-						-- Internal error.
-						-- This error should have already been reported when checking
-						-- `current_feature' (using ET_FEATURE_CHECKER for example).
-					set_fatal_error
-					if internal_error_enabled or not current_class.has_implementation_error then
-						error_handler.report_giaaa_error
-					end
-				elseif l_seed < 1 or l_seed > l_object_tests.count then
-						-- Internal error.
-						-- This error should have already been reported when checking
-						-- `current_feature' (using ET_FEATURE_CHECKER for example).
-					set_fatal_error
-					if internal_error_enabled or not current_class.has_implementation_error then
-						error_handler.report_giaaa_error
-					end
-				else
-					l_object_test := l_object_tests.object_test (l_seed)
-					check is_object_test_local: attached {ET_IDENTIFIER} l_name end
-					l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
-					l_typed_pointer_class := l_typed_pointer_type.named_base_class
-					if l_typed_pointer_class.actual_class.is_preparsed then
-							-- Class TYPED_POINTER has been found in the universe.
-							-- Use ISE's implementation: the type of '$object_test_local' is
-							-- 'TYPED_POINTER [<type-of-object_test_local>]'.
-						l_type := l_object_test.type
-						if l_type /= Void then
-							a_context.force_last (l_type)
-							a_context.force_last (l_typed_pointer_type)
-						else
-							find_expression_type (l_object_test.expression, a_context, current_system.detachable_any_type)
-							if not has_fatal_error then
-								a_context.force_last (l_typed_pointer_type)
-							end
-						end
-					else
-							-- Use the ETL2 implementation: the type of '$object_test_local' is POINTER.
-						a_context.force_last (current_universe_impl.pointer_type)
-					end
-				end
-			elseif l_name.is_iteration_item then
+			elseif
+				l_name.is_argument or
+				l_name.is_local or
+				l_name.is_object_test_local or
+				l_name.is_iteration_item or
+				l_name.is_inline_separate_argument
+			then
 				l_typed_pointer_type := current_universe_impl.typed_pointer_identity_type
 				l_typed_pointer_class := l_typed_pointer_type.named_base_class
 				if l_typed_pointer_class.actual_class.is_preparsed then
 						-- Class TYPED_POINTER has been found in the universe.
-						-- Use ISE's implementation: the type of '$iteration_item' is
-						-- 'TYPED_POINTER [<type-of-iteration-item>]'.
-					find_iteration_item_type (l_name.iteration_item_name, a_context)
+						-- Use ISE's implementation: the type of '$name' is
+						-- 'TYPED_POINTER [<type-of-name>]'.
+					find_expression_type (l_name.as_expression, a_context, current_system.detachable_separate_any_type)
 					if not has_fatal_error then
 						a_context.force_last (l_typed_pointer_type)
 					end
@@ -1016,7 +870,7 @@ feature {NONE} -- Expression processing
 			had_error: BOOLEAN
 			l_old_attachment_scope: like current_attachment_scope
 			l_else_attachment_scope: like current_attachment_scope
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			l_expression_context: ET_NESTED_TYPE_CONTEXT
 			l_result_context_list: DS_ARRAYED_LIST [ET_NESTED_TYPE_CONTEXT]
 			l_old_result_context_list_count: INTEGER
@@ -1033,11 +887,11 @@ feature {NONE} -- Expression processing
 				attachment_scope_builder.build_scope (l_conditional, current_attachment_scope)
 				attachment_scope_builder.build_negated_scope (l_conditional, l_else_attachment_scope)
 			end
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			l_result_context_list := common_ancestor_type_list
 			l_old_result_context_list_count := l_result_context_list.count
 			l_expression_context := new_context (current_type)
-			find_expression_type (a_expression.then_expression, l_expression_context, l_detachable_any_type)
+			find_expression_type (a_expression.then_expression, l_expression_context, l_detachable_separate_any_type)
 			if has_fatal_error then
 				had_error := True
 				free_context (l_expression_context)
@@ -1057,7 +911,7 @@ feature {NONE} -- Expression processing
 						attachment_scope_builder.build_negated_scope (l_conditional, l_else_attachment_scope)
 					end
 					l_expression_context := new_context (current_type)
-					find_expression_type (l_elseif.then_expression, l_expression_context, l_detachable_any_type)
+					find_expression_type (l_elseif.then_expression, l_expression_context, l_detachable_separate_any_type)
 					if has_fatal_error then
 						had_error := True
 						free_context (l_expression_context)
@@ -1071,7 +925,7 @@ feature {NONE} -- Expression processing
 				current_attachment_scope.copy_scope (l_else_attachment_scope)
 			end
 			l_expression_context := new_context (current_type)
-			find_expression_type (a_expression.else_expression, l_expression_context, l_detachable_any_type)
+			find_expression_type (a_expression.else_expression, l_expression_context, l_detachable_separate_any_type)
 			if has_fatal_error then
 				had_error := True
 				free_context (l_expression_context)
@@ -1134,7 +988,7 @@ feature {NONE} -- Expression processing
 			l_name := an_expression.name
 			l_target := an_expression.left
 			l_seed := l_name.seed
-			find_expression_type (l_target, a_context, current_system.detachable_any_type)
+			find_expression_type (l_target, a_context, current_system.detachable_separate_any_type)
 			if has_fatal_error then
 				-- Do nothing.
 			elseif l_seed <= 0 then
@@ -1187,6 +1041,44 @@ feature {NONE} -- Expression processing
 			end
 		end
 
+	find_inline_separate_argument_type (a_name: ET_IDENTIFIER; a_context: ET_NESTED_TYPE_CONTEXT)
+			-- `a_context' represents the type in which `a_name' appears.
+			-- It will be altered on exit to represent the type of `a_name'.
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_name_not_void: a_name /= Void
+			a_name_inline_separate_argument: a_name.is_inline_separate_argument
+			a_context_not_void: a_context /= Void
+		local
+			l_seed: INTEGER
+			l_inline_separate_argument: ET_INLINE_SEPARATE_ARGUMENT
+			l_inline_separate_arguments: detachable ET_INLINE_SEPARATE_ARGUMENT_LIST
+		do
+			reset_fatal_error (False)
+			l_seed := a_name.seed
+			l_inline_separate_arguments := current_closure_impl.inline_separate_arguments
+			if l_inline_separate_arguments = Void then
+					-- Internal error.
+					-- This error should have already been reported when checking
+					-- `current_feature' (using ET_FEATURE_CHECKER for example).
+				set_fatal_error
+				if internal_error_enabled or not current_class.has_implementation_error then
+					error_handler.report_giaaa_error
+				end
+			elseif l_seed < 1 or l_seed > l_inline_separate_arguments.count then
+					-- Internal error.
+					-- This error should have already been reported when checking
+					-- `current_feature' (using ET_FEATURE_CHECKER for example).
+				set_fatal_error
+				if internal_error_enabled or not current_class.has_implementation_error then
+					error_handler.report_giaaa_error
+				end
+			else
+				l_inline_separate_argument := l_inline_separate_arguments.argument (l_seed)
+				find_expression_type (l_inline_separate_argument.expression, a_context, current_system.detachable_separate_any_type)
+			end
+		end
+
 	find_integer_constant_type (a_constant: ET_INTEGER_CONSTANT; a_context: ET_NESTED_TYPE_CONTEXT)
 			-- `a_context' represents the type in which `a_constant' appears.
 			-- It will be altered on exit to represent the type of `a_constant'.
@@ -1216,13 +1108,13 @@ feature {NONE} -- Expression processing
 			l_when_part: ET_WHEN_EXPRESSION
 			i, nb: INTEGER
 			had_error: BOOLEAN
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 			l_expression_context: ET_NESTED_TYPE_CONTEXT
 			l_result_context_list: DS_ARRAYED_LIST [ET_NESTED_TYPE_CONTEXT]
 			l_old_result_context_list_count: INTEGER
 		do
 			reset_fatal_error (False)
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			l_result_context_list := common_ancestor_type_list
 			l_old_result_context_list_count := l_result_context_list.count
 			if attached a_expression.when_parts as l_when_parts then
@@ -1230,7 +1122,7 @@ feature {NONE} -- Expression processing
 				from i := 1 until i > nb loop
 					l_when_part := l_when_parts.item (i)
 					l_expression_context := new_context (current_type)
-					find_expression_type (l_when_part.then_expression, l_expression_context, l_detachable_any_type)
+					find_expression_type (l_when_part.then_expression, l_expression_context, l_detachable_separate_any_type)
 					if has_fatal_error then
 						had_error := True
 						free_context (l_expression_context)
@@ -1242,7 +1134,7 @@ feature {NONE} -- Expression processing
 			end
 			if attached a_expression.else_part as l_else_part then
 				l_expression_context := new_context (current_type)
-				find_expression_type (l_else_part.expression, l_expression_context, l_detachable_any_type)
+				find_expression_type (l_else_part.expression, l_expression_context, l_detachable_separate_any_type)
 				if has_fatal_error then
 					had_error := True
 					free_context (l_expression_context)
@@ -1308,7 +1200,7 @@ feature {NONE} -- Expression processing
 				end
 			else
 				l_iteration_component := l_iteration_components.iteration_component (l_seed)
-				find_expression_type (l_iteration_component.new_cursor_expression, a_context, current_system.detachable_any_type)
+				find_expression_type (l_iteration_component.new_cursor_expression, a_context, current_system.detachable_separate_any_type)
 			end
 		end
 
@@ -1347,9 +1239,9 @@ feature {NONE} -- Expression processing
 			else
 				l_iteration_component := l_iteration_components.iteration_component (l_seed)
 				if a_name = l_iteration_component.unfolded_cursor_name or l_iteration_component.has_cursor_name then
-					find_expression_type (l_iteration_component.new_cursor_expression, a_context, current_system.detachable_any_type)
+					find_expression_type (l_iteration_component.new_cursor_expression, a_context, current_system.detachable_separate_any_type)
 				else
-					find_expression_type (l_iteration_component.cursor_item_expression, a_context, current_system.detachable_any_type)
+					find_expression_type (l_iteration_component.cursor_item_expression, a_context, current_system.detachable_separate_any_type)
 				end
 			end
 		end
@@ -1497,7 +1389,7 @@ feature {NONE} -- Expression processing
 		do
 			reset_fatal_error (False)
 			l_use_target_type := True
-			l_item_target_context := current_system.detachable_any_type
+			l_item_target_context := current_system.detachable_separate_any_type
 				-- Try to find out whether the manifest array is the source of
 				-- an attachment whose target is of type "ARRAY [T]". If this is
 				-- the case then the expected type for the items of the manifest
@@ -1635,7 +1527,7 @@ feature {NONE} -- Expression processing
 			l_tuple_parameters: detachable ET_ACTUAL_PARAMETERS
 			l_expression_context: ET_NESTED_TYPE_CONTEXT
 			l_parameter_context: ET_NESTED_TYPE_CONTEXT
-			l_detachable_any_type: ET_CLASS_TYPE
+			l_detachable_separate_any_type: ET_CLASS_TYPE
 		do
 			reset_fatal_error (False)
 				-- Try to find out whether the expected type (i.e. `current_target_type')
@@ -1653,7 +1545,7 @@ feature {NONE} -- Expression processing
 					nb2 := l_tuple_parameters.count
 				end
 			end
-			l_detachable_any_type := current_system.detachable_any_type
+			l_detachable_separate_any_type := current_system.detachable_separate_any_type
 			nb := an_expression.count
 			if nb = 0 then
 				l_tuple_type := current_universe_impl.tuple_type
@@ -1673,7 +1565,7 @@ feature {NONE} -- Expression processing
 					find_expression_type (an_expression.expression (1), a_context, l_parameter_context)
 					free_context (l_parameter_context)
 				else
-					find_expression_type (an_expression.expression (1), a_context, l_detachable_any_type)
+					find_expression_type (an_expression.expression (1), a_context, l_detachable_separate_any_type)
 				end
 				if not has_fatal_error then
 					l_tuple_type := current_universe_impl.tuple_identity_type
@@ -1684,7 +1576,7 @@ feature {NONE} -- Expression processing
 				create l_actuals.make_with_capacity (nb)
 				from i := nb until i <= nb2 loop
 						-- There is no matching tuple item type.
-					find_expression_type (an_expression.expression (i), l_expression_context, l_detachable_any_type)
+					find_expression_type (an_expression.expression (i), l_expression_context, l_detachable_separate_any_type)
 					if has_fatal_error then
 						had_error := True
 					else
@@ -1808,7 +1700,7 @@ feature {NONE} -- Expression processing
 				if l_type /= Void then
 					a_context.force_last (l_type)
 				else
-					find_expression_type (l_object_test.expression, a_context, current_system.detachable_any_type)
+					find_expression_type (l_object_test.expression, a_context, current_system.detachable_separate_any_type)
 				end
 				if not a_context.is_type_attached then
 					a_context.force_last (tokens.attached_like_current)
@@ -1949,7 +1841,7 @@ feature {NONE} -- Expression processing
 			l_name := a_call.name
 			l_actuals := a_call.arguments
 			l_seed := l_name.seed
-			find_expression_type (l_target, a_context, current_system.detachable_any_type)
+			find_expression_type (l_target, a_context, current_system.detachable_separate_any_type)
 			if has_fatal_error then
 				-- Do nothing.
 			elseif l_seed <= 0 then
@@ -2645,7 +2537,7 @@ feature {NONE} -- Agent validity
 			reset_fatal_error (False)
 			a_name := an_expression.name
 			a_seed := a_name.seed
-			find_expression_type (a_target, a_context, current_system.detachable_any_type)
+			find_expression_type (a_target, a_context, current_system.detachable_separate_any_type)
 			if has_fatal_error then
 				-- Do nothing.
 			elseif a_seed <= 0 then
@@ -3405,8 +3297,8 @@ feature {ET_AST_NODE} -- Processing
 				find_object_test_local_type (an_identifier, current_context)
 			elseif an_identifier.is_iteration_item then
 				find_iteration_item_type (an_identifier, current_context)
-			elseif an_identifier.is_feature_name then
-				find_unqualified_call_expression_type (an_identifier, current_context)
+			elseif an_identifier.is_inline_separate_argument then
+				find_inline_separate_argument_type (an_identifier, current_context)
 			else
 					-- Internal error: invalid kind of identifier.
 					-- This error should have already been reported when checking

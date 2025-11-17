@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Ant"
 	copyright: "Copyright (c) 2002-2018, Sven Ehrke and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_DIRECTORYSET
 
@@ -288,7 +286,7 @@ feature -- Cursor movement
 		end
 
 	forth
-	   		-- Move cursor to next position.
+			-- Move cursor to next position.
 		require
 			not_after: not after
 		do

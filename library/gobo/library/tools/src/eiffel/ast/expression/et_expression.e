@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_EXPRESSION
 
@@ -38,39 +36,57 @@ inherit
 			valid_index as valid_index_actual_argument
 		undefine
 			is_instance_free
+		redefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 	ET_ARGUMENT_OPERAND
 		redefine
-			index
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 	ET_AGENT_ARGUMENT_OPERAND
 		undefine
-			reset, set_index
+			reset
 		redefine
-			index
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 	ET_TARGET_OPERAND
 		undefine
-			reset, set_index
+			reset
 		redefine
-			index
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 	ET_AGENT_TARGET
 		undefine
-			reset, set_index
+			reset
 		redefine
-			index
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 feature -- Access
-
-	index: INTEGER
-			-- Index of expression in enclosing feature;
-			-- Used to get dynamic information about this expression.
 
 	actual_argument (i: INTEGER): ET_EXPRESSION
 			-- Actual argument at index `i'
@@ -122,6 +138,34 @@ feature -- Status report
 			-- Result := False
 		end
 
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
 feature -- Measurement
 
 	actual_argument_count: INTEGER = 1
@@ -143,6 +187,36 @@ feature -- Type conversion
 			-- no_cycle: no cycle in anchored types involved.
 		do
 			-- Result := Void
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current expression
+			-- and (recursively) in its subexpressions.
+		do
+		end
+
+feature -- SCOOP
+
+	add_separate_arguments (a_list: DS_ARRAYED_LIST [ET_IDENTIFIER]; a_closure: ET_CLOSURE)
+			-- Add to `a_list' inline separate arguments or formal arguments which
+			-- when controlled (i.e. when their type is separate) implies that when
+			-- the current expression is involved in the target of a separate call
+			-- this target is also controlled.
+			-- `a_closure' is the closure (i.e. inline agent or enclosing feature)
+			-- in which the current expression appears.
+			-- (Used when determining the SCOOP sessions to be used when recording
+			-- a separate call to another SCOOP processor.)
+		require
+			a_list_not_void: a_list /= Void
+			no_void_item: not a_list.has_void
+			a_closure_not_void: a_closure /= Void
+			valid_items: across a_list as l_item all l_item.is_argument or l_item.is_inline_separate_argument end
+		do
+		ensure
+			no_void_item: not a_list.has_void
+			valid_items: across a_list as l_item all l_item.is_argument or l_item.is_inline_separate_argument end
 		end
 
 invariant

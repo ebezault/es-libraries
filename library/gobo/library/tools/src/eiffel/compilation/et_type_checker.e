@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel type checkers"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_TYPE_CHECKER
 
@@ -339,6 +337,36 @@ feature -- Validity checking
 			current_context := old_context
 		end
 
+	check_root_type_validity (a_type: ET_BASE_TYPE; a_system: ET_SYSTEM)
+			-- Check validity of `a_type' as root type of the system.
+			-- Set `has_fatal_error' if a fatal error occurred.
+		require
+			a_type_not_void: a_type /= Void
+			a_type_is_standalone: a_type.is_base_type
+			a_system_not_void: a_system /= Void
+		local
+			l_root_class: ET_CLASS
+			old_context: ET_TYPE_CONTEXT
+			old_class: ET_CLASS
+			old_class_impl: ET_CLASS
+		do
+			has_fatal_error := False
+			create l_root_class.make_root (a_system)
+			old_context := current_context
+			current_context := l_root_class
+			old_class := current_class
+			current_class := l_root_class
+			old_class_impl := current_class_impl
+			current_class_impl := l_root_class
+			a_type.process (Current)
+			if not has_fatal_error then
+				check_creation_type_validity (a_type, current_class_impl, current_context, a_type.position)
+			end
+			current_class_impl := old_class_impl
+			current_class := old_class
+			current_context := old_context
+		end
+
 feature -- Type conversion
 
 	convert_feature (a_source_type: ET_TYPE_CONTEXT; a_target_type: ET_TYPE_CONTEXT): detachable ET_CONVERT_FEATURE
@@ -362,7 +390,25 @@ feature -- Type conversion
 				a_source_base_class.process (system_processor.eiffel_parser)
 			end
 			Result := a_source_base_class.convert_to_feature (a_target_type, a_source_type)
-			if Result = Void then
+			if Result /= Void then
+				if a_source_type.scoop_mode then
+					if not a_source_type.is_type_non_separate then
+						if not a_source_type.is_controlled then
+								-- This is a separate call. So the target of the call needs
+								-- to be controlled.
+							Result := Void
+						elseif not a_target_type.is_type_separate then
+								-- If the target of a call is separate, then the type of the call
+								-- is separate as well, even if the declared type of the query is not.
+								-- Here we have `a.to_b`, where `a` is of type `a_source_type`. If
+								-- `a_source_type` is separate then `a.to_b` will be separate as well.
+								-- But the type of `a.to_b` needs to conform to `a_target_type`. So
+								-- `a_target_type` need to be separate as well.
+							Result := Void
+						end
+					end
+				end
+			else
 				a_target_base_class := a_target_type.base_class
 					-- Make sure that the class has been parsed before
 					-- asking for its conversion features.
@@ -404,24 +450,26 @@ feature {NONE} -- Validity checking
 				if a_type.is_generic then
 						-- Class "NONE" is not generic.
 					set_fatal_error
-					if not class_interface_error_only then
-						if current_class = current_class_impl then
-							error_handler.report_vtug1a_error (current_class, a_type)
-						else
+					if class_interface_error_only then
+						-- Do not report this error.
+					elseif current_class = current_class_impl then
+						error_handler.report_vtug1a_error (current_class, a_type)
+					else
 -- TODO: this error should have already been reported when processing `current_class_impl'.
-							error_handler.report_vtug1a_error (current_class_impl, a_type)
-						end
+						error_handler.report_vtug1a_error (current_class_impl, a_type)
 					end
 				end
 			elseif a_class.is_unknown then
 				set_fatal_error
-				if not class_interface_error_only then
-					if current_class = current_class_impl then
-						error_handler.report_vtct0a_error (current_class, a_type)
-					else
+				if class_interface_error_only then
+					-- Do not report this error.
+				elseif current_class.is_root then
+					error_handler.report_vsrt2a_error (a_type)
+				elseif current_class = current_class_impl then
+					error_handler.report_vtct0a_error (current_class, a_type)
+				else
 -- TODO: this error should have already been reported when processing `current_class_impl'.
-						error_handler.report_vtct0a_error (current_class_impl, a_type)
-					end
+					error_handler.report_vtct0a_error (current_class_impl, a_type)
 				end
 			else
 				a_class.process (system_processor.interface_checker)
@@ -434,13 +482,13 @@ feature {NONE} -- Validity checking
 				elseif not a_class.is_generic then
 					if a_type.is_generic then
 						set_fatal_error
-						if not class_interface_error_only then
-							if current_class = current_class_impl then
-								error_handler.report_vtug1a_error (current_class, a_type)
-							else
+						if class_interface_error_only then
+							-- Do not report this error.
+						elseif current_class = current_class_impl then
+							error_handler.report_vtug1a_error (current_class, a_type)
+						else
 -- TODO: this error should have already been reported when processing `current_class_impl'.
-								error_handler.report_vtug1a_error (current_class_impl, a_type)
-							end
+							error_handler.report_vtug1a_error (current_class_impl, a_type)
 						end
 					end
 				else
@@ -450,13 +498,13 @@ feature {NONE} -- Validity checking
 					l_actuals := a_type.actual_parameters
 					if not a_type.is_generic then
 						set_fatal_error
-						if not class_interface_error_only then
-							if current_class = current_class_impl then
-								error_handler.report_vtug2a_error (current_class, a_type)
-							else
+						if class_interface_error_only then
+							-- Do not report this error.
+						elseif current_class = current_class_impl then
+							error_handler.report_vtug2a_error (current_class, a_type)
+						else
 -- TODO: this error should have already been reported when processing `current_class_impl'.
-								error_handler.report_vtug2a_error (current_class_impl, a_type)
-							end
+							error_handler.report_vtug2a_error (current_class_impl, a_type)
 						end
 					elseif not attached a_class.formal_parameters as a_formals then
 							-- Internal error: `a_class' is generic.
@@ -469,13 +517,13 @@ feature {NONE} -- Validity checking
 					else
 						if l_actuals.count /= a_formals.count then
 							set_fatal_error
-							if not class_interface_error_only then
-								if current_class = current_class_impl then
-									error_handler.report_vtug2a_error (current_class, a_type)
-								else
+							if class_interface_error_only then
+								-- Do not report this error.
+							elseif current_class = current_class_impl then
+								error_handler.report_vtug2a_error (current_class, a_type)
+							else
 -- TODO: this error should have already been reported when processing `current_class_impl'.
-									error_handler.report_vtug2a_error (current_class_impl, a_type)
-								end
+								error_handler.report_vtug2a_error (current_class_impl, a_type)
 							end
 						else
 							nb := l_actuals.count
@@ -511,21 +559,25 @@ feature {NONE} -- Validity checking
 								if a_formal.is_expanded then
 									if not an_actual.is_type_expanded (current_context) then
 										set_fatal_error
-										if not class_interface_error_only then
+										if class_interface_error_only then
+											-- Do not report this error.
+										else
 											error_handler.report_gvtcg5b_error (current_class, current_class_impl, a_type, an_actual, a_formal)
 										end
 									end
 								elseif a_formal.is_reference then
 									if not an_actual.is_type_reference (current_context) then
 										set_fatal_error
-										if not class_interface_error_only then
+										if class_interface_error_only then
+											-- Do not report this error.
+										else
 											error_handler.report_gvtcg5a_error (current_class, current_class_impl, a_type, an_actual, a_formal)
 										end
 									end
 								end
 								a_constraint := a_formal.constraint
 								if a_constraint = Void then
-									a_constraint := current_system.detachable_any_type
+									a_constraint := current_system.detachable_separate_any_type
 								end
 									-- If we have:
 									--
@@ -558,7 +610,7 @@ feature {NONE} -- Validity checking
 										-- The actual parameter does not conform to the
 										-- constraint of its corresponding formal parameter.
 										--
-										-- Note that it is possible that the actual paramater conforms
+										-- Note that it is possible that the actual parameter conforms
 										-- to the constraint in `current_class_impl' but not in `current_class'.
 										-- Here is an example:
 										--
@@ -581,7 +633,12 @@ feature {NONE} -- Validity checking
 										-- In class B the actual generic parameter 'X [A]' does not conform
 										-- to its constraint 'X [like Current]'.
 									set_fatal_error
-									if not class_interface_error_only then
+									if class_interface_error_only then
+										-- Do not report this error.
+									elseif an_actual.named_type_has_class_with_ancestors_not_built_successfully (current_context) then
+										-- An error has already been reported about the classes
+										-- involved into this conformance check.
+									else
 										error_handler.report_vtcg3a_error (current_class, current_class_impl, a_type, an_actual, a_constraint)
 									end
 								end
@@ -1053,6 +1110,9 @@ feature {NONE} -- Access
 
 	in_qualified_anchored_type: BOOLEAN
 			-- Is the type being checked contained in a qualified anchored type?
+
+	in_root_type: BOOLEAN
+			-- Is the type being checked part of the root type of the system?
 
 feature {NONE} -- Implementation
 

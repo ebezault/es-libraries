@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -9,10 +9,8 @@ note
 		need a few modifications to account of surrogates.
 	]"
 	library: "Gobo Eiffel String Library"
-	copyright: "Copyright (c) 2005-2018, Colin Adams and others"
+	copyright: "Copyright (c) 2005-2022, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ST_UNICODE_NORMALIZATION_INTERFACE
 
@@ -355,7 +353,7 @@ feature {NONE} -- Implementation
 			until
 				Result.is_false or i > len
 			loop
-				c := a_source.item_code (i)
+				c := a_source.code (i).to_integer_32
 				a_combining_class := canonical_combining_class_property (c)
 				if last_combining_class > a_combining_class and a_combining_class /= 0 then
 					Result.set_false
@@ -583,7 +581,7 @@ feature {NONE} -- Implementation
 			until
 				i > len
 			loop
-				a_code := a_source.item_code (i)
+				a_code := a_source.code (i).to_integer_32
 				recursively_decompose (a_code, is_canonical, Result, changed)
 				i := i + 1
 			end

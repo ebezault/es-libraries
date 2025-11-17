@@ -1,13 +1,11 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 
 <project name="gobo" default="help">
 
 	<description>
 		description: "Eiffel Ant file for Gobo Eiffel"
-		copyright: "Copyright (c) 2001-2018, Eric Bezault and others"
+		copyright: "Copyright (c) 2001-2025, Eric Bezault and others"
 		license: "MIT License"
-		date: "$Date$"
-		revision: "$Revision$"
 	</description>
 
 	<inherit>
@@ -35,14 +33,17 @@
 		</description>
 		
 		<geant target="develop"/>
-		<delete>
-			<fileset directory="." include="@(**/.git*)"/>
-		</delete>
-		<delete file=".travis.yml"/>
-		<delete directory=".gitlab"/>
+		<delete directory=".azure"/>
+		<delete directory=".cicd"/>
+		<delete directory=".githooks"/>
+		<delete directory=".github"/>
 		<delete directory=".sourceforge"/>
 		<delete directory="library/structure/doc/visio"/>
 		<delete directory="library/time/doc/visio"/>
+		<delete>
+			<fileset directory="." include="@(**/.git*)"/>
+		</delete>
+		<delete file="azure-pipelines.yml"/>
 	</target>
 
 	<target name="web_site" depend="init">
@@ -51,29 +52,10 @@
 			The bootstrap should be run first.
 		</description>
 		
-		<setenv name="path_to_gobo" value="http://www.gobosoft.com/eiffel/gobo/"/>
-		<geant target="delivery"/>		
-		<geant target="move_doc_files" arguments="library">
-			<fileset include="@(library/*/build.eant)">
-				<map type="glob" from="library/*/build.eant" to="*"/>
-			</fileset>
-		</geant>
-		<geant target="move_doc_files" arguments="tool">
-			<fileset include="@(tool/*/build.eant)">
-				<map type="glob" from="tool/*/build.eant" to="*"/>
-			</fileset>
-		</geant>
-		<move to_directory=".">
-			<fileset include="@(common/**/*)">
-				<map type="glob" from="common/*" to="*"/>
-			</fileset>
-		</move>
-		<delete directory="library"/>
-		<delete directory="tool"/>
-		<delete directory="common"/>
-		<delete>
-			<fileset directory="." include="**/*.@(eant|xml|xsl)"/>
-		</delete>
+		<geant target="delivery"/>
+		<delete directory="tool/gec/backend/c/boehm"/>
+		<delete directory="tool/gec/backend/c/zig"/>
+		<delete directory="tool/gec/bootstrap"/>
 	</target>
 	
 <!-- Implementation -->

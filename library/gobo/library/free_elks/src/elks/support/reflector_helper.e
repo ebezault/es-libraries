@@ -3,8 +3,8 @@
 	library: "Free implementation of ELKS library"
 	status: "See notice at end of class."
 	legal: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2020-09-14 22:34:03 +0000 (Mon, 14 Sep 2020) $"
+	revision: "$Revision: 104657 $"
 
 class
 	REFLECTOR_HELPER

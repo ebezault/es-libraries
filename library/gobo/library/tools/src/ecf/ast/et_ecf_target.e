@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"ECF targets"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2008-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2008-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ECF_TARGET
 
@@ -94,6 +92,10 @@ feature -- Access
 
 	file_rules: detachable ET_ECF_FILE_RULES
 			-- File rules
+
+	namespaces: detachable ET_ECF_NAMESPACES
+			-- .Net namespaces
+			-- (Introduced in ECF 1.23.0)
 
 	external_includes: detachable ET_ECF_EXTERNAL_INCLUDES
 			-- External includes
@@ -266,6 +268,14 @@ feature -- Setting
 			file_rules := a_file_rules
 		ensure
 			file_rules_set: file_rules = a_file_rules
+		end
+
+	set_namespaces (a_namespaces: like namespaces)
+			-- Set `namespaces' to `a_namespaces'.
+		do
+			namespaces := a_namespaces
+		ensure
+			namespaces_set: namespaces = a_namespaces
 		end
 
 	set_external_includes (a_external_includes: like external_includes)
@@ -505,10 +515,33 @@ feature -- Basic operations
 			if l_value /= Void and then l_value.is_boolean then
 				a_system.set_console_application_mode (l_value.to_boolean)
 			end
+				-- "check_for_void_target".
+			l_value := settings.value ({ET_ECF_SETTING_NAMES}.check_for_void_target_setting_name)
+			if l_value = Void then
+					-- The default value for `check_for_void_target` depends on whether we are in void-safety mode or not:
+					--   * void-safety mode (all): False
+					--   * otherwise: True
+				l_value := capabilities.use_value ({ET_ECF_CAPABILITY_NAMES}.void_safety_capability_name)
+				if l_value = Void then
+					l_value := capabilities.support_value ({ET_ECF_CAPABILITY_NAMES}.void_safety_capability_name)
+				end
+				if l_value /= Void and then STRING_.same_case_insensitive (l_value, {ET_ECF_CAPABILITY_NAMES}.all_capability_value) then
+					a_system.set_check_for_void_target_mode (False)
+				else
+					a_system.set_check_for_void_target_mode (True)
+				end
+			elseif l_value.is_boolean then
+				a_system.set_check_for_void_target_mode (l_value.to_boolean)
+			end
 				-- "exception_trace".
 			l_value := settings.value ({ET_ECF_SETTING_NAMES}.exception_trace_setting_name)
 			if l_value /= Void and then l_value.is_boolean then
 				a_system.set_exception_trace_mode (l_value.to_boolean)
+			end
+				-- "executable_name".
+			l_value := settings.value ({ET_ECF_SETTING_NAMES}.executable_name_setting_name)
+			if l_value /= Void and then not l_value.is_empty then
+				a_system.set_executable_name (l_value)
 			end
 				-- "total_order_on_reals".
 			l_value := settings.value ({ET_ECF_SETTING_NAMES}.total_order_on_reals_setting_name)
@@ -519,6 +552,16 @@ feature -- Basic operations
 			l_value := settings.value ({ET_ECF_SETTING_NAMES}.line_generation_setting_name)
 			if l_value /= Void and then l_value.is_boolean then
 				a_system.set_line_generation_mode (l_value.to_boolean)
+			end
+				-- "inlining".
+			l_value := settings.value ({ET_ECF_SETTING_NAMES}.inlining_setting_name)
+			if l_value /= Void and then l_value.is_boolean then
+				a_system.set_inlining_mode (l_value.to_boolean)
+			end
+				-- "inlining_size".
+			l_value := settings.value ({ET_ECF_SETTING_NAMES}.inlining_size_setting_name)
+			if l_value /= Void and then l_value.is_integer then
+				a_system.set_inlining_size (l_value.to_integer)
 			end
 		end
 
@@ -537,10 +580,13 @@ feature -- Basic operations
 			if l_value /= Void then
 				if STRING_.same_case_insensitive (l_value, {ET_ECF_CAPABILITY_NAMES}.thread_capability_value) then
 					a_system.set_multithreaded_mode (True)
+					a_system.set_scoop_mode (False)
 				elseif STRING_.same_case_insensitive (l_value, {ET_ECF_CAPABILITY_NAMES}.scoop_capability_value) then
 					a_system.set_multithreaded_mode (False)
+					a_system.set_scoop_mode (True)
 				else
 					a_system.set_multithreaded_mode (False)
+					a_system.set_scoop_mode (False)
 				end
 			end
 				-- void_safety.
@@ -706,16 +752,8 @@ feature {NONE} -- Implementation
 		require
 			a_group_not_void: a_group /= Void
 			a_value_not_void: a_value /= Void
-		local
-			l_options: ET_ECF_OPTIONS
 		do
-			if attached a_group.options as l_group_options then
-				override_all_assertions_in_option (l_group_options, a_value)
-			else
-				create l_options.make
-				a_group.set_options (l_options)
-				override_all_assertions_in_option (l_options, a_value)
-			end
+			override_all_assertions_in_option (a_group.options, a_value)
 			if attached a_group.class_options as l_class_options then
 				l_class_options.do_all (agent override_all_assertions_in_option (?, a_value))
 			end

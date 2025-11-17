@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel 'like feature' types"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2001-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2001-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_LIKE_FEATURE
 
@@ -35,6 +33,7 @@ inherit
 			conforms_from_formal_parameter_type_with_type_marks,
 			conforms_from_tuple_type_with_type_marks,
 			type_with_type_mark,
+			is_type_non_separate_with_type_mark,
 			is_type_reference_with_type_mark,
 			is_type_detachable_with_type_mark,
 			has_unqualified_anchored_type,
@@ -538,14 +537,6 @@ feature -- Setting
 			like_keyword_set: like_keyword = a_like
 		end
 
-	set_type_mark (a_type_mark: like type_mark)
-			-- Set `type_mark' to `a_type_mark'.
-		do
-			type_mark := a_type_mark
-		ensure
-			type_mark_set: type_mark = a_type_mark
-		end
-
 feature -- Status report
 
 	is_like_argument: BOOLEAN
@@ -562,6 +553,74 @@ feature -- Status report
 			-- Is the feature with seed `seed' a procedure?
 			-- Only make sense in case of 'like argument',
 			-- otherwise the feature has to be a query.
+
+	is_type_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Same as `is_type_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		local
+			a_class: ET_CLASS
+			l_index: INTEGER
+		do
+			if seed = 0 then
+					-- Anchored type not resolved yet.
+				Result := False
+			elseif is_like_argument then
+				a_class := a_context.base_class
+				l_index := index
+				if attached a_class.seeded_feature (seed) as l_feature and then attached l_feature.arguments as l_args and then l_index <= l_args.count then
+					Result := l_args.item (l_index).type.is_type_separate_with_type_mark (overridden_type_mark (a_type_mark), a_context)
+				else
+						-- Internal error: an inconsistency has been
+						-- introduced in the AST since we resolved
+						-- current anchored type.
+					Result := False
+				end
+			else
+				a_class := a_context.base_class
+				if attached a_class.seeded_query (seed) as l_query then
+					Result := l_query.type.is_type_separate_with_type_mark (overridden_type_mark (a_type_mark), a_context)
+				else
+						-- Internal error: an inconsistency has been
+						-- introduced in the AST since we resolved
+						-- current anchored type.
+					Result := False
+				end
+			end
+		end
+
+	is_type_non_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Same as `is_type_non_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		local
+			a_class: ET_CLASS
+			l_index: INTEGER
+		do
+			if seed = 0 then
+					-- Anchored type not resolved yet.
+				Result := False
+			elseif is_like_argument then
+				a_class := a_context.base_class
+				l_index := index
+				if attached a_class.seeded_feature (seed) as l_feature and then attached l_feature.arguments as l_args and then l_index <= l_args.count then
+					Result := l_args.item (l_index).type.is_type_non_separate_with_type_mark (overridden_type_mark (a_type_mark), a_context)
+				else
+						-- Internal error: an inconsistency has been
+						-- introduced in the AST since we resolved
+						-- current anchored type.
+					Result := False
+				end
+			else
+				a_class := a_context.base_class
+				if attached a_class.seeded_query (seed) as l_query then
+					Result := l_query.type.is_type_non_separate_with_type_mark (overridden_type_mark (a_type_mark), a_context)
+				else
+						-- Internal error: an inconsistency has been
+						-- introduced in the AST since we resolved
+						-- current anchored type.
+					Result := False
+				end
+			end
+		end
 
 	is_type_expanded_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
 			-- Same as `is_type_expanded' except that the type mark status is
@@ -837,6 +896,41 @@ feature -- Status report
 						-- introduced in the AST since we resolved
 						-- current anchored type.
 					Result := a_class.is_unknown
+				end
+			end
+		end
+
+	named_type_has_class_with_ancestors_not_built_successfully (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Does the named type of current type contain a class
+			-- whose ancestors have not been built successfully
+			-- when it appears in `a_context'?
+		local
+			a_base_class: ET_CLASS
+			l_index: INTEGER
+		do
+			if seed = 0 then
+					-- Anchored type not resolved yet.
+				Result := False
+			elseif is_like_argument then
+				a_base_class := a_context.base_class
+				l_index := index
+				if attached a_base_class.seeded_feature (seed) as l_feature and then attached l_feature.arguments as l_args and then l_index <= l_args.count then
+					Result := l_args.item (l_index).type.named_type_has_class_with_ancestors_not_built_successfully (a_context)
+				else
+						-- Internal error: an inconsistency has been
+						-- introduced in the AST since we resolved
+						-- current anchored type.
+					Result := False
+				end
+			else
+				a_base_class := a_context.base_class
+				if attached a_base_class.seeded_query (seed) as l_query then
+					Result := l_query.type.named_type_has_class_with_ancestors_not_built_successfully (a_context)
+				else
+						-- Internal error: an inconsistency has been
+						-- introduced in the AST since we resolved
+						-- current anchored type.
+					Result := False
 				end
 			end
 		end
@@ -1424,11 +1518,26 @@ feature -- Resolving
 feature -- Output
 
 	append_to_string (a_string: STRING)
-			-- Append textual representation of
-			-- current type to `a_string'.
+			-- Append `to_text' to `a_string'.
 		do
 			if attached type_mark as l_type_mark then
 				l_type_mark.append_to_string_with_space (a_string)
+			end
+			a_string.append_string (like_space)
+			a_string.append_string (name.lower_name)
+		end
+
+	append_runtime_name_to_string (a_string: STRING)
+			-- Append `runtime_name_to_text' to `a_string'.
+		do
+			if attached type_mark as l_type_mark then
+				if l_type_mark.is_attached_mark or l_type_mark.is_expanded_mark then
+					a_string.append_character ('!')
+				end
+				if l_type_mark.is_separate_mark then
+					a_string.append_string (tokens.separate_keyword_name)
+					a_string.append_character (' ')
+				end
 			end
 			a_string.append_string (like_space)
 			a_string.append_string (name.lower_name)

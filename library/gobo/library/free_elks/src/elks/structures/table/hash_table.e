@@ -1783,8 +1783,8 @@ note
 				... No item was present for `your_key' ...
 			end
 		]"
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-06-18 17:01:52 +0000 (Fri, 18 Jun 2021) $"
+	revision: "$Revision: 105548 $"
 	copyright: "Copyright (c) 1984-2021, Eiffel Software and others"
 	license:   "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[

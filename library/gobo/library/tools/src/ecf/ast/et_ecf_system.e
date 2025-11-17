@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Tools Library"
 	copyright: "Copyright (c) 2006-2018, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ECF_SYSTEM
 
@@ -70,33 +68,5 @@ feature -- Access
 			-- Universe of current system config.
 			-- It might be different from the current system config itself when
 			-- using parent targets with an 'extension_location' attribute.
-
-feature -- Setting
-
-	set_root_class_name (a_name: STRING)
-			-- Set root class name to `a_name'.
-		local
-			an_identifier: ET_IDENTIFIER
-		do
-			if a_name /= Void and then a_name.count > 0 then
-				create an_identifier.make (a_name)
-				set_root_type (an_identifier)
-			else
-				unset_root_type
-			end
-		end
-
-	set_creation_procedure_name (a_name: STRING)
-			-- Set `creation_procedure_name' to `a_name'.
-		local
-			an_identifier: ET_IDENTIFIER
-		do
-			if a_name /= Void and then a_name.count > 0 then
-				create an_identifier.make (a_name)
-				set_root_creation (an_identifier)
-			else
-				root_creation := Void
-			end
-		end
 
 end

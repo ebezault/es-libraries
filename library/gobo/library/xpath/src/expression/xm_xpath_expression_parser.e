@@ -1,4 +1,4 @@
-note
+ï»¿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel XPath Library"
 	copyright: "Copyright (c) 2004-2014, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class XM_XPATH_EXPRESSION_PARSER
 
@@ -2510,11 +2508,11 @@ feature {NONE} -- Implementation
 						if a_parser.is_prefix_present then
 							if l_tokenizer.last_token = String_literal_token then
 								report_parse_warning ("No processing instruction name will ever contain a colon")
-								if not shared_name_pool.is_name_code_allocated ("fake-gexslt-prefix", "http://www.gobosoft.com/gexslt-fake-namespace", "gexslt-invalid-name") then
-									shared_name_pool.allocate_name ("fake-gexslt-prefix", "http://www.gobosoft.com/gexslt-fake-namespace", "gexslt-invalid-name")
+								if not shared_name_pool.is_name_code_allocated ("fake-gexslt-prefix", "https://www.gobosoft.com/gexslt-fake-namespace", "gexslt-invalid-name") then
+									shared_name_pool.allocate_name ("fake-gexslt-prefix", "https://www.gobosoft.com/gexslt-fake-namespace", "gexslt-invalid-name")
 									a_name_code := shared_name_pool.last_name_code
 								else
-									a_name_code := shared_name_pool.name_code ("fake-gexslt-prefix", "http://www.gobosoft.com/gexslt-fake-namespace", "gexslt-invalid-name")
+									a_name_code := shared_name_pool.name_code ("fake-gexslt-prefix", "https://www.gobosoft.com/gexslt-fake-namespace", "gexslt-invalid-name")
 								end
 							else
 								report_parse_error ("Processing instruction name must not contain a colon", "XPST0003")
@@ -2817,9 +2815,9 @@ feature {NONE} -- Implementation
 					else
 						s := STRING_.appended_string (s, "in")
 					end
-					s := STRING_.appended_string (s, " «")
+					s := STRING_.appended_string (s, " Â«")
 					s := STRING_.appended_string (s, l_tokenizer.recent_text)
-					s := STRING_.appended_string (s, "»:%N    ")
+					s := STRING_.appended_string (s, "Â»:%N    ")
 					internal_last_parse_error := STRING_.appended_string (s, a_message)
 					first_parse_error_code := l_code
 					first_parse_error_line_number := l
@@ -2854,9 +2852,9 @@ feature {NONE} -- Implementation
 				else
 					s := STRING_.appended_string (s, "in")
 				end
-				s := STRING_.appended_string (s, " «")
+				s := STRING_.appended_string (s, " Â«")
 				s := STRING_.appended_string (s, l_tokenizer.recent_text)
-				s := STRING_.appended_string (s, "»:%N    ")
+				s := STRING_.appended_string (s, "Â»:%N    ")
 				l_environment.issue_warning (STRING_.appended_string (s, a_message))
 			end
 		end

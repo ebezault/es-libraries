@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel classes"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_CLASS
 
@@ -45,6 +43,8 @@ inherit
 			is_named_type, is_valid_context,
 			debug_output, copy, is_equal,
 			append_unaliased_to_string,
+			append_canonical_to_string,
+			append_runtime_name_to_string,
 			named_query,
 			named_procedure,
 			add_overloaded_queries,
@@ -66,7 +66,10 @@ inherit
 
 create
 
-	make, make_unknown
+	make,
+	make_unknown,
+	make_root,
+	make_formal
 
 feature {NONE} -- Initialization
 
@@ -100,6 +103,25 @@ feature {NONE} -- Initialization
 			-- Create a new "*UNKNOWN*" class.
 		do
 			make (tokens.unknown_class_name)
+		end
+
+	make_root (a_system: ET_SYSTEM)
+			-- Create a new "*ROOT*" class for system `a_system'.
+		require
+			a_system_not_void: a_system /= Void
+		do
+			make (tokens.root_class_name)
+			create {ET_ROOT_GROUP} group.make (a_system)
+		end
+
+	make_formal (a_index: INTEGER; a_system: ET_SYSTEM)
+			-- Create a new virtual class representing formal generic parameters
+			-- (used for Storable files).
+		require
+			a_index_large_enough: a_index >= 1
+		do
+			make (create {ET_IDENTIFIER}.make ("G#" + a_index.out))
+			create {ET_FORMAL_GROUP} group.make (a_system)
 		end
 
 feature -- Initialization
@@ -361,6 +383,15 @@ feature -- Status report
 			definition: Result = group.is_none
 		end
 
+	is_formal: BOOLEAN
+			-- Is current class a virtual class representing formal generic parameters
+			-- (used for Storable files)?
+		do
+			Result := group.is_formal
+		ensure
+			definition: Result = group.is_formal
+		end
+
 	is_basic: BOOLEAN
 			-- Is current class one of "BOOLEAN", "CHARACTER_8",
 			-- "CHARACTER_32", "INTEGER_8", "INTEGER_16", "INTEGER_32",
@@ -388,6 +419,12 @@ feature -- Status report
 			Result := class_code = class_codes.boolean_class_code
 		end
 
+	is_character_n_class: BOOLEAN
+			-- Is current class one of "CHARACTER_8", "CHARACTER_32"?
+		do
+			Result := class_codes.is_character_n (class_code)
+		end
+
 	is_character_8_class: BOOLEAN
 			-- Is current class the "CHARACTER_8" class?
 		do
@@ -398,6 +435,14 @@ feature -- Status report
 			-- Is current class the "CHARACTER_32" class?
 		do
 			Result := class_code = class_codes.character_32_class_code
+		end
+
+	is_integer_n_class: BOOLEAN
+			-- Is current class one of "INTEGER_8", "INTEGER_16",
+			-- "INTEGER_32", "INTEGER_64", "NATURAL_8", "NATURAL_16",
+			-- "NATURAL_32", "NATURAL_64"?
+		do
+			Result := class_codes.is_integer_n (class_code)
 		end
 
 	is_integer_8_class: BOOLEAN
@@ -458,6 +503,12 @@ feature -- Status report
 			-- Is current class the "DISPOSABLE" class?
 		do
 			Result := class_code = class_codes.disposable_class_code
+		end
+
+	is_real_n_class: BOOLEAN
+			-- Is current class one of "REAL_32", "REAL_64"?
+		do
+			Result := class_codes.is_real_n (class_code)
 		end
 
 	is_real_32_class: BOOLEAN
@@ -558,6 +609,14 @@ feature -- Status report
 			definition: Result = group.is_unknown
 		end
 
+	is_root: BOOLEAN
+			-- Is current class an "*ROOT*" class?
+		do
+			Result := name.same_class_name (tokens.root_class_name)
+		ensure
+			definition: Result = name.same_class_name (tokens.root_class_name)
+		end
+
 	is_ignored: BOOLEAN
 			-- Should this class not be taken into account when
 			-- analyzing the system?
@@ -610,10 +669,10 @@ feature -- Access
 	obsolete_message: detachable ET_OBSOLETE
 			-- Obsolete message
 
-	first_indexing: detachable ET_INDEXING_LIST
+	first_note_clause: detachable ET_NOTE_LIST
 			-- Note clause at the beginning of the class
 
-	second_indexing: detachable ET_INDEXING_LIST
+	second_note_clause: detachable ET_NOTE_LIST
 			-- Note clause at the end of the class
 
 	class_keyword: ET_KEYWORD
@@ -639,8 +698,8 @@ feature -- Access
 			-- Position of first character of
 			-- current node in source code
 		do
-			if attached first_indexing as l_first_indexing then
-				Result := l_first_indexing.position
+			if attached first_note_clause as l_first_note_clause then
+				Result := l_first_note_clause.position
 			elseif attached class_mark as l_class_mark then
 				Result := l_class_mark.position
 			else
@@ -655,8 +714,8 @@ feature -- Access
 	first_leaf: ET_AST_LEAF
 			-- First leaf node in current node
 		do
-			if attached first_indexing as l_first_indexing then
-				Result := l_first_indexing.first_leaf
+			if attached first_note_clause as l_first_note_clause then
+				Result := l_first_note_clause.first_leaf
 			elseif attached class_mark as l_class_mark then
 				Result := l_class_mark
 			else
@@ -693,20 +752,20 @@ feature -- Setting
 			obsolete_message_set: obsolete_message = an_obsolete_message
 		end
 
-	set_first_indexing (an_indexing: like first_indexing)
-			-- Set `first_indexing' to `an_indexing'
+	set_first_note_clause (a_note_clause: like first_note_clause)
+			-- Set `first_note_clause' to `a_note_clause'
 		do
-			first_indexing := an_indexing
+			first_note_clause := a_note_clause
 		ensure
-			first_indexing_set: first_indexing = an_indexing
+			first_note_clause_set: first_note_clause = a_note_clause
 		end
 
-	set_second_indexing (an_indexing: like second_indexing)
-			-- Set `second_indexing' to `an_indexing'
+	set_second_note_clause (a_note_clause: like second_note_clause)
+			-- Set `second_note_clause' to `a_note_clause'
 		do
-			second_indexing := an_indexing
+			second_note_clause := a_note_clause
 		ensure
-			second_indexing_set: second_indexing = an_indexing
+			second_note_clause_set: second_note_clause = a_note_clause
 		end
 
 	set_class_keyword (a_class: like class_keyword)
@@ -881,6 +940,7 @@ feature -- Preparsing
 			a_group_not_void: a_group /= Void
 		do
 			group := a_group
+			a_group.fill_options (Current)
 		ensure
 			group_set: group = a_group
 		end
@@ -1050,7 +1110,7 @@ feature -- Preparsing status
 			-- Set `is_preparsed' to False.
 		do
 			filename := Void
-			group := tokens.unknown_group
+			set_group (tokens.unknown_group)
 			time_stamp := no_time_stamp
 			is_interface := False
 			has_utf8_bom := False
@@ -1123,8 +1183,8 @@ feature -- Parsing status
 			creators := Void
 			convert_features := Void
 			feature_clauses := Void
-			first_indexing := Void
-			second_indexing := Void
+			first_note_clause := Void
+			second_note_clause := Void
 			formal_parameters := Void
 			tuple_constraint_position := 0
 			invariants := Void
@@ -1172,12 +1232,80 @@ feature -- Encoding
 			has_utf8_bom_set: has_utf8_bom = b
 		end
 
+feature -- Assertions
+
+	preconditions_enabled: BOOLEAN
+			-- Are preconditions monitored?
+
+	supplier_preconditions_enabled: BOOLEAN
+			-- Are supplier preconditions (preconditions in qualified calls) monitored?
+
+	postconditions_enabled: BOOLEAN
+			-- Are postconditions monitored?
+
+	invariants_enabled: BOOLEAN
+			-- Are invariants monitored?
+
+	check_assertions_enabled: BOOLEAN
+			-- Are check assertions monitored?
+
+	loop_assertions_enabled: BOOLEAN
+			-- Are loop assertions monitored?
+
+	set_preconditions_enabled (b: BOOLEAN)
+			-- Set `preconditions_enabled' to `b'.
+		do
+			preconditions_enabled := b
+		ensure
+			preconditions_enabled_set: preconditions_enabled = b
+		end
+
+	set_supplier_preconditions_enabled (b: BOOLEAN)
+			-- Set `supplier_preconditions_enabled' to `b'.
+		do
+			supplier_preconditions_enabled := b
+		ensure
+			supplier_preconditions_enabled_set: supplier_preconditions_enabled = b
+		end
+
+	set_postconditions_enabled (b: BOOLEAN)
+			-- Set `postconditions_enabled' to `b'.
+		do
+			postconditions_enabled := b
+		ensure
+			postconditions_enabled_set: postconditions_enabled = b
+		end
+
+	set_invariants_enabled (b: BOOLEAN)
+			-- Set `invariants_enabled' to `b'.
+		do
+			invariants_enabled := b
+		ensure
+			invariants_enabled_set: invariants_enabled = b
+		end
+
+	set_check_assertions_enabled (b: BOOLEAN)
+			-- Set `check_assertions_enabled' to `b'.
+		do
+			check_assertions_enabled := b
+		ensure
+			check_assertions_enabled_set: check_assertions_enabled = b
+		end
+
+	set_loop_assertions_enabled (b: BOOLEAN)
+			-- Set `loop_assertions_enabled' to `b'.
+		do
+			loop_assertions_enabled := b
+		ensure
+			loop_assertions_enabled_set: loop_assertions_enabled = b
+		end
+
 feature -- Class header
 
 	is_deferred: BOOLEAN
 			-- Is current class deferred?
 			-- A class is deferred if it has been marked as
-			-- deferred or if is has deferred features. If
+			-- deferred or if it has deferred features. If
 			-- it has deferred features but has not been marked
 			-- as deferred then VCCH-1 is violated; if it is
 			-- marked as deferred but has no deferred features
@@ -1591,10 +1719,12 @@ feature -- Ancestors
 		end
 
 	ancestors: ET_BASE_TYPE_LIST
-			-- Proper ancestors
+			-- Proper ancestors in reverse topological order
+			-- (parents, then grand-parents, etc.)
 
 	conforming_ancestors: ET_BASE_TYPE_LIST
-			-- Proper conforming ancestors
+			-- Proper conforming ancestors in reverse topological order
+			-- (parents, then grand-parents, etc.)
 
 	set_ancestors (some_ancestors: like ancestors)
 			-- Set `ancestors' to `some_ancestors'.
@@ -2748,7 +2878,7 @@ feature -- Type context
 			-- is preparsed and if its `root_context' is only made up
 			-- of class names and formal generic parameter names, and if
 			-- the actual parameters of these formal parameters are
-			-- themselves
+			-- themselves in `root_context'?
 
 feature -- Duplication
 
@@ -2792,7 +2922,7 @@ feature -- Duplication
 				copy (other)
 				name := l_name
 				filename := l_filename
-				group := l_group
+				set_group (l_group)
 				time_stamp := l_time_stamp
 				id := l_id
 				is_ignored := l_is_ignored
@@ -2819,8 +2949,7 @@ feature -- Comparison
 feature -- Output
 
 	append_to_string (a_string: STRING)
-			-- Append textual representation of
-			-- current type to `a_string'.
+			-- Append `to_text' to `a_string'.
 		do
 			a_string.append_string (upper_name)
 			if attached formal_parameters as l_formal_parameters and then not l_formal_parameters.is_empty then
@@ -2830,15 +2959,32 @@ feature -- Output
 		end
 
 	append_unaliased_to_string (a_string: STRING)
-			-- Append textual representation of unaliased
-			-- version of current type to `a_string'.
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- Append `unaliased_to_text' to `a_string'.
 		do
 			a_string.append_string (upper_name)
 			if attached formal_parameters as l_formal_parameters and then not l_formal_parameters.is_empty then
 				a_string.append_character (' ')
 				l_formal_parameters.append_unaliased_to_string (a_string)
+			end
+		end
+
+	append_canonical_to_string (a_string: STRING)
+			-- Append `canonical_to_text' to `a_string'.
+		do
+			a_string.append_string (upper_name)
+			if attached formal_parameters as l_formal_parameters and then not l_formal_parameters.is_empty then
+				a_string.append_character (' ')
+				l_formal_parameters.append_canonical_to_string (a_string)
+			end
+		end
+
+	append_runtime_name_to_string (a_string: STRING)
+			-- Append `runtime_name_to_text' to `a_string'.
+		do
+			a_string.append_string (upper_name)
+			if attached formal_parameters as l_formal_parameters and then not l_formal_parameters.is_empty then
+				a_string.append_character (' ')
+				l_formal_parameters.append_runtime_name_to_string (a_string)
 			end
 		end
 

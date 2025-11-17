@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel once-procedures"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ONCE_PROCEDURE
 
@@ -45,9 +43,10 @@ feature -- Duplication
 			Result.set_end_keyword (end_keyword)
 			Result.set_semicolon (semicolon)
 			Result.set_feature_clause (feature_clause)
-			Result.set_first_indexing (first_indexing)
+			Result.set_first_note (first_note)
 			Result.set_object_tests (object_tests)
 			Result.set_iteration_components (iteration_components)
+			Result.set_inline_separate_arguments (inline_separate_arguments)
 			Result.set_synonym (Current)
 		end
 
@@ -73,9 +72,10 @@ feature -- Conversion
 			Result.set_frozen_keyword (frozen_keyword)
 			Result.set_semicolon (semicolon)
 			Result.set_feature_clause (feature_clause)
-			Result.set_first_indexing (first_indexing)
+			Result.set_first_note (first_note)
 			Result.set_object_tests (object_tests)
 			Result.set_iteration_components (iteration_components)
+			Result.set_inline_separate_arguments (inline_separate_arguments)
 			Result.set_first_seed (first_seed)
 			Result.set_other_seeds (other_seeds)
 		end

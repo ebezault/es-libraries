@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel 'like Current' types"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2001-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2001-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_LIKE_CURRENT
 
@@ -34,8 +32,10 @@ inherit
 			conforms_from_formal_parameter_type_with_type_marks,
 			conforms_from_tuple_type_with_type_marks,
 			type_with_type_mark,
+			is_type_non_separate_with_type_mark,
 			is_type_reference_with_type_mark,
 			is_type_detachable_with_type_mark,
+			is_controlled,
 			has_unqualified_anchored_type
 		end
 
@@ -218,6 +218,20 @@ feature -- Status report
 	is_like_current: BOOLEAN = True
 			-- Is current type of the form 'like Current'?
 
+	is_type_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Same as `is_type_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		do
+			Result := a_context.is_type_separate_with_type_mark (overridden_type_mark (a_type_mark))
+		end
+
+	is_type_non_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Same as `is_type_non_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		do
+			Result := a_context.is_type_non_separate_with_type_mark (overridden_type_mark (a_type_mark))
+		end
+
 	is_type_expanded_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
 			-- Same as `is_type_expanded' except that the type mark status is
 			-- overridden by `a_type_mark', if not Void
@@ -246,6 +260,9 @@ feature -- Status report
 			Result := a_context.is_type_detachable_with_type_mark (overridden_type_mark (a_type_mark))
 		end
 
+	is_controlled: BOOLEAN
+			-- Is current type a controlled separate type?
+
 	has_unqualified_anchored_type: BOOLEAN
 			-- Does current type contain an unqualified anchored type
 			-- (i.e. 'like Current' or 'like feature_name')?
@@ -265,6 +282,24 @@ feature -- Status report
 			-- when it appears in `a_context'?
 		do
 			Result := a_context.named_type_has_class (a_class)
+		end
+
+	named_type_has_class_with_ancestors_not_built_successfully (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Does the named type of current type contain a class
+			-- whose ancestors have not been built successfully
+			-- when it appears in `a_context'?
+		do
+			Result := a_context.named_type_has_class_with_ancestors_not_built_successfully
+		end
+
+feature -- Status setting
+
+	set_controlled (b: BOOLEAN)
+			-- Set `is_controlled' to `b'.
+		do
+			is_controlled := b
+		ensure
+			controlled_set: is_controlled = b
 		end
 
 feature -- Basic operations
@@ -439,11 +474,25 @@ feature {ET_TYPE, ET_TYPE_CONTEXT} -- Conformance
 feature -- Output
 
 	append_to_string (a_string: STRING)
-			-- Append textual representation of
-			-- current type to `a_string'.
+			-- Append `to_text' to `a_string'.
 		do
 			if attached type_mark as l_type_mark then
 				l_type_mark.append_to_string_with_space (a_string)
+			end
+			a_string.append_string (like_space_current)
+		end
+
+	append_runtime_name_to_string (a_string: STRING)
+			-- Append `runtime_name_to_text' to `a_string'.
+		do
+			if attached type_mark as l_type_mark then
+				if l_type_mark.is_attached_mark or l_type_mark.is_expanded_mark then
+					a_string.append_character ('!')
+				end
+				if l_type_mark.is_separate_mark then
+					a_string.append_string (tokens.separate_keyword_name)
+					a_string.append_character (' ')
+				end
 			end
 			a_string.append_string (like_space_current)
 		end

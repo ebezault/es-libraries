@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Element name constants for GEANT"
 
 	library: "Gobo Eiffel Ant"
-	copyright: "Copyright (c) 2001-2021, Sven Ehrke and others"
+	copyright: "Copyright (c) 2001-2023, Sven Ehrke and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_ELEMENT_NAMES
 
@@ -38,6 +36,15 @@ feature -- Task names
 			-- "gec" task name
 		once
 			Result := "gec"
+		ensure
+			task_name_not_void: Result /= Void
+			task_name_not_empty: Result.count > 0
+		end
+
+	Gecc_task_name: STRING
+			-- "gecc" task name
+		once
+			Result := "gecc"
 		ensure
 			task_name_not_void: Result /= Void
 			task_name_not_empty: Result.count > 0

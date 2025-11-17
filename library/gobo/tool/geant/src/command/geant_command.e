@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Ant"
 	copyright: "Copyright (c) 2001-2018, Sven Ehrke and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class GEANT_COMMAND
 
@@ -114,6 +112,33 @@ feature {NONE} -- Implementation
 				create shell_command.make (a_command)
 				shell_command.execute
 				exit_code := shell_command.exit_code
+			end
+		end
+
+	execute_shell_with_timeout (a_command: STRING; a_timeout_ms: NATURAL_64): BOOLEAN
+			-- Execute shell command `a_command'.
+			-- Wait for the command to terminate for at most `a_timeout_ms' milliseconds.
+			-- True if the command terminates within `a_timeout_ms', False otherwise.
+			-- Do not wait and always return True if timeout is not supported.
+		require
+			a_command_not_void: a_command /= Void
+			a_command_not_empty: a_command.count > 0
+		local
+			shell_command: DP_SHELL_COMMAND
+		do
+			if not project.options.no_exec then
+				create shell_command.make (a_command)
+				if shell_command.is_timeout_supported then
+					Result := shell_command.execute_with_timeout (a_timeout_ms)
+				else
+					shell_command.execute
+					Result := True
+				end
+				if Result then
+					exit_code := shell_command.exit_code
+				else
+					exit_code := 1
+				end
 			end
 		end
 

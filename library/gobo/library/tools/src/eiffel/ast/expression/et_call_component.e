@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel call components (either feature calls or agents)"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2023, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_CALL_COMPONENT
 
@@ -24,7 +22,7 @@ feature -- Access
 		end
 
 	name: ET_CALL_NAME
-			-- Feature name
+			-- Call name
 		deferred
 		ensure
 			name_not_void: Result /= Void

@@ -1,13 +1,11 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 
 <project name="gexslt_tool_test" default="help">
 
 	<description>
 		system: "Gobo Eiffel Xslt Tester"
-		copyright: "Copyright (c) 2016, Eric Bezault and others"
+		copyright: "Copyright (c) 2016-2024, Eric Bezault and others"
 		license: "MIT License"
-		date: "$Date$"
-		revision: "$Revision$"
 	</description>
 
 	<inherit>
@@ -24,7 +22,7 @@
 			Remove other intermediary generated files.
 		</description>
 
-		<delete directory="Tgexslt"/>
+		<delete directory="Tgexslt" fail_on_error="false"/> <!-- Deletion sometimes fails on Windows in azure devops pipelines. -->
 	</target>
 
 	<target name="init_system" export="NONE">

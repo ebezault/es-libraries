@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel argument or target components appearing in feature calls or agents"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_OPERAND
 
@@ -21,6 +19,9 @@ feature -- Initialization
 	reset
 			-- Reset operand as it was just after it was last parsed.
 		do
+			index := 0
+		ensure
+			reset: index = 0
 		end
 
 feature -- Status setting
@@ -47,6 +48,34 @@ feature -- Status setting
 			-- Result := False
 		end
 
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current operand
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current operand
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current operand
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current operand
+			-- or (recursively) in one of its subexpressions?
+		do
+			-- Result := False
+		end
+
 feature -- Access
 
 	index: INTEGER
@@ -63,6 +92,19 @@ feature -- Setting
 			index := i
 		ensure
 			index_set: index = i
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current expression
+			-- and (recursively) in its subexpressions.
+		require
+			a_list_not_void: a_list /= Void
+			no_void_item: not a_list.has_void
+		do
+		ensure
+			no_void_item: not a_list.has_void
 		end
 
 end

@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -6,8 +6,6 @@ note
 
 	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class RPCALC
 
@@ -178,9 +176,9 @@ feature {NONE} -- Semantic actions
 		do
 				inspect yy_act
 when 1 then
---|#line 30 "rpcalc.y"
+--|#line 28 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 30")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 28")
 end
 
 
@@ -197,9 +195,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines1.force (yyvs1, yyval1, yyvsp1)
 end
 when 2 then
---|#line 31 "rpcalc.y"
+--|#line 29 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 31")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 29")
 end
 
 
@@ -209,9 +207,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines1.force (yyvs1, yyval1, yyvsp1)
 end
 when 3 then
---|#line 34 "rpcalc.y"
+--|#line 32 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 34")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 32")
 end
 
 
@@ -220,9 +218,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines1.force (yyvs1, yyval1, yyvsp1)
 end
 when 4 then
---|#line 35 "rpcalc.y"
+--|#line 33 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 35")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 33")
 end
 
 print (yyvs2.item (yyvsp2)); print ("%N") 
@@ -232,9 +230,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines1.force (yyvs1, yyval1, yyvsp1)
 end
 when 5 then
---|#line 38 "rpcalc.y"
+--|#line 36 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 38")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 36")
 end
 
 yyval2 := yyvs2.item (yyvsp2) 
@@ -243,9 +241,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines2.force (yyvs2, yyval2, yyvsp2)
 end
 when 6 then
---|#line 39 "rpcalc.y"
+--|#line 37 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 39")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 37")
 end
 
 yyval2 := yyvs2.item (yyvsp2 - 1) + yyvs2.item (yyvsp2) 
@@ -256,9 +254,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines2.force (yyvs2, yyval2, yyvsp2)
 end
 when 7 then
---|#line 40 "rpcalc.y"
+--|#line 38 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 40")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 38")
 end
 
 yyval2 := yyvs2.item (yyvsp2 - 1) - yyvs2.item (yyvsp2) 
@@ -269,9 +267,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines2.force (yyvs2, yyval2, yyvsp2)
 end
 when 8 then
---|#line 41 "rpcalc.y"
+--|#line 39 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 41")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 39")
 end
 
 yyval2 := yyvs2.item (yyvsp2 - 1) * yyvs2.item (yyvsp2) 
@@ -282,9 +280,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines2.force (yyvs2, yyval2, yyvsp2)
 end
 when 9 then
---|#line 42 "rpcalc.y"
+--|#line 40 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 42")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 40")
 end
 
 yyval2 := yyvs2.item (yyvsp2 - 1) / yyvs2.item (yyvsp2) 
@@ -295,9 +293,9 @@ if yy_parsing_status >= yyContinue then
 	yyspecial_routines2.force (yyvs2, yyval2, yyvsp2)
 end
 when 10 then
---|#line 44 "rpcalc.y"
+--|#line 42 "rpcalc.y"
 debug ("GEYACC")
-	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 44")
+	std.error.put_line ("Executing parser user-code from file 'rpcalc.y' at line 42")
 end
 
 yyval2 := -yyvs2.item (yyvsp2) 

@@ -7,8 +7,8 @@
 	access: cursor, membership
 	representation: recursive
 	contents: generic
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2020-11-05 14:26:28 +0000 (Thu, 05 Nov 2020) $"
+	revision: "$Revision: 104861 $"
 
 deferred class TREE [G] inherit
 

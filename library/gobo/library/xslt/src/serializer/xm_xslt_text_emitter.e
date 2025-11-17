@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
-	"Emitters that write plain text."
+		"Emitters that write plain text."
 
-library: "Gobo Eiffel XSLT Library"
-copyright: "Copyright (c) 2004-2015, Colin Adams and others"
-license: "MIT License"
-date: "$Date$"
-revision: "$Revision$"
+	library: "Gobo Eiffel XSLT Library"
+	copyright: "Copyright (c) 2004-2022, Colin Adams and others"
+	license: "MIT License"
 
 class XM_XSLT_TEXT_EMITTER
 
@@ -62,7 +60,7 @@ feature -- Events
 			-- Notify character data.
 			-- Special characters are not escaped
 		local
-			a_bad_character: INTEGER
+			a_bad_character: NATURAL_32
 			a_message: STRING
 			an_error: XM_XPATH_ERROR_VALUE
 		do

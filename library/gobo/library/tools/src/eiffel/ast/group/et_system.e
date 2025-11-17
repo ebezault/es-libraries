@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel systems"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_SYSTEM
 
@@ -73,6 +71,9 @@ feature -- Status report
 			-- Hence follow Eiffel for .NET validity rules.
 
 feature -- Access
+
+	root_type_name: detachable ET_IDENTIFIER
+			-- Name of root type
 
 	root_type: detachable ET_BASE_TYPE
 			-- Root type
@@ -297,32 +298,20 @@ feature -- Setting
 			dotnet_set: is_dotnet = b
 		end
 
-	set_root_type (a_name: ET_CLASS_NAME)
-			-- Set `root_type'.
-		require
-			a_name_not_void: a_name /= Void
-		local
-			l_class: ET_MASTER_CLASS
+	set_root_type_name (a_name: like root_type_name)
+			-- Set `root_type_name' to `a_root_type_name'.
 		do
-			l_class := master_class (a_name)
-			l_class.set_marked (True)
-			if l_class = any_type.named_base_class then
-				root_type := any_type
-			elseif l_class = none_type.named_base_class then
-				root_type := none_type
-			else
-				create {ET_CLASS_TYPE} root_type.make (Void, a_name, l_class)
-			end
+			root_type_name := a_name
 		ensure
-			root_type_set: attached root_type as l_root_type and then l_root_type.name.same_class_name (a_name)
+			root_type_name_set: root_type_name = a_name
 		end
 
-	unset_root_type
-			-- Unset `root_type'.
+	set_root_type (a_type: like root_type)
+			-- Set `root_type' to `a_type'.
 		do
-			root_type := Void
+			root_type := a_type
 		ensure
-			root_type_unset: root_type = Void
+			root_type_set: root_type = a_type
 		end
 
 	set_root_creation (a_name: like root_creation)
@@ -353,6 +342,10 @@ feature -- Compilation options
 			-- Should the attachment status of the target of qualified calls
 			-- be checked at compile time?
 
+	check_for_void_target_mode: BOOLEAN
+			-- Should the attachment status of the target of qualified calls
+			-- be checked at runtime?
+
 	exception_trace_mode: BOOLEAN
 			-- Should the generated application be able to provide an exception trace?
 			-- An exception trace is the execution path from the root creation procedure
@@ -372,11 +365,21 @@ feature -- Compilation options
 			-- Should information about positions of constructs in the Eiffel code
 			-- be included in the generated C code (e.g. using #line clauses)?
 
+	inlining_mode: BOOLEAN
+			-- Should small instructions and expressions be inlined in the
+			-- generated C code?
+
+	inlining_size: INTEGER
+			-- Maximum number of nested inlinining in the generated C code?
+
 	use_boehm_gc: BOOLEAN
 			-- Should the application be compiled with the Boehm GC?
 
-	system_name: detachable STRING
+	system_name: STRING
 			-- Name of system
+
+	executable_name: detachable STRING
+			-- Name of executable to be generated
 
 	external_include_pathnames: DS_ARRAYED_LIST [STRING]
 			-- External include pathnames
@@ -417,6 +420,14 @@ feature -- Compilation options setting
 			multithreaded_mode_mode_set: multithreaded_mode = b
 		end
 
+	set_scoop_mode (b: BOOLEAN)
+			-- Set `scoop_mode' to `b'.
+		do
+			scoop_mode := b
+		ensure
+			scoop_mode_mode_set: scoop_mode = b
+		end
+
 	set_attachment_type_conformance_mode (b: BOOLEAN)
 			-- Set `attachment_type_conformance_mode' to `b'.
 		do
@@ -431,6 +442,14 @@ feature -- Compilation options setting
 			target_type_attachment_mode := b
 		ensure
 			target_type_attachment_mode_set: target_type_attachment_mode = b
+		end
+
+	set_check_for_void_target_mode (b: BOOLEAN)
+			-- Set `check_for_void_target_mode' to `b'.
+		do
+			check_for_void_target_mode := b
+		ensure
+			check_for_void_target_mode_set: check_for_void_target_mode = b
 		end
 
 	set_exception_trace_mode (b: BOOLEAN)
@@ -465,6 +484,22 @@ feature -- Compilation options setting
 			line_generation_mode_set: line_generation_mode = b
 		end
 
+	set_inlining_mode (b: BOOLEAN)
+			-- Set `inlining_mode' to `b'.
+		do
+			inlining_mode := b
+		ensure
+			inlining_mode_set: inlining_mode = b
+		end
+
+	set_inlining_size (a_size: INTEGER)
+			-- Set `inlining_size' to `a_size'.
+		do
+			inlining_size := a_size
+		ensure
+			inlining_size_set: inlining_size = a_size
+		end
+
 	set_use_boehm_gc (b: BOOLEAN)
 			-- Set `use_boehm_gc' to `b'.
 		do
@@ -475,10 +510,21 @@ feature -- Compilation options setting
 
 	set_system_name (a_name: like system_name)
 			-- Set `system_name' to `a_name'.
+		require
+			a_name_not_void: a_name /= Void
+			a_name_not_empty: not a_name.is_empty
 		do
 			system_name := a_name
 		ensure
 			system_name_set: system_name = a_name
+		end
+
+	set_executable_name (a_name: like executable_name)
+			-- Set `executable_name' to `a_name'.
+		do
+			executable_name := a_name
+		ensure
+			executable_name_set: executable_name = a_name
 		end
 
 	set_external_include_pathnames (a_pathnames: like external_include_pathnames)
@@ -720,6 +766,8 @@ invariant
 	routine_call_seed_not_negative: routine_call_seed >= 0
 	function_item_seed_not_negative: function_item_seed >= 0
 		-- Compilation options.
+	system_name_not_void: system_name /= Void
+	system_name_not_empty: not system_name.is_empty
 	external_include_pathnames_not_void: external_include_pathnames /= Void
 	no_void_external_include_pathname: not external_include_pathnames.has_void
 	external_object_pathnames_not_void: external_object_pathnames /= Void

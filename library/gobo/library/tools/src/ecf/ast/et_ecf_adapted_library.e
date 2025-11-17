@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"ECF Eiffel adapted class libraries"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2008-2017, Eric Bezault and others"
+	copyright: "Copyright (c) 2008-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ECF_ADAPTED_LIBRARY
 
@@ -44,6 +42,8 @@ feature {NONE} -- Initialization
 			filename_id := a_filename
 			universe := a_universe
 			target := a_target
+			create options.make
+			options.set_secondary_options (a_target.options)
 			make_adapted_library (a_name.name, tokens.unknown_library)
 		ensure
 			name_id_set: name_id = a_name

@@ -1,13 +1,11 @@
 @echo off
 
 rem description: "Bootstrap Gobo Eiffel Compiler in $GOBO/bin"
-rem copyright: "Copyright (c) 2016-2021, Eric Bezault and others"
+rem copyright: "Copyright (c) 2016-2024, Eric Bezault and others"
 rem license: "MIT License"
-rem date: "$Date$"
-rem revision: "$Revision$"
 
 
-rem "usage: bootstrap.bat [-v|-s] <c_compiler>"
+rem "usage: bootstrap.bat [-v|-s] [<c_compiler>]"
 
 
 if .%1. == .-v. goto verbose
@@ -34,16 +32,19 @@ goto no_verbose
 
 :do_it
 	if not .%VERBOSE%. == .-s. echo Executing bootstrap.bat...
-	if .%GOBO%. == .. goto gobo
+	if ".%GOBO%." == ".." goto gobo
 	goto windows
 
 :gobo
 	echo Environment variable GOBO must be set
-	goto exit
+	set GOBO=%~dp0\..\..\..
+	echo Set $GOBO to "%GOBO%"
+	goto windows
 
 :windows
 	set MV=rename
 	set RM=del
+	set RMDIR=rmdir /s /q
 	set BIN_DIR=%GOBO%\bin
 	set BOOTSTRAP_DIR=%GOBO%\tool\gec\bootstrap
 	set OBJ=.obj
@@ -56,7 +57,7 @@ set BIN_DIR=%GOBO%\bin
 set BOOTSTRAP_DIR=%GOBO%\tool\gec\bootstrap
 cd %BIN_DIR%
 
-if .%CC%. == .. goto usage
+if .%CC%. == .. set CC=zig
 if .%CC%. == .-help. goto usage
 if .%CC%. == .--help. goto usage
 if .%CC%. == .-h. goto usage
@@ -77,6 +78,7 @@ if .%CC%. == .bcc32. goto bcc32
 if .%CC%. == .gcc. goto gcc
 if .%CC%. == .mingw. goto mingw
 if .%CC%. == .clang. goto clang
+if .%CC%. == .zig. goto zig
 if .%CC%. == .cc. goto cc
 if .%CC%. == .icc. goto icc
 if .%CC%. == .tcc. goto tcc
@@ -91,7 +93,7 @@ goto exit
 	set LFLAGS=-nologo -subsystem:console
 	set LFLAG_OUT=-out:
 	set LLIBS=
-	echo msc > %GOBO%\tool\gec\config\c\default.cfg
+	echo msc > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :bcc32
@@ -101,7 +103,7 @@ goto exit
 	set LFLAGS=-5 -q 
 	set LFLAG_OUT=-e
 	set LLIBS=
-	echo bcc > %GOBO%\tool\gec\config\c\default.cfg
+	echo bcc > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :lcc-win32
@@ -112,7 +114,7 @@ goto exit
 	set LFLAGS=-s -subsystem Console
 	set LFLAG_OUT=-o 
 	set LLIBS=
-	echo lcc-win32 > %GOBO%\tool\gec\config\c\default.cfg
+	echo lcc-win32 > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :lcc-win64
@@ -123,7 +125,7 @@ goto exit
 	set LFLAGS=-s -subsystem Console
 	set LFLAG_OUT=-o 
 	set LLIBS=
-	echo lcc-win64 > %GOBO%\tool\gec\config\c\default.cfg
+	echo lcc-win64 > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :gcc
@@ -132,9 +134,9 @@ goto exit
 	set CFLAGS=-O2
 	set LFLAGS=
 	set LFLAG_OUT=-o 
-	set LLIBS=-lm -lpthread
+	set LLIBS=-lm -pthread
 	set OBJ=.o
-	echo gcc > %GOBO%\tool\gec\config\c\default.cfg
+	echo gcc > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :mingw
@@ -143,31 +145,50 @@ goto exit
 	set CFLAGS=-O2
 	set LFLAGS=
 	set LFLAG_OUT=-o 
-	set LLIBS=-lm
+	set LLIBS=-lm -pthread
 	set OBJ=.o
-	echo mingw > %GOBO%\tool\gec\config\c\default.cfg
+	echo mingw > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :clang
 	set CC=clang
 	set LD=clang
-	set CFLAGS=-Wno-unused-value -Wno-deprecated-declarations -O2
-	set LFLAGS=
+	set CFLAGS=-pthread -Wno-unused-value -Wno-deprecated-declarations -fno-strict-aliasing -O2 -DNDEBUG
+	set LFLAGS=-lm -pthread -fno-strict-aliasing -O2 -DNDEBUG
 	set LFLAG_OUT=-o 
-	set LLIBS=-lm -lpthread
-	set OBJ=.o
-	echo clang > %GOBO%\tool\gec\config\c\default.cfg
+	set LLIBS=
+	set OBJ=.obj
+	echo clang > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
-	
+
+:zig
+	if not ".%ZIG%." == ".." goto zig_defined
+	set ZIG=%GOBO%\tool\gec\backend\c\zig
+	if exist "%ZIG%" goto zig_in_gobo
+	set ZIG=zig
+	goto zig_defined
+:zig_in_gobo
+	set ZIG=%ZIG%\zig
+:zig_defined
+	set CC="%ZIG%" cc
+	set LD="%ZIG%" cc
+	set CFLAGS=-pthread -Wno-unused-value -Wno-deprecated-declarations -fno-strict-aliasing -fno-sanitize=undefined -O2 -DNDEBUG
+	set LFLAGS=-lm -pthread -fno-strict-aliasing -fno-sanitize=undefined -O2 -DNDEBUG
+	set LFLAG_OUT=-o 
+	set LLIBS=
+	set OBJ=.obj
+	echo zig > "%GOBO%\tool\gec\backend\c\config\default.cfg"
+	goto c_compilation
+
 :cc
 	set CC=cc
 	set LD=cc
 	set CFLAGS='-fast'
-	set LFLAGS='-lm'
+	set LFLAGS='-lm -pthread'
 	set LFLAG_OUT=-o 
 	set LLIBS=
 	set OBJ=.o
-	echo cc > %GOBO%\tool\gec\config\c\default.cfg
+	echo cc > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :icc
@@ -178,7 +199,7 @@ goto exit
 	set LFLAG_OUT=-o 
 	set LLIBS=
 	set OBJ=.o
-	echo icc > %GOBO%\tool\gec\config\c\default.cfg
+	echo icc > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :tcc
@@ -189,23 +210,24 @@ goto exit
 	set LFLAG_OUT=-o 
 	set LLIBS=
 	set OBJ=.o
-	echo tcc > %GOBO%\tool\gec\config\c\default.cfg
+	echo tcc > "%GOBO%\tool\gec\backend\c\config\default.cfg"
 	goto c_compilation
 
 :c_compilation
 	if not .%VERBOSE%. == .-s. echo Compiling gec (bootstrap 0)...
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec9.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec8.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec7.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec6.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec5.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec4.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec3.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec2.c
-	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec1.c
-	%LD% %LFLAGS% %LFLAG_OUT%gec%EXE% gec*%OBJ% %LLIBS%
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_9.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_8.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_7.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_6.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_5.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_4.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_3.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_2.c
+	%CC% %CFLAGS% -c %BOOTSTRAP_DIR%\gec_1.c
+	%LD% %LFLAGS% %LFLAG_OUT%gec0%EXE% gec_1%OBJ% gec_2%OBJ% gec_3%OBJ% gec_4%OBJ% gec_5%OBJ% gec_6%OBJ% gec_7%OBJ% gec_8%OBJ% gec_9%OBJ% %LLIBS%
 	%RM% gec*%OBJ%
-	if .%CC%. == .bcc32. %RM% gec.tds
+	if exist gec0.tds %RM% gec0.tds
+	if exist gec0.pdb %RM% gec0.pdb
 	goto install
 
 :install
@@ -214,38 +236,21 @@ goto exit
 	goto exit
 
 :ge
-	cd %BIN_DIR%
-	if not .%VERBOSE%. == .-s. echo Compiling gecc (bootstrap 1)...
-	%BIN_DIR%\gec%EXE% --finalize --cc=no --no-benchmark %GOBO%\tool\gecc\src\system.ecf
-	call .\gecc.bat
+	cd "%BIN_DIR%"
 	rem Compile gec twice to get a bootstrap effect.
 	if not .%VERBOSE%. == .-s. echo Compiling gec (bootstrap 1)...
-	%BIN_DIR%\gec%EXE% --finalize --cc=no --no-benchmark %GOBO%\tool\gec\src\system.ecf
-	%BIN_DIR%\gecc%EXE% gec.bat
+	"%BIN_DIR%\gec0%EXE%" --finalize --setting=executable_name=gec1 "%GOBO%\tool\gec\src\system.ecf"
+	%RM% "%BIN_DIR%\gec0%EXE%"
 	if not .%VERBOSE%. == .-s. echo Compiling gec (bootstrap 2)...
-	%BIN_DIR%\gec%EXE% --finalize --cc=no --no-benchmark %GOBO%\tool\gec\src\system.ecf
-	%BIN_DIR%\gecc%EXE% gec.bat
-	if not .%VERBOSE%. == .-s. echo Compiling gecc (bootstrap 2)...
-	%BIN_DIR%\gec%EXE% --finalize --cc=no --no-benchmark %GOBO%\tool\gecc\src\system.ecf
-	call .\gecc.bat
-	%RM% gec*.h
-	%RM% gec*.c
-	%RM% gec*%OBJ%
-	rem Make sure 'gec.bat' exists to avoid getting some warning when removing it.
-	echo "" > gec.bat
-	%RM% gec*.bat
-	rem Make sure 'gec.sh' exists to avoid getting some warning when removing it.
-	echo "" > gec.sh
-	%RM% gec*.sh
-	rem Make sure 'gec.make' exists to avoid getting some warning when removing it.
-	echo "" > gec.make
-	%RM% gec*.make
-	if .%CC%. == .bcc32. %RM% gec.tds
+	"%BIN_DIR%\gec1%EXE%" --finalize "%GOBO%\tool\gec\src\system.ecf"
+	%RM% "%BIN_DIR%\gec1%EXE%"
+	%RMDIR% .gobo
 	goto exit
 
 :usage
-	echo usage: bootstrap.bat [-v^|-s] ^<c_compiler^>
-	echo    c_compiler:  msc ^| lcc-win32 ^| lcc-win64 ^| bcc ^| gcc ^| mingw ^| clang ^| cc ^| icc ^| tcc ^| no_c
+	echo usage: bootstrap.bat [-v^|-s] [^<c_compiler^>]
+	echo    c_compiler:  zig ^| gcc ^| clang ^| msc ^| lcc-win32 ^| lcc-win64 ^| bcc ^| mingw ^| cc ^| icc ^| tcc ^| no_c
+	echo    default c_compiler: zig
 	goto exit
 
 :exit

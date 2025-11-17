@@ -1,23 +1,25 @@
-note
+﻿note
 
-	description:
-
-	"[
+	description: "[
 		Eiffel iteration components (either across expressions/instructions,
 		quantifier expressions or repeat instructions).
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2019-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2019-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_ITERATION_COMPONENT
 
 inherit
 
-	ET_AST_NODE
+	ET_REPETITION_COMPONENT
+		redefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test
+		end
 
 	HASHABLE
 
@@ -27,6 +29,7 @@ feature -- Initialization
 			-- Reset component as it was just after it was last parsed.
 		do
 			iterable_expression.reset
+			item_name.reset
 			if attached invariant_part as l_invariant_part then
 				l_invariant_part.reset
 			end
@@ -49,6 +52,34 @@ feature -- Status report
 		deferred
 		end
 
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current iteration component
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_result or precursor
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current iteration component
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_address_expression or precursor
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current iteration component
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_agent or precursor
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current iteration component
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := iterable_expression.has_typed_object_test or precursor
+		end
+
 feature -- Access
 
 	iterable_expression: ET_EXPRESSION
@@ -57,25 +88,10 @@ feature -- Access
 	item_name: ET_IDENTIFIER
 			-- Iteration item name
 			--
-			-- It's either then folded form for the calls to the 'item'
+			-- It's either the folded form for the calls to the 'item'
 			-- feature of the iteration cursor (the unfolded form is
 			-- `unfolded_cursor_name'.item), or the name of the iteration
 			-- cursor when `has_item_cursor' is False.
-
-	invariant_part: detachable ET_LOOP_INVARIANTS
-			-- Invariant part
-		deferred
-		end
-
-	variant_part: detachable ET_VARIANT
-			-- Variant part
-		deferred
-		end
-
-	until_conditional: detachable ET_CONDITIONAL
-			-- Until conditional
-		deferred
-		end
 
 	hash_code: INTEGER
 			-- Hash value

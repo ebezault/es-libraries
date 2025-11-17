@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Test features of class ET_AST_TOKENIZER"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2018-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2018-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_TEST_AST_TOKENIZER
 
@@ -34,7 +32,7 @@ inherit
 	UT_SHARED_ISE_VERSIONS
 		export {NONE} all end
 
-	ET_SHARED_ISE_VARIABLES
+	UT_SHARED_ISE_VARIABLES
 		export {NONE} all end
 
 create
@@ -144,6 +142,7 @@ feature {NONE} -- Test
 				create l_output.make_empty
 				create l_tokenizer.make_null
 				l_tokenizer.set_separator ("")
+				l_tokenizer.set_bom_enabled (False)
 				l_tokenizer.set_file (l_output)
 				a_class.process (l_tokenizer)
 				l_tokenizer.set_null_file
@@ -155,7 +154,7 @@ feature {NONE} -- Implementation
 
 	stripped_file (a_filename: STRING): STRING
 			-- Content of `a_filename' where spaces, tabs,
-			-- new-lines and comments have been removed.
+			-- new-lines, BOM, and comments have been removed.
 		require
 			a_filename_not_void: a_filename /= Void
 		local

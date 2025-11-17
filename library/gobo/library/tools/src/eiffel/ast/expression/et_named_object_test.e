@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Tools Library"
 	copyright: "Copyright (c) 2009-2014, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_NAMED_OBJECT_TEST
 
@@ -20,6 +18,7 @@ inherit
 		redefine
 			name,
 			last_leaf,
+			reset,
 			process
 		end
 
@@ -45,6 +44,15 @@ feature {NONE} -- Initialization
 			name_set: name = a_name
 			declared_type_set: declared_type = a_type
 			expression_set: expression = a_expression
+		end
+
+feature -- Initialization
+
+	reset
+			-- Reset expression as it was just after it was last parsed.
+		do
+			precursor
+			name.reset
 		end
 
 feature -- Access

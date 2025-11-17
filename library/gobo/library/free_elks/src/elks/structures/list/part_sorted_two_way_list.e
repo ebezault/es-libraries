@@ -7,8 +7,8 @@
 	representation: linked
 	access: index, cursor, membership, min, max
 	contents: generic
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-06-18 16:58:32 +0000 (Fri, 18 Jun 2021) $"
+	revision: "$Revision: 105547 $"
 
 class PART_SORTED_TWO_WAY_LIST [G -> PART_COMPARABLE] inherit
 

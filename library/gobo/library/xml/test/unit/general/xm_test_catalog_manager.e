@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel XML test suite"
 	copyright: "Copyright (c) 2004-2016, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class XM_TEST_CATALOG_MANAGER
 
@@ -36,7 +34,7 @@ feature -- Tests
 		local
 			a_uri: STRING
 		do
-			a_uri := shared_catalog_manager.resolved_external_entity ("", "http://www.gobosoft.com/test/system-id-one")
+			a_uri := shared_catalog_manager.resolved_external_entity ("", "https://www.gobosoft.com/test/system-id-one")
 			assert ("SYSTEM resolved", a_uri /= Void and then STRING_.same_string (a_uri, "http://colina.demon.co.uk/gobo/system-id-one"))
 		end
 

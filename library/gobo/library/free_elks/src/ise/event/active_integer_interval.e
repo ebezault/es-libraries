@@ -6,8 +6,8 @@
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	keywords: "event, action, linked, list"
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2017-03-23 19:18:26 +0000 (Thu, 23 Mar 2017) $"
+	revision: "$Revision: 100033 $"
 
 class
 	ACTIVE_INTEGER_INTERVAL

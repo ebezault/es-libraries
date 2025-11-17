@@ -28,8 +28,8 @@
 
 	status: "See notice at end of class."
 	keywords: event, action
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-04-05 23:52:49 +0000 (Mon, 05 Apr 2021) $"
+	revision: "$Revision: 105261 $"
 
 class
 	ACTION_SEQUENCE [EVENT_DATA -> detachable TUPLE create default_create end]

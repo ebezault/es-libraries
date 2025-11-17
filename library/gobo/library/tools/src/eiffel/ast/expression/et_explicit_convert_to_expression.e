@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel conversion-to expressions to be made explicit"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2020-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_EXPLICIT_CONVERT_TO_EXPRESSION
 
@@ -22,6 +20,9 @@ inherit
 		end
 
 	ET_EXPLICIT_CONVERT_EXPRESSION
+		undefine
+			add_separate_arguments
+		end
 
 create
 

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel lists of local variables"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_LOCAL_VARIABLE_LIST
 
@@ -71,6 +69,9 @@ feature -- Access
 	local_keyword: ET_KEYWORD
 			-- 'local' keyword
 
+	first_semicolon: detachable ET_SEMICOLON_SYMBOL
+			-- Semicolon before the first local variable, if any
+
 	index_of (a_name: ET_IDENTIFIER): INTEGER
 			-- Index of local variable `a_name';
 			-- 0 if it does not exist
@@ -98,8 +99,12 @@ feature -- Access
 			-- current node in source code
 		do
 			Result := local_keyword.position
-			if Result.is_null and not is_empty then
-				Result := first.position
+			if Result.is_null then
+				if not is_empty then
+					Result := first.position
+				elseif attached first_semicolon as l_first_semicolon then
+					Result := l_first_semicolon.position
+				end
 			end
 		end
 
@@ -112,10 +117,12 @@ feature -- Access
 	last_leaf: ET_AST_LEAF
 			-- Last leaf node in current node
 		do
-			if is_empty then
-				Result := local_keyword
-			else
+			if not is_empty then
 				Result := last.last_leaf
+			elseif attached first_semicolon as l_first_semicolon then
+				Result := l_first_semicolon.last_leaf
+			else
+				Result := local_keyword
 			end
 		end
 
@@ -129,6 +136,14 @@ feature -- Setting
 			local_keyword := a_local
 		ensure
 			local_keyword_set: local_keyword = a_local
+		end
+
+	set_first_semicolon (a_first_semicolon: like first_semicolon)
+			-- Set `first_semicolon' to `a_first_semicolon'.
+		do
+			first_semicolon := a_first_semicolon
+		ensure
+			first_semicolon_set: first_semicolon = a_first_semicolon
 		end
 
 feature -- Processing

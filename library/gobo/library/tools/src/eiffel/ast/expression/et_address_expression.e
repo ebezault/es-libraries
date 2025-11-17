@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Tools Library"
 	copyright: "Copyright (c) 1999-2002, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_ADDRESS_EXPRESSION
 
@@ -16,7 +14,8 @@ inherit
 
 	ET_EXPRESSION
 		redefine
-			is_never_void
+			is_never_void,
+			has_address_expression
 		end
 
 feature -- Access
@@ -41,6 +40,10 @@ feature -- Status report
 
 	is_never_void: BOOLEAN = True
 			-- Can current expression never be void?
+
+	has_address_expression: BOOLEAN = True
+			-- Does an address expression appear in current expression
+			-- or (recursively) in one of its subexpressions?
 
 feature -- Setting
 

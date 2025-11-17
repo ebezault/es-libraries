@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel class types"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright:  "Copyright (c) 1999-2020, Eric Bezault and others"
+	copyright:  "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_CLASS_TYPE
 
@@ -24,9 +22,8 @@ inherit
 			conforms_from_class_type_with_type_marks,
 			resolved_formal_parameters_with_type_mark,
 			append_unaliased_to_string,
-			append_runtime_name_to_string,
+			append_canonical_to_string,
 			type_with_type_mark,
-			type_mark,
 			overridden_type_mark,
 			reset
 		end
@@ -101,16 +98,13 @@ feature -- Access
 	actual_parameters: detachable ET_ACTUAL_PARAMETERS
 			-- Actual generic parameters
 
-	type_mark: detachable ET_TYPE_MARK
-			-- 'attached', 'detachable', 'expanded', 'reference' or 'separate' keyword,
-			-- or '!' or '?' symbol
-
 	overridden_type_mark (a_override_type_mark: detachable ET_TYPE_MARK): detachable ET_TYPE_MARK
 			-- Version of `type_mark' overridden by `a_override_type_mark'
 		local
 			l_result_expanded_mark: BOOLEAN
 			l_result_reference_mark: BOOLEAN
 			l_result_separate_mark: BOOLEAN
+			l_result_non_separate_mark: BOOLEAN
 			l_result_attached_mark: BOOLEAN
 			l_result_detachable_mark: BOOLEAN
 			l_current_ok: BOOLEAN
@@ -151,16 +145,33 @@ feature -- Access
 					end
 				end
 				if a_override_type_mark.is_separateness_mark then
-					if not is_separate then
-						l_current_ok := False
+					if a_override_type_mark.is_separate_mark then
+						if not is_separate then
+							l_current_ok := False
+						end
+						if not base_class.is_separate then
+							l_result_separate_mark := True
+						end
+					else
+						if is_separate then
+							l_current_ok := False
+						end
+						if base_class.is_separate then
+							l_result_non_separate_mark := True
+						end
 					end
-					if not base_class.is_separate then
-						l_result_separate_mark := True
-					end
+
 				elseif attached type_mark as l_type_mark and then l_type_mark.is_separateness_mark then
-					if not base_class.is_separate then
-						l_other_ok := False
-						l_result_separate_mark := True
+					if l_type_mark.is_separate_mark then
+						if not base_class.is_separate then
+							l_other_ok := False
+							l_result_separate_mark := True
+						end
+					else
+						if base_class.is_separate then
+							l_other_ok := False
+							l_result_non_separate_mark := True
+						end
 					end
 				end
 				if a_override_type_mark.is_attachment_mark then
@@ -201,7 +212,7 @@ feature -- Access
 				elseif l_other_ok then
 					Result := a_override_type_mark
 				else
-					Result := tokens.implicit_type_mark (l_result_expanded_mark, l_result_reference_mark, l_result_separate_mark, l_result_attached_mark, l_result_detachable_mark)
+					Result := tokens.implicit_type_mark (l_result_expanded_mark, l_result_reference_mark, l_result_separate_mark, l_result_non_separate_mark, l_result_attached_mark, l_result_detachable_mark)
 				end
 			end
 		end
@@ -252,6 +263,34 @@ feature -- Access
 			end
 		end
 
+	type_without_non_basic_actual_generic_parameters (a_parameters: DS_ARRAYED_LIST [ET_BASE_TYPE]): ET_CLASS_TYPE
+			-- Current type whose non basic actual generic parameters
+			-- are replaced by those in `a_parameters'
+		require
+			a_parameters_not_void: a_parameters /= Void
+			a_parameters_large_enough: a_parameters.count >= actual_parameter_count
+			no_void_parameter: not a_parameters.has_void
+		local
+			i, nb: INTEGER
+			l_actual_parameter_list: ET_ACTUAL_PARAMETER_LIST
+		do
+			if attached actual_parameters as l_actual_parameters and then not l_actual_parameters.is_empty then
+				nb := l_actual_parameters.count
+				create l_actual_parameter_list.make_with_capacity (nb)
+				from i := nb until i < 1 loop
+					if attached {ET_CLASS_TYPE} l_actual_parameters.actual_parameter (i).type as l_class_type and then l_class_type.base_class.is_basic then
+						l_actual_parameter_list.put_first (l_class_type)
+					else
+						l_actual_parameter_list.put_first (a_parameters.item (i))
+					end
+					i := i - 1
+				end
+				create Result.make_generic (type_mark, name, l_actual_parameter_list, named_base_class)
+			else
+				Result := Current
+			end
+		end
+
 	position: ET_POSITION
 			-- Position of first character of
 			-- current node in source code
@@ -288,24 +327,23 @@ feature -- Status report
 	is_separate: BOOLEAN
 			-- Is current type separate?
 		do
-			if attached type_mark as l_type_mark then
-				Result := l_type_mark.is_separate_mark
+			if not attached type_mark as l_type_mark then
+				Result := base_class.is_separate
+			elseif l_type_mark.is_separate_mark then
+				Result := not is_expanded
 			else
 				Result := base_class.is_separate
 			end
 		end
 
 	is_type_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
-			-- Is current type separate when viewed from `a_context'?
-		require
-			a_context_not_void: a_context /= Void
-			a_context_valid: a_context.is_valid_context
-			-- no_cycle: no cycle in anchored types involved.
+			-- Same as `is_type_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
 		do
 			if a_type_mark = Void then
 				Result := is_separate
 			elseif a_type_mark.is_separate_mark then
-				Result := True
+				Result := not is_type_expanded_with_type_mark (a_type_mark, a_context)
 			else
 				Result := is_separate
 			end
@@ -326,7 +364,8 @@ feature -- Status report
 		end
 
 	is_type_expanded_with_type_mark (a_type_mark: detachable ET_TYPE_MARK; a_context: ET_TYPE_CONTEXT): BOOLEAN
-			-- Is current type expanded when viewed from `a_context'?
+			-- Same as `is_type_expanded' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
 		do
 			if a_type_mark = Void then
 				Result := is_expanded
@@ -367,14 +406,21 @@ feature -- Status report
 			end
 		end
 
-	base_type_has_class (a_class: ET_CLASS; a_context: ET_TYPE_CONTEXT): BOOLEAN
-			-- Does the base type of current type contain `a_class'
-			-- when it appears in `a_context'?
+	has_non_basic_actual_generic_parameter: BOOLEAN
+			-- Does current type have a non basic type amongst its actual generic parameters?
+		local
+			i, nb: INTEGER
 		do
-			if a_class = base_class then
-				Result := True
-			elseif attached actual_parameters as l_actual_parameters then
-				Result := l_actual_parameters.named_types_have_class (a_class, a_context)
+			if attached actual_parameters as l_actual_parameters then
+				nb := l_actual_parameters.count
+				from i := 1 until i > nb loop
+					if attached {ET_CLASS_TYPE} l_actual_parameters.actual_parameter (i).type as l_class_type and then not l_class_type.base_class.is_basic then
+						Result := True
+							-- Jump out of the loop.
+						i := nb + 1
+					end
+					i := i + 1
+				end
 			end
 		end
 
@@ -837,8 +883,7 @@ feature -- Type processing
 feature -- Output
 
 	append_to_string (a_string: STRING)
-			-- Append textual representation of
-			-- current type to `a_string'.
+			-- Append `to_text' to `a_string'.
 		do
 			if attached type_mark as l_type_mark then
 				l_type_mark.append_to_string_with_space (a_string)
@@ -851,10 +896,7 @@ feature -- Output
 		end
 
 	append_unaliased_to_string (a_string: STRING)
-			-- Append textual representation of unaliased
-			-- version of current type to `a_string'.
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- Append `unaliased_to_text' to `a_string'.
 		do
 			if attached type_mark as l_type_mark then
 				l_type_mark.append_to_string_with_space (a_string)
@@ -866,11 +908,18 @@ feature -- Output
 			end
 		end
 
+	append_canonical_to_string (a_string: STRING)
+			-- Append `canonical_to_text' to `a_string'.
+		do
+			a_string.append_string (base_class.upper_name)
+			if attached actual_parameters as l_parameters and then not l_parameters.is_empty then
+				a_string.append_character (' ')
+				l_parameters.append_canonical_to_string (a_string)
+			end
+		end
+
 	append_runtime_name_to_string (a_string: STRING)
-			-- Append to `a_string' textual representation of unaliased
-			-- version of current type as returned by 'TYPE.runtime_name'.
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- Append `runtime_name_to_text' to `a_string'.
 		local
 			l_base_class: ET_CLASS
 		do
@@ -881,7 +930,13 @@ feature -- Output
 					a_string.append_character ('!')
 				end
 			end
-			a_string.append_string (base_class.upper_name)
+			if l_base_class.current_system.scoop_mode then
+				if is_separate then
+					a_string.append_string (tokens.separate_keyword_name)
+					a_string.append_character (' ')
+				end
+			end
+			a_string.append_string (l_base_class.upper_name)
 			if attached actual_parameters as l_parameters and then not l_parameters.is_empty then
 				a_string.append_character (' ')
 				l_parameters.append_runtime_name_to_string (a_string)

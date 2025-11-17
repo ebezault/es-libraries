@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel dynamic type set builders where types are pushed to supersets"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_DYNAMIC_PUSH_TYPE_SET_BUILDER
 
@@ -35,6 +33,7 @@ inherit
 			propagate_extended_attribute_result_dynamic_types,
 			propagate_if_expression_dynamic_types,
 			propagate_inline_agent_result_dynamic_types,
+			propagate_inline_separate_argument_dynamic_types,
 			propagate_inspect_expression_dynamic_types,
 			propagate_like_argument_dynamic_types,
 			propagate_manifest_string_area_dynamic_type,
@@ -176,6 +175,13 @@ feature -- Generation
 						end
 						j := j + 1
 					end
+						-- Process dynamic invariants.
+					if attached l_type.invariants as l_invariants then
+						if not l_invariants.is_built then
+							is_built := False
+							build_feature_dynamic_type_sets (l_invariants, l_type)
+						end
+					end
 					i := i + 1
 				end
 			end
@@ -240,13 +246,19 @@ feature {ET_DYNAMIC_ROUTINE_TYPE} -- Generation
 			l_call_dynamic_type_sets: ET_DYNAMIC_TYPE_SET_LIST
 			l_dynamic_type_sets: ET_DYNAMIC_TYPE_SET_LIST
 			l_agent_type_set: ET_DYNAMIC_AGENT_OPERAND_PUSH_TYPE_SET
+			i, nb: INTEGER
 		do
 			l_call_dynamic_type_sets := a_call_feature.dynamic_type_sets
 			if not l_call_dynamic_type_sets.is_empty then
 				create l_agent_type_set.make (l_call_dynamic_type_sets.item (1).static_type, an_agent_type)
 				l_agent_type_set.set_never_void
-				create l_dynamic_type_sets.make_with_capacity (1)
+				nb := l_call_dynamic_type_sets.count
+				create l_dynamic_type_sets.make_with_capacity (nb)
 				l_dynamic_type_sets.put_last (l_agent_type_set)
+				from i := 2 until i > nb loop
+					l_dynamic_type_sets.put_last (l_call_dynamic_type_sets.item (i))
+					i := i + 1
+				end
 				a_call_feature.set_dynamic_type_sets (l_dynamic_type_sets)
 			end
 		end
@@ -702,6 +714,30 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	propagate_inline_separate_argument_dynamic_types (a_inline_separate_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Propagate dynamic types of the expression of `a_inline_separate_argument'
+			-- to the dynamic type set of its name.
+		local
+			l_source_type_set: detachable ET_DYNAMIC_TYPE_SET
+			l_target_type_set: detachable ET_DYNAMIC_TYPE_SET
+		do
+			l_source_type_set := dynamic_type_set (a_inline_separate_argument.expression)
+			l_target_type_set := dynamic_type_set (a_inline_separate_argument.name)
+			if l_source_type_set = Void then
+					-- Internal error: the dynamic type sets of the expression
+					-- should be known at this stage.
+				set_fatal_error
+				error_handler.report_giaaa_error
+			elseif l_target_type_set = Void then
+					-- Internal error: the dynamic type sets of the inline separate argument
+					-- name should be known at this stage.
+				set_fatal_error
+				error_handler.report_giaaa_error
+			else
+				l_source_type_set.put_target (l_target_type_set, current_dynamic_system)
+			end
+		end
+
 	propagate_inspect_expression_dynamic_types (a_inspect_expression: ET_INSPECT_EXPRESSION; a_sub_expression: ET_EXPRESSION; a_source_type_set, a_target_type_set: ET_DYNAMIC_TYPE_SET)
 			-- Propagate dynamic types of `a_source_type_set' (which is the dynamic
 			-- type set of the sub-expressions `a_sub_expression' within `a_inspect_expression')
@@ -770,13 +806,13 @@ feature {NONE} -- Implementation
 			a_equality.target_type_set.put_target (a_equality, current_dynamic_system)
 		end
 
-	propagate_tuple_label_argument_dynamic_types (a_label_type_set: ET_DYNAMIC_TYPE_SET; a_assigner: ET_ASSIGNER_INSTRUCTION)
+	propagate_tuple_label_argument_dynamic_types (a_label_type_set: ET_DYNAMIC_TYPE_SET; a_assigner: ET_ASSIGNER_INSTRUCTION; a_call: ET_DYNAMIC_QUALIFIED_PROCEDURE_CALL)
 			-- Propagate dynamic types of the source of tuple label setter `a_assigner'
 			-- to the dynamic type set `a_label_type_set' of the corresponding tuple label.
 		local
 			l_source_type_set: detachable ET_DYNAMIC_TYPE_SET
 		do
-			l_source_type_set := current_dynamic_feature.dynamic_type_set (a_assigner.source)
+			l_source_type_set := a_call.dynamic_type_set (a_assigner.source)
 			if l_source_type_set = Void then
 					-- Internal error: the dynamic type set of the source
 					-- of the label setter should be known at this stage.

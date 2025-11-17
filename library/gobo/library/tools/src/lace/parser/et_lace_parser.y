@@ -1,15 +1,13 @@
-%{
+﻿%{
 note
 
 	description:
 
 		"Lace parsers"
-  
+
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_LACE_PARSER
 
@@ -67,7 +65,8 @@ Ace: System L_ROOT Identifier Root_cluster_opt Creation_procedure_opt
 			if attached $8 as l_assemblies then
 				$$.set_dotnet_assemblies (l_assemblies)
 			end
-			$$.set_root_type ($3)
+			$$.set_root_type_name ($3)
+			$$.set_root_type (Void)
 			$$.set_root_creation ($5)
 		}
 	;

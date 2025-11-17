@@ -1,13 +1,11 @@
-note
+﻿note
 
 	description:
 
 		"Gobo Eiffel Doc"
 
-	copyright: "Copyright (c) 2017-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2017-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEDOC
 
@@ -27,7 +25,10 @@ inherit
 	UT_SHARED_ISE_VERSIONS
 		export {NONE} all end
 
-	ET_SHARED_ISE_VARIABLES
+	UT_SHARED_ISE_VARIABLES
+		export {NONE} all end
+
+	UT_SHARED_GOBO_VARIABLES
 		export {NONE} all end
 
 	KL_IMPORTED_STRING_ROUTINES
@@ -72,6 +73,9 @@ feature -- Execution
 			a_error_handler_not_void: a_error_handler /= Void
 		do
 			Arguments.set_program_name ("gedoc")
+				-- Set environment variables "$GOBO", "$GOBO_LIBRARY",
+				-- "$BOEHM_GC" and "$ZIG" if not set yet.
+			gobo_variables.set_gobo_variables
 				-- For compatibility with ISE's tools, define the environment
 				-- variables "$ISE_LIBRARY", "$EIFFEL_LIBRARY", "$ISE_PLATFORM"
 				-- and "$ISE_C_COMPILER" if not set yet.
@@ -183,7 +187,8 @@ feature -- Argument parsing
 			format_option.extend ("explicit_converts")
 			format_option.extend ("ecf_pretty_print")
 			format_option.extend ("available_targets")
-			format_option.set_parameter_description ("pretty_print|html_ise_stylesheet|descendants|implicit_converts|explicit_converts|ecf_pretty_print|available_targets")
+			format_option.extend ("executable_name")
+			format_option.set_parameter_description ("pretty_print|html_ise_stylesheet|descendants|implicit_converts|explicit_converts|ecf_pretty_print|available_targets|executable_name")
 			l_parser.options.force_last (format_option)
 				-- class.
 			create class_option.make ('c', "class")
@@ -255,7 +260,7 @@ feature -- Argument parsing
 			l_parser.options.force_last (variable_option)
 				-- thread.
 			create thread_option.make_with_long_form ("thread")
-			thread_option.set_description ("Number of threads to be used. Negative numbers -N mean %"number of CPUs - N%". (default: number of CPUs)")
+			thread_option.set_description ("Number of threads to be used. Negative numbers -N mean %"number of CPUs - N%". (default: -3)")
 			thread_option.set_parameter_description ("thread_count")
 			if {PLATFORM}.is_thread_capable then
 				l_parser.options.force_last (thread_option)
@@ -290,6 +295,8 @@ feature -- Argument parsing
 				create {GEDOC_ECF_PRETTY_PRINT_FORMAT} l_format.make (l_input_filename, new_system_processor (thread_option))
 			elseif format_option.parameter ~ "available_targets" then
 				create {GEDOC_AVAILABLE_TARGETS_FORMAT} l_format.make (l_input_filename, new_system_processor (thread_option))
+			elseif format_option.parameter ~ "executable_name" then
+				create {GEDOC_EXECUTABLE_NAME_FORMAT} l_format.make (l_input_filename, new_system_processor (thread_option))
 			end
 			if l_format /= Void then
 				set_target_name (target_option, l_parser, l_format)
@@ -592,7 +599,7 @@ feature -- Argument parsing
 		local
 			l_thread_count: INTEGER
 		do
-			l_thread_count := {EXECUTION_ENVIRONMENT}.available_cpu_count.as_integer_32
+			l_thread_count := {EXECUTION_ENVIRONMENT}.available_cpu_count.as_integer_32 - 3
 			if a_thread_option.was_found then
 				l_thread_count := a_thread_option.parameter
 				if l_thread_count <= 0 then

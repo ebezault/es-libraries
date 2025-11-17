@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Gec commands"
 
 	library: "Gobo Eiffel Ant"
-	copyright: "Copyright (c) 2005-2020, Sven Ehrke and others"
+	copyright: "Copyright (c) 2005-2024, Sven Ehrke and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_GEC_COMMAND
 
@@ -32,7 +30,6 @@ feature {NONE} -- Initialization
 			-- Create a new 'gec' command.
 		do
 			precursor (a_project)
-			c_compile := "gecc"
 			executable_filename := "gec"
 			split_mode := True
 		end
@@ -50,7 +47,7 @@ feature -- Status report
 		end
 
 	is_ecf_configuration: BOOLEAN
-			-- Does ace file configuration apply?
+			-- Does ECF file configuration apply?
 		do
 			Result := (attached ecf_filename as l_ecf_filename and then l_ecf_filename.count > 0)
 		ensure
@@ -77,6 +74,9 @@ feature -- Access
 			-- Name of target to be used in ECF file.
 			-- Use last target in ECF file if not specified.
 
+	executable_name: detachable STRING
+			-- Name of executable to be compiled
+
 	c_compile: detachable STRING
 			-- Should the back-end C compiler be invoked on the generated C code, and if yes with what method?
 			-- (default: gecc)
@@ -99,10 +99,13 @@ feature -- Access
 	garbage_collector: detachable STRING
 			-- Name of GC being used
 
+	use_thread_count: BOOLEAN
+			-- Should the number of threads to be used when running gec
+			-- be overridden with `thread_count'?
+
 	thread_count: INTEGER
 			-- Number of threads to be used to run gec.
 			-- Negative numbers -N mean "number of CPUs - N".
-			-- (default: number of CPUs)
 
 	new_instance_types_filename: detachable STRING
 			-- Filename containing the list of types which can have instances
@@ -160,6 +163,14 @@ feature -- Setting
 			target_name := a_target_name
 		ensure
 			target_name_set: target_name = a_target_name
+		end
+
+	set_executable_name (a_executable_name: like executable_name)
+			-- Set `executable_name' to `a_executable_name'.
+		do
+			executable_name := a_executable_name
+		ensure
+			executable_name_set: executable_name = a_executable_name
 		end
 
 	set_c_compile (a_c_compile: like c_compile)
@@ -227,7 +238,9 @@ feature -- Setting
 			-- Set `thread_count' to `a_thread_count'.
 		do
 			thread_count := a_thread_count
+			use_thread_count := True
 		ensure
+			use_thread_count_set: use_thread_count
 			thread_count_set: thread_count = a_thread_count
 		end
 
@@ -305,125 +318,35 @@ feature -- Execution
 		local
 			cmd: STRING
 			a_name: STRING
-			i: INTEGER
-			stop: BOOLEAN
+			l_dir: KL_DIRECTORY
+			l_regexp: RX_PCRE_REGULAR_EXPRESSION
 		do
 			exit_code := 0
 			if is_cleanable and then attached clean as l_clean then
-				a_name := l_clean + ".c"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
+				if file_system.directory_exists (".gobo") then
+					project.trace (<<"  [gec] delete .gobo">>)
 					if not project.options.no_exec then
-						file_system.delete_file (a_name)
+						file_system.recursive_delete_directory (".gobo")
 					end
 				end
-				a_name := l_clean + ".cpp"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				from i := 1 until stop loop
-					stop := True
-					a_name := l_clean + i.out + ".c"
-					if file_system.file_exists (a_name) then
-						project.trace (<<"  [gec] delete ", a_name>>)
-						if not project.options.no_exec then
-							file_system.delete_file (a_name)
+				create l_dir.make (".")
+				l_dir.open_read
+				if l_dir.is_open_read then
+					create l_regexp.make
+					l_regexp.compile (l_clean + "(_?[0-9]+)?\.(c(pp)?|h|o(bj)?|tds|pdb|ilk|suo|exe\.manifest|gc\.log|res|bat|sh|make)")
+					from
+						l_dir.read_entry
+					until
+						l_dir.end_of_input
+					loop
+						a_name := l_dir.last_entry
+						if l_regexp.recognizes (a_name) then
+							project.trace (<<"  [gec] delete ", a_name>>)
+							if not project.options.no_exec then
+								file_system.delete_file (a_name)
+							end
 						end
-						stop := False
-					end
-					a_name := l_clean + i.out + ".cpp"
-					if file_system.file_exists (a_name) then
-						project.trace (<<"  [gec] delete ", a_name>>)
-						if not project.options.no_exec then
-							file_system.delete_file (a_name)
-						end
-						stop := False
-					end
-					i := i + 1
-				end
-				a_name := l_clean + ".h"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				a_name := l_clean + ".obj"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				stop := False
-				from i := 1 until stop loop
-					a_name := l_clean + i.out + ".obj"
-					if file_system.file_exists (a_name) then
-						project.trace (<<"  [gec] delete ", a_name>>)
-						if not project.options.no_exec then
-							file_system.delete_file (a_name)
-						end
-					else
-						stop := True
-					end
-					i := i + 1
-				end
-				a_name := l_clean + ".o"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				stop := False
-				from i := 1 until stop loop
-					a_name := l_clean + i.out + ".o"
-					if file_system.file_exists (a_name) then
-						project.trace (<<"  [gec] delete ", a_name>>)
-						if not project.options.no_exec then
-							file_system.delete_file (a_name)
-						end
-					else
-						stop := True
-					end
-					i := i + 1
-				end
-				a_name := l_clean + ".tds"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				a_name := l_clean + ".res"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				a_name := l_clean + ".bat"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				a_name := l_clean + ".sh"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
-					end
-				end
-				a_name := l_clean + ".make"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [gec] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
+						l_dir.read_entry
 					end
 				end
 			elseif is_ecf_configuration then
@@ -452,13 +375,24 @@ feature -- Command-line
 			is_ecf_configuration: is_ecf_configuration
 		local
 			a_filename: STRING
+			l_gec_pathname: STRING
 		do
 			create Result.make (50)
-			Result.append_string (executable_filename)
+			if executable_filename.same_string ("gec") then
+				l_gec_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("gec")
+				Result.append_string (l_gec_pathname)
+			else
+				Result.append_string (executable_filename)
+			end
 			Result.append_character (' ')
 			if attached target_name as l_target_name and then not l_target_name.is_empty then
 				Result.append_string ("--target=")
 				Result.append_string (l_target_name)
+				Result.append_character (' ')
+			end
+			if attached executable_name as l_executable_name and then not l_executable_name.is_empty then
+				Result.append_string ("--setting=executable_name=")
+				Result.append_string (l_executable_name)
 				Result.append_character (' ')
 			end
 			if finalize then
@@ -495,7 +429,11 @@ feature -- Command-line
 				Result.append_string (l_new_instance_types_filename)
 				Result.append_character (' ')
 			end
-			if thread_count /= 0 then
+			if project.options.use_thread_count then
+				Result.append_string ("--thread=")
+				INTEGER_.append_decimal_integer (project.options.thread_count, Result)
+				Result.append_character (' ')
+			elseif use_thread_count then
 				Result.append_string ("--thread=")
 				INTEGER_.append_decimal_integer (thread_count, Result)
 				Result.append_character (' ')

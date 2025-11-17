@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -8,10 +8,8 @@ note
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2007-2017, Eric Bezault and others"
+	copyright: "Copyright (c) 2007-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_IMPLEMENTATION_STATUS_CHECKER
 
@@ -44,6 +42,8 @@ feature -- Processing
 			a_processor: like Current
 		do
 			if a_class.is_none then
+				a_class.unset_implementation_error
+			elseif a_class.is_formal then
 				a_class.unset_implementation_error
 			elseif not current_class.is_unknown then
 					-- Internal error (recursive call)

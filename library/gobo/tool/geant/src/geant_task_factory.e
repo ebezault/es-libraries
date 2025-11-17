@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Geant tasks factory"
 
 	library: "Gobo Eiffel Ant"
-	copyright: "Copyright (c) 2001-2021, Sven Ehrke, Jocelyn Fiat, and others"
+	copyright: "Copyright (c) 2001-2023, Sven Ehrke, Jocelyn Fiat, and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_TASK_FACTORY
 
@@ -65,6 +63,16 @@ feature -- Factory
 			create Result.make (project, a_xml_element)
 		ensure
 			new_gec_task_not_void: Result /= Void
+		end
+
+	new_gecc_task (a_xml_element: XM_ELEMENT): GEANT_GECC_TASK
+			-- gecc: Gobo Eiffel C Compilation
+		require
+			a_xml_element_not_void: a_xml_element /= Void
+		do
+			create Result.make (project, a_xml_element)
+		ensure
+			new_gecc_task_not_void: Result /= Void
 		end
 
 	new_ise_task (a_xml_element: XM_ELEMENT): GEANT_ISE_TASK
@@ -320,6 +328,8 @@ feature {NONE} -- Implementation
 
 				-- gec: Gobo Eiffel compilation
 			builders.force_new (agent new_gec_task, Gec_task_name)
+				-- gec: Gobo Eiffel C Compilation
+			builders.force_new (agent new_gecc_task, Gecc_task_name)
 				-- ise: ISE Eiffel compilation
 			builders.force_new (agent new_ise_task, Ise_task_name)
 				-- exec

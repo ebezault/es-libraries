@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Lexical Library"
 	copyright: "Copyright (c) 2001-2019, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class YY_SCANNER_SKELETON
 
@@ -207,7 +205,7 @@ feature -- Access
 			-- the input buffer.)
 			--
 			-- Note that `unicode_text' does not contain surrogate
-			-- or invalid Unicode characters, the the resulting
+			-- or invalid Unicode characters, therefore the resulting
 			-- string is valid UTF-8.
 		do
 			if e < s then

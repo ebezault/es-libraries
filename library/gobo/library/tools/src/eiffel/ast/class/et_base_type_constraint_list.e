@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -9,10 +9,8 @@ note
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2019-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_BASE_TYPE_CONSTRAINT_LIST
 
@@ -155,6 +153,60 @@ feature -- Status report
 			end
 		end
 
+	has_expanded_type (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is one of the constraint types an expanded type when viewed from `a_context'?
+		local
+			j: INTEGER
+		do
+			from
+				j := count - 1
+			until
+				j < 0
+			loop
+				if storage.item (j).is_type_expanded (a_context) then
+					Result := True
+					j := 0 -- Jump out of the loop.
+				end
+				j := j - 1
+			end
+		end
+
+	has_attached_type (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is one of the constraint types attached when viewed from `a_context'?
+		local
+			j: INTEGER
+		do
+			from
+				j := count - 1
+			until
+				j < 0
+			loop
+				if storage.item (j).is_type_attached (a_context) then
+					Result := True
+					j := 0 -- Jump out of the loop.
+				end
+				j := j - 1
+			end
+		end
+
+	has_non_separate_type (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is one of the constraint types non-separate when viewed from `a_context'?
+		local
+			j: INTEGER
+		do
+			from
+				j := count - 1
+			until
+				j < 0
+			loop
+				if storage.item (j).is_type_non_separate (a_context) then
+					Result := True
+					j := 0 -- Jump out of the loop.
+				end
+				j := j - 1
+			end
+		end
+
 feature -- Setting
 
 	set_left_brace (l: like left_brace)
@@ -187,7 +239,7 @@ feature -- Conformance
 			i: INTEGER
 		do
 			if count = 0 then
-				Result := a_context.base_class.universe.detachable_any_type.conforms_to_type_with_type_marks (other, other_type_mark, other_context, a_type_mark, a_context, a_system_processor)
+				Result := a_context.base_class.universe.detachable_separate_any_type.conforms_to_type_with_type_marks (other, other_type_mark, other_context, a_type_mark, a_context, a_system_processor)
 			else
 				from
 					i := count - 1

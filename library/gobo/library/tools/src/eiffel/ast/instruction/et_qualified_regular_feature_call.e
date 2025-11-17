@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel qualified regular feature calls"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2016, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_QUALIFIED_REGULAR_FEATURE_CALL
 
@@ -16,7 +14,12 @@ inherit
 
 	ET_REGULAR_FEATURE_CALL
 		undefine
-			is_qualified_call
+			is_qualified_call,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 	ET_QUALIFIED_FEATURE_CALL
@@ -28,7 +31,13 @@ inherit
 		rename
 			make as make_qualified_call
 		undefine
-			process
+			process,
+			is_call_agent,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		redefine
 			reset,
 			position,
@@ -56,7 +65,7 @@ feature -- Initialization
 	reset
 			-- Reset call as it was when it was last parsed.
 		do
-			Precursor
+			precursor
 			target.reset
 		end
 

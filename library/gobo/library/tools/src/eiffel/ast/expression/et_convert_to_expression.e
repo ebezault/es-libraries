@@ -1,26 +1,32 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel conversion-to expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_CONVERT_TO_EXPRESSION
 
 inherit
 
 	ET_CONVERT_EXPRESSION
+		undefine
+			add_separate_arguments
+		end
 
 	ET_QUALIFIED_FEATURE_CALL_EXPRESSION
 		rename
 			target as expression
 		undefine
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 create

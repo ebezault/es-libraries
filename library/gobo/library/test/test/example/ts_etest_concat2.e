@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Test 'concat2' example"
 
 	library: "Gobo Eiffel Test Library"
-	copyright: "Copyright (c) 2001-2016, Eric Bezault and others"
+	copyright: "Copyright (c) 2001-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class TS_ETEST_CONCAT2
 
@@ -35,6 +33,7 @@ feature -- Test
 		local
 			a_debug: STRING
 			a_geant_filename: STRING
+			l_geant_pathname: STRING
 		do
 				-- Run example.
 			if variables.has ("debug") then
@@ -43,13 +42,14 @@ feature -- Test
 				a_debug := ""
 			end
 			a_geant_filename := geant_filename
-			assert_execute ("geant -b " + a_geant_filename + " test_" + a_debug + eiffel_compiler.vendor + " " + output_log)
+			l_geant_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("geant")
+			assert_execute_with_command_output (l_geant_pathname + " -b " + a_geant_filename + " test_" + a_debug + eiffel_compiler.vendor + " " + output2_log, output2_log_filename, error2_log_filename)
 				-- Check result.
 			file_system.delete_file (expected_output)
 			file_system.concat_files (expected_output, expected_output1)
 			file_system.concat_files (expected_output, expected_output2)
 			file_system.concat_files (expected_output, expected_output3)
-			if file_system.same_text_files (expected_output, output_log_filename) then
+			if file_system.same_text_files (expected_output, output2_log_filename) then
 				assert ("output", True)
 			else
 					-- Free version of ISE Eiffel?
@@ -58,7 +58,7 @@ feature -- Test
 				file_system.concat_files (expected_output, expected_output2)
 				file_system.concat_files (expected_output, freeise_log_filename)
 				file_system.concat_files (expected_output, expected_output3)
-				if file_system.same_text_files (expected_output, output_log_filename) then
+				if file_system.same_text_files (expected_output, output2_log_filename) then
 					assert ("freeise_output1", True)
 				else
 					file_system.delete_file (expected_output)
@@ -67,7 +67,7 @@ feature -- Test
 					file_system.concat_files (expected_output, expected_output2)
 					file_system.concat_files (expected_output, freeise_log_filename)
 					file_system.concat_files (expected_output, expected_output3)
-					if file_system.same_text_files (expected_output, output_log_filename) then
+					if file_system.same_text_files (expected_output, output2_log_filename) then
 						assert ("freeise_output2", True)
 					else
 						file_system.delete_file (expected_output)
@@ -77,21 +77,21 @@ feature -- Test
 						file_system.concat_files (expected_output, expected_output2)
 						file_system.concat_files (expected_output, freeise_log_filename)
 						file_system.concat_files (expected_output, expected_output3)
-						if file_system.same_text_files (expected_output, output_log_filename) then
+						if file_system.same_text_files (expected_output, output2_log_filename) then
 							assert ("freeise_output3", True)
 						else
 							file_system.delete_file (expected_output)
 							file_system.concat_files (expected_output, expected_output1)
 							file_system.concat_files (expected_output, expected_output2)
 							file_system.concat_files (expected_output, expected_output3)
-							assert_files_equal ("output2", expected_output, output_log_filename)
+							assert_files_equal ("output2", expected_output, output2_log_filename)
 						end
 					end
 				end
 			end
-			assert_integers_equal ("no_error_log", 0, file_system.file_count (error_log_filename))
+			assert_integers_equal ("no_error_log", 0, file_system.file_count (error2_log_filename))
 				-- Clean.
-			assert_execute ("geant -b " + a_geant_filename + " clean" + output_log)
+			assert_execute_with_command_output (l_geant_pathname + " -b " + a_geant_filename + " clean" + output3_log, output3_log_filename, error3_log_filename)
 		end
 
 feature {NONE} -- Implementation
