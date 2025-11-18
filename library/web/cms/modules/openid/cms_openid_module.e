@@ -385,8 +385,12 @@ feature -- Openid Login
 							res.add_cookie (l_cookie)
 
 									-- Send Email
-							create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (api))
-							es.send_contact_welcome_email (l_email, l_user, req.absolute_script_url (""))
+							if attached {CMS_AUTHENTICATION_API} api.module_api ({CMS_AUTHENTICATION_MODULE}) as l_auth_api then
+								create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (l_auth_api))
+								es.notify_user_about_accepted_account_application (l_email, l_user, req.absolute_script_url (""))
+							else
+								check False end
+							end
 						end
 					end
 					r.set_redirection (r.front_page_url)

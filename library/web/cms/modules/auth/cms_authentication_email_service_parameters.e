@@ -6,47 +6,52 @@ note
 class
 	CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS
 
+inherit
+	CMS_API_ACCESS
+
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_cms_api: CMS_API)
+	make (a_auth_api: CMS_AUTHENTICATION_API)
 		local
 			s: detachable READABLE_STRING_32
 			l_utf8_site_name: IMMUTABLE_STRING_8
-			l_contact_email, l_subject_register, l_subject_activate, l_subject_password, l_subject_oauth: detachable READABLE_STRING_8
+			l_contact_email: detachable READABLE_STRING_8
+			l_cms_api: CMS_API
+			p: PATH
 		do
-			cms_api := a_cms_api
-			create l_utf8_site_name.make_from_string (a_cms_api.setup.utf_8_site_name)
+			auth_api := a_auth_api
+			l_cms_api := a_auth_api.cms_api
+			cms_api := l_cms_api
+			create l_utf8_site_name.make_from_string (l_cms_api.setup.utf_8_site_name)
 			utf_8_site_name := l_utf8_site_name
-			notif_email_address := a_cms_api.setup.site_notification_email
-			sender_email_address := a_cms_api.setup.site_email
-
+			notif_email_address := l_cms_api.setup.site_notification_email
+			sender_email_address := l_cms_api.setup.site_email
 			if not notif_email_address.has ('<') then
 				notif_email_address := l_utf8_site_name + " <" + notif_email_address + ">"
 			end
+			mail_templates_location := l_cms_api.module_location_by_name ({CMS_AUTHENTICATION_MODULE}.name).extended ("mail_templates")
+			if
+				attached l_cms_api.module_configuration_by_name ({CMS_AUTHENTICATION_MODULE}.name, Void) as cfg
+			then
+				if attached cfg.text_item ("templates.mails.location") as loc then
+					create p.make_from_string (loc)
+					if not p.is_absolute then
+						if attached p.components as l_comps and then not l_comps.is_empty and then l_comps.first.name.same_string ("site") then
+							p := l_cms_api.site_location.parent.extended_path (p)
+						else
+							p := l_cms_api.site_location.extended_path (p)
+						end
 
-			if attached a_cms_api.module_configuration_by_name ({CMS_AUTHENTICATION_MODULE}.name, Void) as cfg then
-				s := cfg.text_item ("email")
-				if s /= Void then
-					l_contact_email := cms_api.utf_8_encoded (s)
+					end
+					mail_templates_location := p
 				end
-				s := cfg.text_item ("subject_register")
+				messages_config := cfg.sub_config ("messages")
+				s := cfg.text_item ("contact_email")
 				if s /= Void then
-					l_subject_register := cms_api.utf_8_encoded (s)
-				end
-				s := cfg.text_item ("subject_activate")
-				if s /= Void then
-					l_subject_register := cms_api.utf_8_encoded (s)
-				end
-				s := cfg.text_item ("subject_password")
-				if s /= Void then
-					l_subject_register := cms_api.utf_8_encoded (s)
-				end
-				s := cfg.text_item ("subject_oauth")
-				if s /= Void then
-					l_subject_oauth := cms_api.utf_8_encoded (s)
+					l_contact_email := l_cms_api.utf_8_encoded (s)
 				end
 			end
 			if l_contact_email = Void then
@@ -56,37 +61,32 @@ feature {NONE} -- Initialization
 				l_contact_email := l_utf8_site_name + " <" + l_contact_email + ">"
 			end
 			contact_email_address := l_contact_email
-
-			if l_subject_register /= Void then
-				contact_subject_register := l_subject_register
-			else
-				contact_subject_register := "Thank you for registering with us."
-			end
-
-			if l_subject_activate /= Void then
-				contact_subject_activate := l_subject_activate
-			else
-				contact_subject_activate := "New account activation token."
-			end
-			if l_subject_password /= Void then
-				contact_subject_password := l_subject_password
-			else
-				contact_subject_password := "Password Recovery."
-			end
-			if l_subject_oauth /= Void then
-				contact_subject_oauth := l_subject_oauth
-			else
-				contact_subject_oauth := "Welcome."
-			end
-
-			contact_subject_account_evaluation := "New register, account evalution."
-			contact_subject_rejected := "Your account was rejected."
-			contact_subject_activated := "Your account was activated."
 		end
 
+feature {NONE} -- Config
 
+	mail_templates_location: PATH
+
+	messages_config: detachable like {CMS_API}.module_configuration_by_name
+			-- Messages section of the config.
+
+	subject_for_message (m: READABLE_STRING_GENERAL): detachable READABLE_STRING_8
+		local
+			k: STRING_32
+		do
+			create k.make_from_string_general (m)
+			k.append (".subject")
+			if
+				attached messages_config as msg_cfg and then
+				attached msg_cfg.text_item (k) as s
+			then
+				Result := cms_api.utf_8_encoded (s)
+			end
+		end
 
 feature	-- Access
+
+	auth_api: CMS_AUTHENTICATION_API
 
 	cms_api: CMS_API
 
@@ -100,71 +100,113 @@ feature	-- Access
 	utf_8_site_name: IMMUTABLE_STRING_8
 			-- UTF-8 encoded Site name.
 
-	contact_subject_account_evaluation: IMMUTABLE_STRING_8
-	contact_subject_register: IMMUTABLE_STRING_8
-	contact_subject_activate: IMMUTABLE_STRING_8
-	contact_subject_password: IMMUTABLE_STRING_8
-	contact_subject_oauth: IMMUTABLE_STRING_8
-	contact_subject_rejected: IMMUTABLE_STRING_8
-	contact_subject_activated: IMMUTABLE_STRING_8
+feature -- Access / Messages / Evaluation
 
-	admin_account_evaluation: STRING
+	admin_account_registration_subject: READABLE_STRING_8
+		do
+			if attached subject_for_message ("admin_account_registration") as s then
+				Result := s
+			else
+				Result := {IMMUTABLE_STRING_8} "New register, account evaluation."
+			end
+		end
+
+	admin_account_registration_message: STRING
 			-- Account evaluation template email message.
 		do
-			Result := template_string ("admin_account_evaluation.html", default_template_account_evaluation)
+			Result := template_string ("admin_account_registration.html", default_template_account_evaluation)
 		end
 
-	account_activation: STRING
+feature -- Access / Messages / Registration
+
+	user_registration_application_subject: IMMUTABLE_STRING_8
+		do
+			if attached subject_for_message ("user_registration_application") as s then
+				Result := s
+			else
+				Result := {IMMUTABLE_STRING_8} "Thank you for registering with us."
+			end
+		end
+
+	user_registration_application_message: STRING
 			-- Account activation template email message.
 		do
-			Result := template_string ("account_activation.html", default_template_account_activation)
+			Result := template_string ("user_registration_application.html", default_template_account_activation)
 		end
 
-	account_email_verification: STRING
-			-- Account activation confirmation template email message.
+feature -- Access / Messages / Password		
+
+	user_reset_password_subject: IMMUTABLE_STRING_8
 		do
-			Result := template_string ("account_email_verification.html", default_template_account_activation_confirmation)
+			if attached subject_for_message ("user_reset_password") as s then
+				Result := s
+			else
+				Result := {IMMUTABLE_STRING_8} "Password Recovery."
+			end
 		end
 
-	account_activation_confirmation: STRING
-			-- Account activation confirmation template email message.
-		do
-			Result := template_string ("account_activation_confirmation.html", default_template_account_activation_confirmation)
-		end
-
-	account_re_activation: STRING
-			-- Account re_activation template email message.
-		do
-			Result := template_string ("account_re_activation.html", default_template_account_re_activation)
-		end
-
-	account_rejected: STRING
-			-- Account rejected template email message.
-		do
-			Result := template_string ("account_rejected.html", default_template_account_rejected)
-		end
-
-	account_password: STRING
+	user_reset_password_message: STRING
 			-- Account password template email message.
 		do
-			Result := template_string ("account_new_password.html", default_template_account_new_password)
+			Result := template_string ("user_reset_password.html", default_template_account_new_password)
 		end
 
-	account_welcome: STRING
-			-- Account welcome template email message.
+feature -- Access / Messages / Rejection		
+
+	user_rejected_account_application_subject: IMMUTABLE_STRING_8
 		do
-			Result := template_string ("account_welcome.html", default_template_account_welcome)
+			if attached subject_for_message ("user_rejected_account_application") as s then
+				Result := s
+			else
+				Result := {IMMUTABLE_STRING_8} "Your account was rejected."
+			end
+		end
+
+	user_rejected_account_application_message: STRING
+			-- Account rejected template email message.
+		do
+			Result := template_string ("user_rejected_account_application.html", default_template_account_rejected)
+		end
+
+	accepted_account_application_subject: IMMUTABLE_STRING_8
+		do
+			if attached subject_for_message ("accepted_account_application") as s then
+				Result := s
+			else
+				Result := {IMMUTABLE_STRING_8} "Your account was activated."
+			end
+		end
+
+	accepted_account_application_message: STRING
+			-- Account activation confirmation template email message.
+		do
+			Result := template_string ("user_accepted_account_application.html", default_template_account_activation_confirmation)
+		end
+
+feature -- Access / Messages / Verification - Activation	
+
+
+	user_email_verification_subject: IMMUTABLE_STRING_8
+		do
+			if attached subject_for_message ("user_email_verification") as s then
+				Result := s
+			else
+				Result := {IMMUTABLE_STRING_8} "Verify your email address."
+			end
+		end
+
+	user_email_verification_message: STRING
+			-- Account activation confirmation template email message.
+		do
+			Result := template_string ("user_email_verification.html", default_template_account_activation_confirmation)
 		end
 
 feature {NONE} -- Implementation: Template		
 
 	template_path (a_name: READABLE_STRING_GENERAL): PATH
 			-- Location of template named `a_name'.
-		local
-			p: PATH
 		do
-			create p.make_from_string (a_name)
-			Result := cms_api.module_location_by_name ({CMS_AUTHENTICATION_MODULE}.name).extended ("mail_templates").extended (a_name)
+			Result := mail_templates_location.extended (a_name)
 		end
 
 	template_string (a_name: READABLE_STRING_GENERAL; a_default: STRING): STRING

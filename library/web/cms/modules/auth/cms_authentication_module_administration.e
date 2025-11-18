@@ -238,8 +238,8 @@ feature -- Request handling
 								l_reason := p_reason.value
 							end
 							if attached l_temp_user.email as l_email then
-								create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api.cms_api))
-								es.send_contact_activation_reject_email (l_email, l_temp_user, req.absolute_script_url (""), l_reason)
+								create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api))
+								es.notify_user_about_rejected_account_application (l_email, l_temp_user, req.absolute_script_url (""), l_reason)
 							end
 						else
 							create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
@@ -311,8 +311,8 @@ feature -- Request handling
 									l_url_reject := req.absolute_script_url (a_auth_api.cms_api.administration_path ("/" + reject_user_location + l_token))
 											-- Send Email to webmaster
 									if attached l_user.personal_information as l_personal_information then
-										create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api.cms_api))
-										es.send_admin_account_evaluation (l_user, l_personal_information, l_url_activate, l_url_reject, req.absolute_script_url (""), False)
+										create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api))
+										es.notify_admin_about_account_registration (l_user, l_personal_information, l_url_activate, l_url_reject, req.absolute_script_url (""), False)
 									end
 								end
 							else

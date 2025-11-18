@@ -566,8 +566,8 @@ feature -- Handler
 							l_url := req.absolute_script_url ("/"+ roc_reset_password_location + "?token=" + l_token)
 
 								-- Send Email
-							create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api.cms_api))
-							es.send_contact_password_email (l_email, l_user, l_url, req.absolute_script_url (""))
+							create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api))
+							es.notify_user_about_password_reset (l_email, l_user, l_url, req.absolute_script_url (""))
 						else
 							r.set_value ("The email does not exist !", "error_email")
 							r.set_value (p_email.value, "email")
@@ -589,8 +589,8 @@ feature -- Handler
 						l_url := req.absolute_script_url ("/" + roc_reset_password_location + "?token=" + l_token)
 
 							-- Send Email
-						create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api.cms_api))
-						es.send_contact_password_email (l_user_email, l_user, l_url, req.absolute_script_url (""))
+						create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (a_auth_api))
+						es.notify_user_about_password_reset (l_user_email, l_user, l_url, req.absolute_script_url (""))
 					else
 						r.set_value ("The username does not exist !", "error_username")
 						r.set_value (l_username.value, "username")
