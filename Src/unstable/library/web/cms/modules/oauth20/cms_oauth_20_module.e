@@ -735,8 +735,12 @@ feature -- Registration
 												i_r.set_redirection (i_oauth20_api.cms_api.absolute_url ("/account", Void))
 
 													-- Send Email
-												create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (i_oauth20_api.cms_api))
-												es.send_contact_welcome_email (l_email.to_string_8, l_user, i_oauth20_api.cms_api.absolute_url ("", Void))
+												if attached {CMS_AUTHENTICATION_API} i_oauth20_api.cms_api.module_api ({CMS_AUTHENTICATION_MODULE}) as l_auth_api then
+													create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (l_auth_api))
+													es.notify_user_about_accepted_account_application (l_email.to_string_8, l_user, i_oauth20_api.cms_api.absolute_url ("", Void))
+												else
+													check False end
+												end
 											end
 										else
 											fd.report_invalid_field ("email", "Missing email information!")

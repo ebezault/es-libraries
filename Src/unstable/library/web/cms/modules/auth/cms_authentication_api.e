@@ -35,20 +35,20 @@ feature -- Token Generation
 			l_url_reject := cms_api.absolute_url (cms_api.administration_path ("/account/reject/" + l_token), Void)
 
 				-- Send Email to webmaster
-			cms_api.log_debug ("registration", "send_register_email", Void)
-			create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
-			es.send_admin_account_evaluation (u, u.personal_information, l_url_activate, l_url_reject, cms_api.absolute_url ("", Void), cms_api.user_has_permission (Void, {CMS_AUTHENTICATION_MODULE}.perm_account_auto_activate))
+--			cms_api.log_debug ("registration", "send_register_email", Void)
+			create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (Current))
+			es.notify_admin_about_account_registration (u, u.personal_information, l_url_activate, l_url_reject, cms_api.absolute_url ("", Void), cms_api.user_has_permission (Void, {CMS_AUTHENTICATION_MODULE}.perm_account_auto_activate))
 
 			if cms_api.user_has_permission (Void, {CMS_AUTHENTICATION_MODULE}.perm_account_auto_activate) then
 					-- Send Email comfirmation to user
-				cms_api.log_debug ("registration", "send_email_confirmation", Void)
-				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
-				es.send_contact_account_email_verification (a_email, u, cms_api.absolute_url ("/account/confirm-email/" + l_token, Void), cms_api.absolute_url ("", Void))
+--				cms_api.log_debug ("registration", "send_email_confirmation", Void)
+				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (Current))
+				es.notify_user_about_email_verification (a_email, u, cms_api.absolute_url ("/account/confirm-email/" + l_token, Void), cms_api.absolute_url ("", Void))
 			else
 					-- Send Email to user
-				cms_api.log_debug ("registration", "send_contact_email", Void)
-				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
-				es.send_contact_email (a_email, u, cms_api.absolute_url ("", Void))
+--				cms_api.log_debug ("registration", "send_contact_email", Void)
+				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (Current))
+				es.notify_user_about_registration_application (a_email, u, cms_api.absolute_url ("", Void))
 			end
 
 			cms_api.log ("registration", "new user %"" + html_encoded (u.name) + "%" <" + html_encoded (a_email) + ">", {CMS_LOG}.level_info, Void)
@@ -75,13 +75,13 @@ feature -- Token Generation
 			if cms_api.user_has_permission (Void, {CMS_AUTHENTICATION_MODULE}.perm_account_auto_activate) then
 					-- Send Email comfirmation to user
 				cms_api.log_debug ("registration", "send_new_email_confirmation", Void)
-				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
-				es.send_contact_account_email_verification (a_email, u, cms_api.absolute_url ("/account/confirm-email/" + l_token, Void), cms_api.absolute_url ("", Void))
+				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (Current))
+				es.notify_user_about_email_verification (a_email, u, cms_api.absolute_url ("/account/confirm-email/" + l_token, Void), cms_api.absolute_url ("", Void))
 			else
 					-- Send Email to user
 				cms_api.log_debug ("registration", "send_new_contact_email", Void)
-				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
-				es.send_contact_email (a_email, u, cms_api.absolute_url ("", Void))
+				create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (Current))
+				es.notify_user_about_registration_application (a_email, u, cms_api.absolute_url ("", Void))
 			end
 		end
 
@@ -126,8 +126,8 @@ feature -- Token Generation
 					-- Send Email
 				if attached l_new_user.email as l_email then
 					cms_api.log_debug ("activation", "send_contact_activation_confirmation_email", Void)
-					create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (cms_api))
-					es.send_contact_activation_confirmation_email (l_email, l_new_user, cms_api.site_url)
+					create es.make (create {CMS_AUTHENTICATION_EMAIL_SERVICE_PARAMETERS}.make (Current))
+					es.notify_user_about_accepted_account_application (l_email, l_new_user, cms_api.site_url)
 				end
 			else
 				error_handler.add_custom_error (-1, "activation error", "Activation failed!")
@@ -157,6 +157,19 @@ feature -- Token Generation
 		end
 
 feature -- Hooks
+
+	invoke_authentication_mail_alter (e: CMS_EMAIL; u: detachable CMS_USER)
+		do
+			if attached cms_api.hooks.subscribers ({CMS_HOOK_AUTHENTICATION}) as lst then
+				across
+					lst as i
+				loop
+					if attached {CMS_HOOK_AUTHENTICATION} i as h then
+						h.alter_authentication_mail (e, u)
+					end
+				end
+			end
+		end
 
 	invoke_get_login_redirection (a_response: CMS_RESPONSE; a_destination_url: detachable READABLE_STRING_8)
 		do

@@ -18,6 +18,11 @@ feature -- Hook
 		deferred
 		end
 
+	alter_authentication_mail (e: CMS_EMAIL; u: detachable CMS_USER)
+			-- Alter authentication mail about account `u`.
+		do
+		end
+
 note
 	copyright: "2011-2020, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
