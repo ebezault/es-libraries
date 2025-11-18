@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel XSLT Library"
 	copyright: "Copyright (c) 2004-2015, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class XM_XSLT_DEFAULT_TRACE_LISTENER
 
@@ -55,7 +53,7 @@ feature -- Access
 	opening_namespace_declarations: STRING
 			-- XML namespace declarations
 		do
-			Result := "xmlns=%"http://www.gobosoft.com/eiffel/gobo/gexslt/trace%" xmlns:xsl=%"" + Xslt_uri + "%""
+			Result := "xmlns=%"https://www.gobosoft.com/eiffel/gobo/tool/gexslt/doc/trace%" xmlns:xsl=%"" + Xslt_uri + "%""
 		ensure
 			result_not_void: Result /= Void
 		end

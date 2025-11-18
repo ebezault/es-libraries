@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Groups of Eiffel classes"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2006-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2006-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_GROUP
 
@@ -77,6 +75,19 @@ feature -- Status report
 
 	is_unknown: BOOLEAN
 			-- Is current group a built-in group for class "*UNKNOWN*"?
+		do
+			-- Result := False
+		end
+
+	is_root: BOOLEAN
+			-- Is current group a built-in group for class "*ROOT*"?
+		do
+			-- Result := False
+		end
+
+	is_formal: BOOLEAN
+			-- Is current group a built-in group for virtual classes representing
+			-- formal generic parameters (used for Storable files)?
 		do
 			-- Result := False
 		end
@@ -561,6 +572,13 @@ feature -- Setting
 			data := a_data
 		ensure
 			data_set: data = a_data
+		end
+
+	fill_options (a_class: ET_CLASS)
+			-- Fill `a_class' with option information.
+		require
+			a_class_not_void: a_class /= Void
+		do
 		end
 
 feature -- Iteration

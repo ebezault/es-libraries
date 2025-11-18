@@ -1,25 +1,23 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel loop instructions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_LOOP_INSTRUCTION
 
 inherit
 
-	ET_INSTRUCTION
+	ET_REPETITION_INSTRUCTION
 		redefine
-			reset
+			reset,
+			has_inline_separate_instruction,
+			nested_instruction_count
 		end
-
-	ET_LOOP_COMPONENT
 
 create
 
@@ -69,6 +67,14 @@ feature -- Status report
 	has_old_variant_syntax: BOOLEAN
 			-- Does the variant clause appears after the invariant clause
 			-- (instead of before the end keyword as specified in ECMA)?
+
+	has_inline_separate_instruction: BOOLEAN
+			-- Does an inline separate instruction appear in current instruction or
+			-- (recursively) in one of its subinstructions?
+		do
+			Result := attached from_compound as l_from_compound and then l_from_compound.has_inline_separate_instruction or
+				attached loop_compound as l_loop_compound and then l_loop_compound.has_inline_separate_instruction
+		end
 
 feature -- Access
 
@@ -131,6 +137,21 @@ feature -- Access
 			-- Last leaf node in current node
 		do
 			Result := end_keyword
+		end
+
+feature -- Measurement
+
+	nested_instruction_count: INTEGER
+			-- Number of instructions contained in current instruction and
+			-- (recursively) in its subinstructions?
+		do
+			Result := 1
+			if attached from_compound as l_from_compound then
+				Result := Result + l_from_compound.nested_instruction_count
+			end
+			if attached loop_compound as l_loop_compound then
+				Result := Result + l_loop_compound.nested_instruction_count
+			end
 		end
 
 feature -- Status setting

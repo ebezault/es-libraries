@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Tools Library"
 	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_POSITION
 
@@ -138,7 +136,6 @@ feature -- Output
 						a_string.append_character ('^')
 						a_string.append_character ('%N')
 						append_line_to_string (a_file, a_string)
-						a_string.append_character ('%N')
 					else
 						from
 							i := 1
@@ -172,7 +169,6 @@ feature -- Output
 						end
 						a_string.append_character ('%N')
 						append_line_to_string (a_file, a_string)
-						a_string.append_character ('%N')
 					end
 					a_file.close
 				end

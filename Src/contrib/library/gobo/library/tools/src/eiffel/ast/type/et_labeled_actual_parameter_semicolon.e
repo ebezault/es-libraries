@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel labeled actual generic parameters followed by a semicolon"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2006-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 2006-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_LABELED_ACTUAL_PARAMETER_SEMICOLON
 
@@ -53,7 +51,7 @@ feature -- Access
 			Result := actual_parameter.label
 		end
 
-	semicolon: ET_SYMBOL
+	semicolon: ET_SEMICOLON_SYMBOL
 			-- Semicolon separator
 
 	position: ET_POSITION

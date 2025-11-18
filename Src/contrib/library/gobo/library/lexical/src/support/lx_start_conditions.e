@@ -1,15 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Lexical analyzer start condition lists"
 
-	storable_version: "20130823"
 	library: "Gobo Eiffel Lexical Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class LX_START_CONDITIONS
 
@@ -70,7 +67,7 @@ feature -- Status report
 			until
 				Result or i > nb
 			loop
-				Result := a_lower_name.is_equal (item (i).name.as_lower)
+				Result := a_lower_name.same_string (item (i).name.as_lower)
 				i := i + 1
 			end
 		end
@@ -96,7 +93,7 @@ feature -- Access
 				l_result /= Void or i > nb
 			loop
 				l_result := item (i)
-				if not a_lower_name.is_equal (l_result.name.as_lower) then
+				if not a_lower_name.same_string (l_result.name.as_lower) then
 					l_result := Void
 					i := i + 1
 				end

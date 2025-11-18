@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel assignment instructions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ASSIGNMENT
 
@@ -16,7 +14,11 @@ inherit
 
 	ET_INSTRUCTION
 		redefine
-			reset
+			reset,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test
 		end
 
 create
@@ -79,6 +81,50 @@ feature -- Access
 			-- Last leaf node in current node
 		do
 			Result := source.last_leaf
+		end
+
+feature -- Status report
+
+	no_source_twin: BOOLEAN
+			-- Should the source object not be cloned even when needed
+			-- (e.g. when its type is expanded)?
+
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current instruction or
+			-- (recursively) in one of its subinstructions or subexpressions?
+		do
+			Result := target.has_result or source.has_result
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current instruction or
+			-- (recursively) in one of its subinstructions or subexpressions?
+		do
+			Result := target.has_address_expression or source.has_address_expression
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current instruction or
+			-- (recursively) in one of its subinstructions or subexpressions?
+		do
+			Result := target.has_agent or source.has_agent
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current instruction or
+			-- (recursively) in one of its subinstructions or subexpressions?
+		do
+			Result := target.has_typed_object_test or source.has_typed_object_test
+		end
+
+feature -- Status setting
+
+	set_no_source_twin (b: BOOLEAN)
+			-- Set `no_source_twin' to `b'.
+		do
+			no_source_twin := b
+		ensure
+			no_source_twin_set: no_source_twin = b
 		end
 
 feature -- Setting

@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -9,10 +9,8 @@ note
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2019-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_TYPE_RENAME_CONSTRAINT
 
@@ -100,6 +98,24 @@ feature -- Status report
 			-- Is `type' a named type (only made up of named types)?
 		do
 			Result := type.is_named_type
+		end
+
+	is_type_expanded (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is the type of the current constraint an expanded type when viewed from `a_context'?
+		do
+			Result := type.is_type_expanded (a_context)
+		end
+
+	is_type_attached (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is the type of the current constraint attached when viewed from `a_context'?
+		do
+			Result := type.is_type_attached (a_context)
+		end
+
+	is_type_non_separate (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Is one of the constraint types non-separate when viewed from `a_context'?
+		do
+			Result := type.is_type_non_separate (a_context)
 		end
 
 feature -- Setting

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Assertion routines"
 
 	library: "Gobo Eiffel Test Library"
-	copyright: "Copyright (c) 2000-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2000-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class TS_ASSERTION_ROUTINES
 
@@ -855,6 +853,126 @@ feature {TS_TEST_HANDLER} -- Files
 			assertions.set_exception_on_error (l_fatal)
 		end
 
+	assert_binary_files_equal (a_tag: STRING; a_filename1, a_filename2: STRING)
+			-- Assert that there is no difference between the
+			-- binary files named `a_filename1' and `a_filename2'.
+			-- (Expand environment variables in filenames.)
+		require
+			a_tag_not_void: a_tag /= Void
+			a_filename1_not_void: a_filename1 /= Void
+			a_filename1_not_empty: a_filename1.count > 0
+			a_filename2_not_void: a_filename2 /= Void
+			a_filename2_not_empty: a_filename2.count > 0
+		local
+			a_file1, a_file2: KL_BINARY_INPUT_FILE
+			a_message: detachable STRING
+			done: BOOLEAN
+			i: INTEGER
+		do
+			assertions.add_assertion
+			create a_file1.make (Execution_environment.interpreted_string (a_filename1))
+			a_file1.open_read
+			if a_file1.is_open_read then
+				create a_file2.make (Execution_environment.interpreted_string (a_filename2))
+				a_file2.open_read
+				if a_file2.is_open_read then
+					from
+					until
+						done
+					loop
+						a_file1.read_character
+						a_file2.read_character
+						i := i + 1
+						if a_file1.end_of_file then
+							if not a_file2.end_of_file then
+								create a_message.make (50)
+								a_message.append_string (a_tag)
+								a_message.append_string (" (diff between files '")
+								a_message.append_string (a_filename1)
+								a_message.append_string ("' and '")
+								a_message.append_string (a_filename2)
+								a_message.append_string ("' at byte ")
+								INTEGER_.append_decimal_integer (i, a_message)
+								a_message.append_string (")")
+								a_file1.close
+								a_file2.close
+								done := True
+							else
+								a_file1.close
+								a_file2.close
+								done := True
+							end
+						elseif a_file2.end_of_file then
+							create a_message.make (50)
+							a_message.append_string (a_tag)
+							a_message.append_string (" (diff between files '")
+							a_message.append_string (a_filename1)
+							a_message.append_string ("' and '")
+							a_message.append_string (a_filename2)
+							a_message.append_string ("' at byte ")
+							INTEGER_.append_decimal_integer (i, a_message)
+							a_message.append_string (")")
+							a_file1.close
+							a_file2.close
+							done := True
+						elseif a_file1.last_character /= a_file2.last_character then
+							create a_message.make (50)
+							a_message.append_string (a_tag)
+							a_message.append_string (" (diff between files '")
+							a_message.append_string (a_filename1)
+							a_message.append_string ("' and '")
+							a_message.append_string (a_filename2)
+							a_message.append_string ("' at byte ")
+							INTEGER_.append_decimal_integer (i, a_message)
+							a_message.append_string (")")
+							a_file1.close
+							a_file2.close
+							done := True
+						end
+					end
+				else
+					create a_message.make (50)
+					a_message.append_string (a_tag)
+					a_message.append_string (" (cannot read file '")
+					a_message.append_string (a_filename2)
+					a_message.append_string ("')")
+					a_file1.close
+				end
+			else
+				create a_message.make (50)
+				a_message.append_string (a_tag)
+				a_message.append_string (" (cannot read file '")
+				a_message.append_string (a_filename1)
+				a_message.append_string ("')")
+			end
+			if a_message /= Void then
+				logger.report_failure (a_tag, a_message)
+				assertions.report_error (a_message)
+			else
+				logger.report_success (a_tag)
+			end
+		end
+
+	check_binary_files_equal (a_tag: STRING; a_filename1, a_filename2: STRING)
+			-- Check that there is no difference between the
+			-- binary files named `a_filename1' and `a_filename2'.
+			-- (Expand environment variables in filenames.)
+			-- Violation of this assertion is not fatal.
+		require
+			a_tag_not_void: a_tag /= Void
+			a_filename1_not_void: a_filename1 /= Void
+			a_filename1_not_empty: a_filename1.count > 0
+			a_filename2_not_void: a_filename2 /= Void
+			a_filename2_not_empty: a_filename2.count > 0
+		local
+			l_fatal: BOOLEAN
+		do
+			l_fatal := assertions.exception_on_error
+			assertions.set_exception_on_error (False)
+			assert_binary_files_equal (a_tag, a_filename1, a_filename2)
+			assertions.set_exception_on_error (l_fatal)
+		end
+
 	assert_file_equal_to_string (a_tag: STRING; a_filename, a_string: STRING)
 			-- Assert that there is no difference between the
 			-- content of the file named `a_filename' and `a_string'.
@@ -1491,36 +1609,31 @@ feature {TS_TEST_HANDLER} -- Execution
 			assertions.set_exception_on_error (l_fatal)
 		end
 
-	assert_execute_with_command_output (a_shell_command, a_command_output_filename: STRING)
+	assert_execute_with_command_output (a_shell_command: STRING; a_command_output_filename, a_command_error_filename: detachable STRING)
 			-- Execute `a_shell_command' and check whether the
 			-- exit status code is zero.
 			-- Display the output of the command (to be found in file
-			-- `a_command_output_filename') if the exit status code
-			-- is not equal to zero.
+			-- `a_command_output_filename' and `a_command_error_filename')
+			-- if the exit status code is not equal to zero.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
 		do
-			assert_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename, 0)
+			assert_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename, a_command_error_filename, 0)
 		end
 
-	check_execute_with_command_output (a_shell_command, a_command_output_filename: STRING)
+	check_execute_with_command_output (a_shell_command: STRING; a_command_output_filename, a_command_error_filename: detachable STRING)
 			-- Execute `a_shell_command' and check whether the
 			-- exit status code is zero.
 			-- Display the output of the command (to be found in file
-			-- `a_command_output_filename') if the exit status code
-			-- is not equal to zero.
+			-- `a_command_output_filename' and `a_command_error_filename')
+			-- if the exit status code is not equal to zero.
 			-- Violation of this assertion is not fatal.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
-		local
-			l_fatal: BOOLEAN
 		do
-			l_fatal := assertions.exception_on_error
-			assertions.set_exception_on_error (False)
-			assert_execute_with_command_output (a_shell_command, a_command_output_filename)
-			assertions.set_exception_on_error (l_fatal)
+			check_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename, a_command_error_filename, 0)
 		end
 
 	assert_exit_code_execute (a_shell_command: STRING; a_exit_code: INTEGER)
@@ -1529,50 +1642,30 @@ feature {TS_TEST_HANDLER} -- Execution
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
-		local
-			l_command: DP_SHELL_COMMAND
-			l_command_exit_code: INTEGER
-			l_message: STRING
 		do
-			create l_command.make (a_shell_command)
-			l_command.execute
-			assertions.add_assertion
-			l_command_exit_code := l_command.exit_code
-			if l_command_exit_code /= a_exit_code then
-				l_message := assert_strings_equal_message (a_shell_command + "%Nexit_code:", a_exit_code.out, l_command_exit_code.out)
-				logger.report_failure (a_shell_command, l_message)
-				assertions.report_error (l_message)
-			else
-				logger.report_success (a_shell_command)
-			end
+			assert_exit_code_execute_with_command_output (a_shell_command, Void, Void, a_exit_code)
 		end
 
-	check_exit_code_execute (a_shell_command: STRING; an_exit_code: INTEGER)
+	check_exit_code_execute (a_shell_command: STRING; a_exit_code: INTEGER)
 			-- Execute `a_shell_command' and check whether the
-			-- exit status code is `an_exit_code'.
+			-- exit status code is `a_exit_code'.
 			-- Violation of this assertion is not fatal.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
-		local
-			l_fatal: BOOLEAN
 		do
-			l_fatal := assertions.exception_on_error
-			assertions.set_exception_on_error (False)
-			assert_exit_code_execute (a_shell_command, an_exit_code)
-			assertions.set_exception_on_error (l_fatal)
+			check_exit_code_execute_with_command_output (a_shell_command, Void, Void, a_exit_code)
 		end
 
-	assert_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename: STRING; a_exit_code: INTEGER)
+	assert_exit_code_execute_with_command_output (a_shell_command: STRING; a_command_output_filename, a_command_error_filename: detachable STRING; a_exit_code: INTEGER)
 			-- Execute `a_shell_command' and check whether the
 			-- exit status code is `a_exit_code'.
 			-- Display the output of the command (to be found in file
-			-- `a_command_output_filename') if the exit status code
-			-- is not equal to `a_exit_code'.
+			-- `a_command_output_filename' and `a_command_error_filename')
+			-- if the exit status code is not equal to `a_exit_code'.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
-			a_command_output_filename_not_void: a_command_output_filename /= Void
 		local
 			l_command: DP_SHELL_COMMAND
 			l_command_exit_code: INTEGER
@@ -1586,26 +1679,50 @@ feature {TS_TEST_HANDLER} -- Execution
 			if l_command_exit_code /= a_exit_code then
 				create l_message.make (512)
 				l_message.append_string (assert_strings_equal_message (a_shell_command + "%Nexit_code:", a_exit_code.out, l_command_exit_code.out))
-				l_message.append_string ("%Ncommand output:%N----%N")
-				create l_file.make (a_command_output_filename)
-				l_file.open_read
-				if l_file.is_open_read then
-					from
-						l_file.read_line
-					until
-						l_file.end_of_file
-					loop
-						l_message.append_string (l_file.last_string)
-						l_message.append_character ('%N')
-						l_file.read_line
+				if a_command_output_filename /= Void then
+					l_message.append_string ("%Ncommand output:%N----%N")
+					create l_file.make (a_command_output_filename)
+					l_file.open_read
+					if l_file.is_open_read then
+						from
+							l_file.read_line
+						until
+							l_file.end_of_file
+						loop
+							l_message.append_string (l_file.last_string)
+							l_message.append_character ('%N')
+							l_file.read_line
+						end
+						l_file.close
+					else
+						l_message.append_string ("Cannot read command output file '")
+						l_message.append_string (a_command_output_filename)
+						l_message.append_string ("'%N")
 					end
-					l_file.close
-				else
-					l_message.append_string ("Cannot read command output file '")
-					l_message.append_string (a_command_output_filename)
-					l_message.append_string ("%N")
+					l_message.append_string ("----")
 				end
-				l_message.append_string ("----")
+				if a_command_error_filename /= Void then
+					l_message.append_string ("%Ncommand error:%N----%N")
+					create l_file.make (a_command_error_filename)
+					l_file.open_read
+					if l_file.is_open_read then
+						from
+							l_file.read_line
+						until
+							l_file.end_of_file
+						loop
+							l_message.append_string (l_file.last_string)
+							l_message.append_character ('%N')
+							l_file.read_line
+						end
+						l_file.close
+					else
+						l_message.append_string ("Cannot read command error file '")
+						l_message.append_string (a_command_error_filename)
+						l_message.append_string ("'%N")
+					end
+					l_message.append_string ("----")
+				end
 				logger.report_failure (a_shell_command, l_message)
 				assertions.report_error (l_message)
 			else
@@ -1613,23 +1730,22 @@ feature {TS_TEST_HANDLER} -- Execution
 			end
 		end
 
-	check_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename: STRING; a_exit_code: INTEGER)
+	check_exit_code_execute_with_command_output (a_shell_command: STRING; a_command_output_filename, a_command_error_filename: detachable STRING; a_exit_code: INTEGER)
 			-- Execute `a_shell_command' and check whether the
 			-- exit status code is `a_exit_code'.
 			-- Display the output of the command (to be found in file
-			-- `a_command_output_filename') if the exit status code
-			-- is not equal to `a_exit_code'.
+			-- `a_command_output_filename' and `a_command_error_filename')
+			-- if the exit status code is not equal to `a_exit_code'.
 			-- Violation of this assertion is not fatal.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
-			a_command_output_filename_not_void: a_command_output_filename /= Void
 		local
 			l_fatal: BOOLEAN
 		do
 			l_fatal := assertions.exception_on_error
 			assertions.set_exception_on_error (False)
-			assert_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename, a_exit_code)
+			assert_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename, a_command_error_filename, a_exit_code)
 			assertions.set_exception_on_error (l_fatal)
 		end
 
@@ -1639,46 +1755,27 @@ feature {TS_TEST_HANDLER} -- Execution
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
-		local
-			l_command: DP_SHELL_COMMAND
-			l_command_exit_code: INTEGER
-			l_message: STRING
 		do
-			create l_command.make (a_shell_command)
-			l_command.execute
-			assertions.add_assertion
-			l_command_exit_code := l_command.exit_code
-			if l_command_exit_code = a_exit_code then
-				l_message := assert_strings_not_equal_message (a_shell_command + "%Nexit_code:", a_exit_code.out, l_command_exit_code.out)
-				logger.report_failure (a_shell_command, l_message)
-				assertions.report_error (l_message)
-			else
-				logger.report_success (a_shell_command)
-			end
+			assert_not_exit_code_execute_with_command_output (a_shell_command, Void, Void, a_exit_code)
 		end
 
-	check_not_exit_code_execute (a_shell_command: STRING; an_exit_code: INTEGER)
+	check_not_exit_code_execute (a_shell_command: STRING; a_exit_code: INTEGER)
 			-- Execute `a_shell_command' and check whether the
-			-- exit status code is not equal to `an_exit_code'.
+			-- exit status code is not equal to `a_exit_code'.
 			-- Violation of this assertion is not fatal.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
-		local
-			l_fatal: BOOLEAN
 		do
-			l_fatal := assertions.exception_on_error
-			assertions.set_exception_on_error (False)
-			assert_not_exit_code_execute (a_shell_command, an_exit_code)
-			assertions.set_exception_on_error (l_fatal)
+			check_not_exit_code_execute_with_command_output (a_shell_command, Void, Void, a_exit_code)
 		end
 
-	assert_not_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename: STRING; a_exit_code: INTEGER)
+	assert_not_exit_code_execute_with_command_output (a_shell_command: STRING; a_command_output_filename, a_command_error_filename: detachable STRING; a_exit_code: INTEGER)
 			-- Execute `a_shell_command' and check whether the
 			-- exit status code is not equal to `a_exit_code'.
 			-- Display the output of the command (to be found in file
-			-- `a_command_output_filename') if the exit status code
-			-- is equal to `a_exit_code'.
+			-- `a_command_output_filename' and `a_command_error_filename')
+			-- if the exit status code is equal to `a_exit_code'.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
 			a_shell_command_not_empty: a_shell_command.count > 0
@@ -1695,26 +1792,50 @@ feature {TS_TEST_HANDLER} -- Execution
 			if l_command_exit_code = a_exit_code then
 				create l_message.make (512)
 				l_message.append_string (assert_strings_not_equal_message (a_shell_command + "%Nexit_code:", a_exit_code.out, l_command_exit_code.out))
-				l_message.append_string ("%Ncommand output:%N----%N")
-				create l_file.make (a_command_output_filename)
-				l_file.open_read
-				if l_file.is_open_read then
-					from
-						l_file.read_line
-					until
-						l_file.end_of_file
-					loop
-						l_message.append_string (l_file.last_string)
-						l_message.append_character ('%N')
-						l_file.read_line
+				if a_command_output_filename /= Void then
+					l_message.append_string ("%Ncommand output:%N----%N")
+					create l_file.make (a_command_output_filename)
+					l_file.open_read
+					if l_file.is_open_read then
+						from
+							l_file.read_line
+						until
+							l_file.end_of_file
+						loop
+							l_message.append_string (l_file.last_string)
+							l_message.append_character ('%N')
+							l_file.read_line
+						end
+						l_file.close
+					else
+						l_message.append_string ("Cannot read command output file '")
+						l_message.append_string (a_command_output_filename)
+						l_message.append_string ("'%N")
 					end
-					l_file.close
-				else
-					l_message.append_string ("Cannot read command output file '")
-					l_message.append_string (a_command_output_filename)
-					l_message.append_string ("%N")
+					l_message.append_string ("----")
 				end
-				l_message.append_string ("----")
+				if a_command_error_filename /= Void then
+					l_message.append_string ("%Ncommand error:%N----%N")
+					create l_file.make (a_command_error_filename)
+					l_file.open_read
+					if l_file.is_open_read then
+						from
+							l_file.read_line
+						until
+							l_file.end_of_file
+						loop
+							l_message.append_string (l_file.last_string)
+							l_message.append_character ('%N')
+							l_file.read_line
+						end
+						l_file.close
+					else
+						l_message.append_string ("Cannot read command error file '")
+						l_message.append_string (a_command_error_filename)
+						l_message.append_string ("'%N")
+					end
+					l_message.append_string ("----")
+				end
 				logger.report_failure (a_shell_command, l_message)
 				assertions.report_error (l_message)
 			else
@@ -1722,12 +1843,12 @@ feature {TS_TEST_HANDLER} -- Execution
 			end
 		end
 
-	check_not_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename: STRING; a_exit_code: INTEGER)
+	check_not_exit_code_execute_with_command_output (a_shell_command: STRING; a_command_output_filename, a_command_error_filename: detachable STRING; a_exit_code: INTEGER)
 			-- Execute `a_shell_command' and check whether the
 			-- exit status code is not equal to `a_exit_code'.
 			-- Display the output of the command (to be found in file
-			-- `a_command_output_filename') if the exit status code
-			-- is equal to `a_exit_code'.
+			-- `a_command_output_filename' and `a_command_error_filename')
+			-- if the exit status code is equal to `a_exit_code'.
 			-- Violation of this assertion is not fatal.
 		require
 			a_shell_command_not_void: a_shell_command /= Void
@@ -1737,7 +1858,7 @@ feature {TS_TEST_HANDLER} -- Execution
 		do
 			l_fatal := assertions.exception_on_error
 			assertions.set_exception_on_error (False)
-			assert_not_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename, a_exit_code)
+			assert_not_exit_code_execute_with_command_output (a_shell_command, a_command_output_filename, a_command_error_filename, a_exit_code)
 			assertions.set_exception_on_error (l_fatal)
 		end
 

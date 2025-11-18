@@ -5,10 +5,8 @@
 		"Scanner skeletons for Eiffel parsers"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_EIFFEL_SCANNER_SKELETON
 
@@ -36,7 +34,6 @@ inherit
 	KL_IMPORTED_INTEGER_ROUTINES
 	KL_IMPORTED_STRING_ROUTINES
 	KL_SHARED_PLATFORM
-	KL_SHARED_EIFFEL_COMPILER
 	KL_SHARED_EXECUTION_ENVIRONMENT
 	KL_SHARED_FILE_SYSTEM
 	ET_SHARED_TOKEN_CONSTANTS
@@ -833,7 +830,7 @@ feature {NONE} -- Integer values
 			a_string_not_void: a_string /= Void
 			a_start_valid: a_string.valid_index (a_start)
 			a_end_valid: a_string.valid_index (a_end)
-			valid_literal: {RX_PCRE_ROUTINES}.regexp ("[0-9](_*[0-9]+)*|0[xX][0-9a-fA-F](_*[0-9a-fA-F]+)*|0[cC][0-7](_*[0-7]+)*|0[bB][0-1](_*[0-1]+)*").recognizes (a_string.substring (a_start, a_end))
+			valid_literal: {RX_PCRE_ROUTINES}.regexp ("0([xX][0-9a-fA-F](_*[0-9a-fA-F]+)*|[cC][0-7](_*[0-7]+)*|[bB][0-1](_*[0-1]+)*|(_*[0-9]+)*)|[1-9](_*[0-9]+)*").recognizes (a_string.substring (a_start, a_end))
 		local
 			i, nb: INTEGER
 			c: CHARACTER_8
@@ -975,6 +972,7 @@ feature {NONE} -- String handler
 			Result.force_new (-1, tokens.builtin_static_marker)
 				-- Class names.
 			Result.force_new (-1, tokens.capitalized_any_name)
+			Result.force_new (-1, tokens.capitalized_arguments_name)
 			Result.force_new (-1, tokens.capitalized_arguments_32_name)
 			Result.force_new (-1, tokens.capitalized_array_name)
 			Result.force_new (-1, tokens.capitalized_boolean_name)
@@ -987,6 +985,7 @@ feature {NONE} -- String handler
 			Result.force_new (-1, tokens.capitalized_exception_name)
 			Result.force_new (-1, tokens.capitalized_exception_manager_name)
 			Result.force_new (-1, tokens.capitalized_exception_manager_factory_name)
+			Result.force_new (-1, tokens.capitalized_file_name)
 			Result.force_new (-1, tokens.capitalized_function_name)
 			Result.force_new (-1, tokens.capitalized_identified_routines_name)
 			Result.force_new (-1, tokens.capitalized_immutable_string_8_name)
@@ -1032,6 +1031,7 @@ feature {NONE} -- String handler
 			Result.force_new (-1, tokens.after_name)
 			Result.force_new (-1, tokens.aliased_resized_area_name)
 			Result.force_new (-1, tokens.area_name)
+			Result.force_new (-1, tokens.argument_array_name)
 			Result.force_new (-1, tokens.argument_count_name)
 			Result.force_new (-1, tokens.as_integer_8_name)
 			Result.force_new (-1, tokens.as_integer_16_name)
@@ -1054,6 +1054,10 @@ feature {NONE} -- String handler
 			Result.force_new (-1, tokens.boolean_field_name)
 			Result.force_new (-1, tokens.boolean_field_at_name)
 			Result.force_new (-1, tokens.boolean_item_name)
+			Result.force_new (-1, tokens.c_basic_store_name)
+			Result.force_new (-1, tokens.c_general_store_name)
+			Result.force_new (-1, tokens.c_independent_store_name)
+			Result.force_new (-1, tokens.c_retrieved_name)
 			Result.force_new (-1, tokens.c_strlen_name)
 			Result.force_new (-1, tokens.call_name)
 			Result.force_new (-1, tokens.capacity_name)
@@ -3219,7 +3223,7 @@ feature {NONE} -- Processing
 												inspect text_item (9)
 												when 't', 'T' then
 													last_token := E_INVARIANT
-													last_detachable_et_keyword_value := ast_factory.new_invariant_keyword (Current)
+													last_detachable_et_invariant_keyword_value := ast_factory.new_invariant_keyword (Current)
 												else
 													-- Do nothing.
 												end

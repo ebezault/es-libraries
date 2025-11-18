@@ -1,18 +1,16 @@
-note
+﻿note
 
 	description:
 
 		"Version of geimage"
 
-	copyright: "Copyright (c) 2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2020-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEIMAGE_VERSION
 
 inherit
 
-	KL_GOBO_VERSION
+	UT_GOBO_VERSION
 
 end

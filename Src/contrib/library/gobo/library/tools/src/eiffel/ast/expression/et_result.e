@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Tools Library"
 	copyright: "Copyright (c) 1999-2016, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_RESULT
 
@@ -20,7 +18,8 @@ inherit
 			last_position,
 			break
 		redefine
-			is_result
+			is_result,
+			has_result
 		end
 
 	ET_KEYWORD
@@ -43,6 +42,10 @@ feature -- Status report
 
 	is_result: BOOLEAN = True
 			-- Is current expression the 'Result' entity?
+
+	has_result: BOOLEAN = True
+			-- Does the entity 'Result' appear in current expression
+			-- or (recursively) in one of its subexpressions?
 
 feature -- Processing
 

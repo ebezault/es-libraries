@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel dynamic types at run-time"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_DYNAMIC_TYPE
 
@@ -45,7 +43,7 @@ feature -- Status report
 			-- set should also be non-empty. Therefore it is recommended to
 			-- use 'not can_be_void'.)
 		do
-			Result := not base_class.is_none and primary_type.is_alive
+			Result := not base_class.is_none and not base_class.is_formal and primary_type.is_alive
 		end
 
 	is_generic: BOOLEAN
@@ -67,6 +65,32 @@ feature -- Status report
 			definition: Result = base_class.is_basic
 		end
 
+	is_character_n: BOOLEAN
+			-- Is current type one of "CHARACTER_8", "CHARACTER_32"?
+		do
+			Result := base_class.is_character_n_class
+		ensure
+			definition: Result = base_class.is_character_n_class
+		end
+
+	is_integer_n: BOOLEAN
+			-- Is current type one of "INTEGER_8", "INTEGER_16",
+			-- "INTEGER_32", "INTEGER_64", "NATURAL_8", "NATURAL_16",
+			-- "NATURAL_32", "NATURAL_64"?
+		do
+			Result := base_class.is_integer_n_class
+		ensure
+			definition: Result = base_class.is_integer_n_class
+		end
+
+	is_real_n: BOOLEAN
+			-- Is current type one of "REAL_32", "REAL_64"?
+		do
+			Result := base_class.is_real_n_class
+		ensure
+			definition: Result = base_class.is_real_n_class
+		end
+
 	is_self_initializing: BOOLEAN
 			-- Is current type self-initializing?
 			--
@@ -80,6 +104,11 @@ feature -- Status report
 
 	is_attached: BOOLEAN
 			-- Is current type attached?
+		deferred
+		end
+
+	is_separate: BOOLEAN
+			-- Is current type separate?
 		deferred
 		end
 
@@ -178,7 +207,7 @@ feature -- Measurement
 	count: INTEGER
 			-- Number of types in current type set
 		do
-			if not base_class.is_none and primary_type.is_alive then
+			if not base_class.is_none and not base_class.is_formal and primary_type.is_alive then
 				Result := 1
 			end
 		end

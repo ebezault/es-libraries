@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel loop invariants"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_LOOP_INVARIANTS
 
@@ -41,7 +39,7 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	invariant_keyword: ET_KEYWORD
+	invariant_keyword: ET_INVARIANT_KEYWORD
 			-- 'invariant' keyword
 
 	position: ET_POSITION
@@ -49,8 +47,12 @@ feature -- Access
 			-- current node in source code
 		do
 			Result := invariant_keyword.position
-			if Result.is_null and not is_empty then
-				Result := item (1).position
+			if Result.is_null then
+				if not is_empty then
+					Result := item (1).position
+				elseif attached first_semicolon as l_first_semicolon then
+					Result := l_first_semicolon.last_leaf
+				end
 			end
 		end
 
@@ -65,6 +67,8 @@ feature -- Access
 		do
 			if not is_empty then
 				Result := last.last_leaf
+			elseif attached first_semicolon as l_first_semicolon then
+				Result := l_first_semicolon.last_leaf
 			else
 				Result := invariant_keyword
 			end

@@ -11,8 +11,8 @@
 	representation: recursive, array
 	access: cursor, membership
 	contents: generic
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-02-22 14:28:59 +0000 (Mon, 22 Feb 2021) $"
+	revision: "$Revision: 105199 $"
 
 class FIXED_TREE [G] inherit
 

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel lists of agent actual arguments"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_AGENT_ARGUMENT_OPERAND_LIST
 
@@ -109,6 +107,92 @@ feature -- Access
 			Result := right_parenthesis
 		end
 
+feature -- Status report
+
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in one of the current operands
+			-- or (recursively) in one of their subexpressions?
+		local
+			l_actual: ET_AGENT_ARGUMENT_OPERAND_ITEM
+			l_operand: ET_AGENT_ARGUMENT_OPERAND
+			i, nb: INTEGER
+		do
+			nb := count - 1
+			from i := 0 until i > nb loop
+				l_actual := storage.item (i)
+				l_operand := l_actual.agent_actual_argument
+				if l_operand.has_result then
+					Result := True
+						-- Jump out of teh loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in one of the current operands
+			-- or (recursively) in one of their subexpressions?
+		local
+			l_actual: ET_AGENT_ARGUMENT_OPERAND_ITEM
+			l_operand: ET_AGENT_ARGUMENT_OPERAND
+			i, nb: INTEGER
+		do
+			nb := count - 1
+			from i := 0 until i > nb loop
+				l_actual := storage.item (i)
+				l_operand := l_actual.agent_actual_argument
+				if l_operand.has_address_expression then
+					Result := True
+						-- Jump out of teh loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in one of the current operands
+			-- or (recursively) in one of their subexpressions?
+		local
+			l_actual: ET_AGENT_ARGUMENT_OPERAND_ITEM
+			l_operand: ET_AGENT_ARGUMENT_OPERAND
+			i, nb: INTEGER
+		do
+			nb := count - 1
+			from i := 0 until i > nb loop
+				l_actual := storage.item (i)
+				l_operand := l_actual.agent_actual_argument
+				if l_operand.has_agent then
+					Result := True
+						-- Jump out of teh loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in one of the current operands
+			-- or (recursively) in one of their subexpressions?
+		local
+			l_actual: ET_AGENT_ARGUMENT_OPERAND_ITEM
+			l_operand: ET_AGENT_ARGUMENT_OPERAND
+			i, nb: INTEGER
+		do
+			nb := count - 1
+			from i := 0 until i > nb loop
+				l_actual := storage.item (i)
+				l_operand := l_actual.agent_actual_argument
+				if l_operand.has_typed_object_test then
+					Result := True
+						-- Jump out of teh loop.
+					i := nb
+				end
+				i := i + 1
+			end
+		end
+
 feature -- Setting
 
 	set_left_parenthesis (l: like left_parenthesis)
@@ -129,6 +213,25 @@ feature -- Setting
 			right_parenthesis := r
 		ensure
 			right_parenthesis_set: right_parenthesis = r
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current operands
+			-- and (recursively) in its subexpressions.
+		local
+			l_actual: ET_AGENT_ARGUMENT_OPERAND_ITEM
+			l_operand: ET_AGENT_ARGUMENT_OPERAND
+			i, nb: INTEGER
+		do
+			nb := count - 1
+			from i := 0 until i > nb loop
+				l_actual := storage.item (i)
+				l_operand := l_actual.agent_actual_argument
+				l_operand.add_old_expressions (a_list)
+				i := i + 1
+			end
 		end
 
 feature {NONE} -- Implementation

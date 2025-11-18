@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel addresses of features"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_FEATURE_ADDRESS
 
@@ -41,6 +39,7 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor
 			name.reset
 		end
 

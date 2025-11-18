@@ -9,8 +9,8 @@
 	names: subset, set
 	access: membership
 	contents: generic
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-06-18 17:01:52 +0000 (Fri, 18 Jun 2021) $"
+	revision: "$Revision: 105548 $"
 
 deferred class SUBSET [G]
 

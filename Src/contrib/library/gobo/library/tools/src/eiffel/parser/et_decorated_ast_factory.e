@@ -5,10 +5,8 @@
 		"Eiffel decorated Abstract Syntax Tree factories"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_DECORATED_AST_FACTORY
 
@@ -251,6 +249,7 @@ inherit
 			new_feature_address,
 			new_feature_clause,
 			new_feature_name_comma,
+			new_first_semicolon,
 			new_for_all_quantifier_expression,
 			new_formal_argument_semicolon,
 			new_formal_arguments,
@@ -259,10 +258,14 @@ inherit
 			new_from_compound,
 			new_if_expression,
 			new_if_instruction,
-			new_indexing_semicolon,
-			new_indexing_term_comma,
+			new_note_semicolon,
+			new_note_term_comma,
 			new_infix_and_then_operator,
 			new_infix_or_else_operator,
+			new_inline_separate_argument,
+			new_inline_separate_argument_comma,
+			new_inline_separate_arguments,
+			new_inline_separate_instruction,
 			new_inspect_expression,
 			new_inspect_instruction,
 			new_invariants,
@@ -708,10 +711,10 @@ feature -- Eiffel keywords
 			Result.set_break (last_break (False, a_scanner))
 		end
 
-	new_invariant_keyword (a_scanner: ET_EIFFEL_SCANNER_SKELETON): detachable ET_KEYWORD
+	new_invariant_keyword (a_scanner: ET_EIFFEL_SCANNER_SKELETON): detachable ET_INVARIANT_KEYWORD
 			-- New 'invariant' keyword
 		do
-			create Result.make_invariant
+			create Result.make
 			Result.set_text (a_scanner.last_literal)
 			Result.set_position (a_scanner.line, a_scanner.column)
 			Result.set_break (last_break (False, a_scanner))
@@ -2098,7 +2101,7 @@ feature -- AST nodes
 		end
 
 	new_assertion_semicolon (an_assertion: detachable ET_ASSERTION;
-		a_semicolon: detachable ET_SYMBOL): detachable ET_ASSERTION_ITEM
+		a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_ASSERTION_ITEM
 			-- New assertion followed by a semicolon
 		do
 			if a_semicolon = Void then
@@ -2631,7 +2634,7 @@ feature -- AST nodes
 
 	new_deferred_function (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
 		a_type: detachable ET_DECLARED_TYPE; an_assigner: detachable ET_ASSIGNER;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST;
 		an_obsolete: detachable ET_OBSOLETE; a_preconditions: detachable ET_PRECONDITIONS;
 		a_deferred: detachable ET_KEYWORD;
 		a_postconditions: detachable ET_POSTCONDITIONS; an_end: detachable ET_KEYWORD;
@@ -2646,7 +2649,7 @@ feature -- AST nodes
 				Result.set_preconditions (a_preconditions)
 				Result.set_postconditions (a_postconditions)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -2662,7 +2665,7 @@ feature -- AST nodes
 		end
 
 	new_deferred_procedure (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST; an_obsolete: detachable ET_OBSOLETE;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST; an_obsolete: detachable ET_OBSOLETE;
 		a_preconditions: detachable ET_PRECONDITIONS; a_deferred: detachable ET_KEYWORD; a_postconditions: detachable ET_POSTCONDITIONS;
 		an_end: detachable ET_KEYWORD; a_semicolon: detachable ET_SEMICOLON_SYMBOL; a_clients: detachable ET_CLIENT_LIST;
 		a_feature_clause: detachable ET_FEATURE_CLAUSE; a_class: detachable ET_CLASS): detachable ET_DEFERRED_PROCEDURE
@@ -2674,7 +2677,7 @@ feature -- AST nodes
 				Result.set_preconditions (a_preconditions)
 				Result.set_postconditions (a_postconditions)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -2704,7 +2707,7 @@ feature -- AST nodes
 
 	new_do_function (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
 		a_type: detachable ET_DECLARED_TYPE; an_assigner: detachable ET_ASSIGNER;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST;
 		an_obsolete: detachable ET_OBSOLETE; a_preconditions: detachable ET_PRECONDITIONS;
 		a_locals: detachable ET_LOCAL_VARIABLE_LIST; a_compound: detachable ET_COMPOUND;
 		a_postconditions: detachable ET_POSTCONDITIONS;
@@ -2724,7 +2727,7 @@ feature -- AST nodes
 				Result.set_postconditions (a_postconditions)
 				Result.set_rescue_clause (a_rescue)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -2761,7 +2764,7 @@ feature -- AST nodes
 		end
 
 	new_do_procedure (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST;
 		an_obsolete: detachable ET_OBSOLETE; a_preconditions: detachable ET_PRECONDITIONS;
 		a_locals: detachable ET_LOCAL_VARIABLE_LIST; a_compound: detachable ET_COMPOUND;
 		a_postconditions: detachable ET_POSTCONDITIONS;
@@ -2780,7 +2783,7 @@ feature -- AST nodes
 				Result.set_postconditions (a_postconditions)
 				Result.set_rescue_clause (a_rescue)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -2880,7 +2883,7 @@ feature -- AST nodes
 
 	new_extended_attribute (a_name: detachable ET_EXTENDED_FEATURE_NAME;
 		a_type: detachable ET_DECLARED_TYPE; an_assigner: detachable ET_ASSIGNER;
-		a_first_indexing: detachable ET_INDEXING_LIST;
+		a_first_note: detachable ET_NOTE_LIST;
 		an_obsolete: detachable ET_OBSOLETE; a_preconditions: detachable ET_PRECONDITIONS;
 		a_locals: detachable ET_LOCAL_VARIABLE_LIST;
 		a_compound: detachable ET_COMPOUND; a_postconditions: detachable ET_POSTCONDITIONS;
@@ -2900,7 +2903,7 @@ feature -- AST nodes
 				Result.set_postconditions (a_postconditions)
 				Result.set_rescue_clause (a_rescue_clause)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_end /= Void then
 					Result.set_end_keyword (an_end)
 				end
@@ -2932,7 +2935,7 @@ feature -- AST nodes
 
 	new_external_function (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
 		a_type: detachable ET_DECLARED_TYPE; an_assigner: detachable ET_ASSIGNER;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST;
 		an_obsolete: detachable ET_OBSOLETE; a_preconditions: detachable ET_PRECONDITIONS;
 		a_language: detachable ET_EXTERNAL_LANGUAGE;
 		an_alias: detachable ET_EXTERNAL_ALIAS; a_postconditions: detachable ET_POSTCONDITIONS;
@@ -2949,7 +2952,7 @@ feature -- AST nodes
 				Result.set_postconditions (a_postconditions)
 				Result.set_alias_clause (an_alias)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -2993,7 +2996,7 @@ feature -- AST nodes
 		end
 
 	new_external_procedure (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST; an_obsolete: detachable ET_OBSOLETE;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST; an_obsolete: detachable ET_OBSOLETE;
 		a_preconditions: detachable ET_PRECONDITIONS; a_language: detachable ET_EXTERNAL_LANGUAGE;
 		an_alias: detachable ET_EXTERNAL_ALIAS; a_postconditions: detachable ET_POSTCONDITIONS; an_end: detachable ET_KEYWORD;
 		a_semicolon: detachable ET_SEMICOLON_SYMBOL; a_clients: detachable ET_CLIENT_LIST;
@@ -3007,7 +3010,7 @@ feature -- AST nodes
 				Result.set_postconditions (a_postconditions)
 				Result.set_alias_clause (an_alias)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -3072,6 +3075,13 @@ feature -- AST nodes
 			end
 		end
 
+	new_first_semicolon (a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_SEMICOLON_SYMBOL
+			-- Semicolon appearing before the first element of a list
+			-- with semicolons as separators
+		do
+			Result := a_semicolon
+		end
+
 	new_for_all_quantifier_expression (a_quantifier_symbol: detachable ET_SYMBOL;
 		a_item_name: detachable ET_IDENTIFIER; a_colon_symbol: detachable ET_SYMBOL;
 		a_iterable_expression: detachable ET_EXPRESSION; a_bar_symbol: detachable ET_SYMBOL;
@@ -3093,7 +3103,7 @@ feature -- AST nodes
 		end
 
 	new_formal_argument_semicolon (an_argument: detachable ET_FORMAL_ARGUMENT;
-		a_semicolon: detachable ET_SYMBOL): detachable ET_FORMAL_ARGUMENT_ITEM
+		a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_FORMAL_ARGUMENT_ITEM
 			-- New formal_argument-semicolon
 		do
 			if a_semicolon = Void then
@@ -3186,23 +3196,23 @@ feature -- AST nodes
 			end
 		end
 
-	new_indexing_semicolon (an_indexing: detachable ET_INDEXING_ITEM; a_semicolon: detachable ET_SYMBOL): detachable ET_INDEXING_ITEM
-			-- New indexing-semicolon
+	new_note_semicolon (a_note: detachable ET_NOTE_ITEM; a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_NOTE_ITEM
+			-- New note-semicolon
 		do
 			if a_semicolon = Void then
-				Result := an_indexing
-			elseif an_indexing /= Void then
-				create {ET_INDEXING_SEMICOLON} Result.make (an_indexing, a_semicolon)
+				Result := a_note
+			elseif a_note /= Void then
+				create {ET_NOTE_SEMICOLON} Result.make (a_note, a_semicolon)
 			end
 		end
 
-	new_indexing_term_comma (a_term: detachable ET_INDEXING_TERM; a_comma: detachable ET_SYMBOL): detachable ET_INDEXING_TERM_ITEM
-			-- New indexing_term-comma
+	new_note_term_comma (a_term: detachable ET_NOTE_TERM; a_comma: detachable ET_SYMBOL): detachable ET_NOTE_TERM_ITEM
+			-- New note_term-comma
 		do
 			if a_comma = Void then
 				Result := a_term
 			elseif a_term /= Void then
-				create {ET_INDEXING_TERM_COMMA} Result.make (a_term, a_comma)
+				create {ET_NOTE_TERM_COMMA} Result.make (a_term, a_comma)
 			end
 		end
 
@@ -3232,6 +3242,47 @@ feature -- AST nodes
 			end
 		end
 
+	new_inline_separate_argument (a_expression: detachable ET_EXPRESSION; a_as: detachable ET_KEYWORD; a_name: detachable ET_IDENTIFIER): detachable ET_INLINE_SEPARATE_ARGUMENT
+			-- New inline separate argument
+		do
+			if a_expression /= Void and a_name /= Void then
+				create Result.make (a_expression, a_name)
+				if a_as /= Void then
+					Result.set_as_keyword (a_as)
+				end
+			end
+		end
+
+	new_inline_separate_argument_comma (a_inline_separate_argument: detachable ET_INLINE_SEPARATE_ARGUMENT; a_comma: detachable ET_SYMBOL): detachable ET_INLINE_SEPARATE_ARGUMENT_ITEM
+			-- Newinline_separate_argument-comma
+		do
+			if a_comma = Void then
+				Result := a_inline_separate_argument
+			elseif a_inline_separate_argument /= Void then
+				create {ET_INLINE_SEPARATE_ARGUMENT_COMMA} Result.make (a_inline_separate_argument, a_comma)
+			end
+		end
+
+	new_inline_separate_arguments (a_separate: detachable ET_KEYWORD; nb: INTEGER): detachable ET_INLINE_SEPARATE_ARGUMENTS
+			-- New inline_separate_argument list with capacity `nb'
+		do
+			create Result.make_with_capacity (nb)
+			if a_separate /= Void then
+				Result.set_separate_keyword (a_separate)
+			end
+		end
+
+	new_inline_separate_instruction (a_arguments: detachable ET_INLINE_SEPARATE_ARGUMENTS; a_compound: detachable ET_COMPOUND; a_end: detachable ET_KEYWORD): detachable ET_INLINE_SEPARATE_INSTRUCTION
+			-- New inline separate instruction
+		do
+			if a_arguments /= Void then
+				create Result.make (a_arguments, a_compound)
+				if a_end /= Void then
+					Result.set_end_keyword (a_end)
+				end
+			end
+		end
+
 	new_inspect_expression (a_conditional: detachable ET_CONDITIONAL; a_when_parts: detachable ET_WHEN_EXPRESSION_LIST;
 		an_else_part: detachable ET_CONDITIONAL; an_end: detachable ET_KEYWORD): detachable ET_INSPECT_EXPRESSION
 			-- New inspect expression
@@ -3258,7 +3309,7 @@ feature -- AST nodes
 			end
 		end
 
-	new_invariants (an_invariant: detachable ET_KEYWORD; a_class: detachable ET_CLASS; nb: INTEGER): detachable ET_INVARIANTS
+	new_invariants (an_invariant: detachable ET_INVARIANT_KEYWORD; a_class: detachable ET_CLASS; nb: INTEGER): detachable ET_INVARIANTS
 			-- New class invariants with given capacity
 		do
 			if a_class /= Void then
@@ -3300,7 +3351,7 @@ feature -- AST nodes
 		end
 
 	new_labeled_actual_parameter_semicolon (a_parameter: detachable ET_LABELED_ACTUAL_PARAMETER;
-		a_semicolon: detachable ET_SYMBOL): detachable ET_ACTUAL_PARAMETER_ITEM
+		a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_ACTUAL_PARAMETER_ITEM
 			-- New labeled_actual_parameter-semicolon
 		do
 			if a_semicolon = Void then
@@ -3346,7 +3397,7 @@ feature -- AST nodes
 		end
 
 	new_local_variable_semicolon (a_variable: detachable ET_LOCAL_VARIABLE;
-		a_semicolon: detachable ET_SYMBOL): detachable ET_LOCAL_VARIABLE_ITEM
+		a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_LOCAL_VARIABLE_ITEM
 			-- New local_variable-semicolon
 		do
 			if a_semicolon = Void then
@@ -3411,7 +3462,7 @@ feature -- AST nodes
 			end
 		end
 
-	new_loop_invariants (an_invariant: detachable ET_KEYWORD; nb: INTEGER): detachable ET_LOOP_INVARIANTS
+	new_loop_invariants (an_invariant: detachable ET_INVARIANT_KEYWORD; nb: INTEGER): detachable ET_LOOP_INVARIANTS
 			-- New loop invariants with given capacity
 		do
 			create Result.make_with_capacity (nb)
@@ -3591,7 +3642,7 @@ feature -- AST nodes
 	new_once_function (a_name: detachable ET_EXTENDED_FEATURE_NAME;
 		args: detachable ET_FORMAL_ARGUMENT_LIST; a_type: detachable ET_DECLARED_TYPE;
 		an_assigner: detachable ET_ASSIGNER; an_is: detachable ET_KEYWORD;
-		a_first_indexing: detachable ET_INDEXING_LIST; an_obsolete: detachable ET_OBSOLETE;
+		a_first_note: detachable ET_NOTE_LIST; an_obsolete: detachable ET_OBSOLETE;
 		a_preconditions: detachable ET_PRECONDITIONS; a_locals: detachable ET_LOCAL_VARIABLE_LIST;
 		a_keys: detachable ET_MANIFEST_STRING_LIST;
 		a_compound: detachable ET_COMPOUND; a_postconditions: detachable ET_POSTCONDITIONS;
@@ -3611,7 +3662,7 @@ feature -- AST nodes
 				Result.set_postconditions (a_postconditions)
 				Result.set_rescue_clause (a_rescue)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -3662,7 +3713,7 @@ feature -- AST nodes
 		end
 
 	new_once_procedure (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST;
 		an_obsolete: detachable ET_OBSOLETE; a_preconditions: detachable ET_PRECONDITIONS;
 		a_locals: detachable ET_LOCAL_VARIABLE_LIST; a_keys: detachable ET_MANIFEST_STRING_LIST;
 		a_compound: detachable ET_COMPOUND;
@@ -3683,7 +3734,7 @@ feature -- AST nodes
 				Result.set_postconditions (a_postconditions)
 				Result.set_rescue_clause (a_rescue)
 				Result.set_clients (a_clients)
-				Result.set_first_indexing (a_first_indexing)
+				Result.set_first_note (a_first_note)
 				if an_is /= Void then
 					Result.set_is_keyword (an_is)
 				end
@@ -3732,7 +3783,7 @@ feature -- AST nodes
 			end
 		end
 
-	new_parent_semicolon (a_parent: detachable ET_PARENT; a_semicolon: detachable ET_SYMBOL): detachable ET_PARENT_ITEM
+	new_parent_semicolon (a_parent: detachable ET_PARENT; a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_PARENT_ITEM
 			-- New parent-semicolon
 		do
 			if a_semicolon = Void then

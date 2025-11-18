@@ -1,20 +1,24 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel creation expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2008-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2008-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_CREATION_EXPRESSION
 
 inherit
 
-	ET_EXPRESSION
+	ET_CALL_EXPRESSION_WITH_ACTUAL_ARGUMENTS
+		undefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		redefine
 			is_never_void
 		end
@@ -33,16 +37,6 @@ feature -- Access
 			type_not_void: Result /= Void
 		end
 
-	name: detachable ET_FEATURE_NAME
-			-- Creation procedure name
-		deferred
-		end
-
-	arguments: detachable ET_ACTUAL_ARGUMENTS
-			-- Arguments of creation call
-		deferred
-		end
-
 	type_position: ET_POSITION
 			-- Position of `type'
 		deferred
@@ -54,9 +48,5 @@ feature -- Status report
 
 	is_never_void: BOOLEAN = True
 			-- Can current expression never be void?
-
-invariant
-
-	no_call_constraint: name = Void implies arguments = Void
 
 end

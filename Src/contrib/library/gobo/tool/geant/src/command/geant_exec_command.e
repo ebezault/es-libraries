@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Exec commands"
 
 	library: "Gobo Eiffel Ant"
-	copyright: "Copyright (c) 2001-2018, Sven Ehrke and others"
+	copyright: "Copyright (c) 2001-2024, Sven Ehrke and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_EXEC_COMMAND
 
@@ -34,6 +32,7 @@ feature {NONE} -- Initialization
 			create command_line.make
 			create exit_code_variable_name.make
 			create accept_errors.make
+			create timeout.make
 		end
 
 feature -- Status report
@@ -79,6 +78,10 @@ feature -- Access
 	accept_errors: GEANT_BOOLEAN_PROPERTY
 			-- Should return codes of called process other than zero be accepted?
 
+	timeout: GEANT_NATURAL_64_PROPERTY
+			-- Timeout in milliseconds.
+			-- 0 means no timeout.
+
 	fileset: detachable GEANT_FILESET
 		-- Fileset for current command
 
@@ -104,10 +107,25 @@ feature -- Execution
 			s: STRING
 			a_string_interpreter: GEANT_STRING_INTERPRETER
 			a_accept_errors: BOOLEAN
+			l_gedoc_pathname: STRING
+			l_timeout: NATURAL_64
 		do
 			if single_execution_mode then
-				project.trace (<<"  [exec] ", command_line.value>>)
-				execute_shell (command_line.value)
+				s := command_line.value
+				if s.starts_with ("gedoc ") then
+					l_gedoc_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("gedoc")
+					s := l_gedoc_pathname + s.substring (6, s.count)
+				end
+				project.trace (<<"  [exec] ", s>>)
+				l_timeout := timeout.non_empty_value_or_else (0)
+				if l_timeout = 0 then
+					execute_shell (s)
+				else
+					if not execute_shell_with_timeout (s, l_timeout) then
+						project.log (<<"  [exec] error: timeout command ", s>>)
+						exit_code := 1
+					end
+				end
 
 				if exit_code_variable_name /= Void and then exit_code_variable_name.is_defined then
 						-- Store return_code of process:
@@ -132,6 +150,7 @@ feature -- Execution
 						Project_variables_resolver.set_variables (project.variables)
 						a_string_interpreter.set_variable_resolver (Project_variables_resolver)
 
+						l_timeout := timeout.non_empty_value_or_else (0)
 						l_fileset.execute
 						from
 							l_fileset.start
@@ -139,8 +158,19 @@ feature -- Execution
 							l_fileset.after or else exit_code /= 0
 						loop
 							s := a_string_interpreter.interpreted_string (command_line.value)
+							if s.starts_with ("gedoc ") then
+								l_gedoc_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("gedoc")
+								s := l_gedoc_pathname + s.substring (6, s.count)
+							end
 							project.trace (<<"  [exec] ", s>>)
-							execute_shell (s)
+							if l_timeout = 0 then
+								execute_shell (s)
+							else
+								if not execute_shell_with_timeout (s, l_timeout) then
+									project.log (<<"  [exec] error: timeout command ", s>>)
+									exit_code := 1
+								end
+							end
 							a_accept_errors := accept_errors.non_empty_value_or_else (False)
 							if a_accept_errors then
 								exit_code := 0
@@ -157,6 +187,5 @@ feature -- Execution
 	single_execution_mode: BOOLEAN
 			-- Should only a single command be executed?
 			-- (If False each command defined through 'fileset' will be executed)
-
 
 end

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel precursor validity checkers"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2023, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_PRECURSOR_CHECKER
 
@@ -58,6 +56,10 @@ inherit
 			process_if_expression,
 			process_if_instruction,
 			process_infix_expression,
+			process_inline_separate_argument,
+			process_inline_separate_argument_comma,
+			process_inline_separate_arguments,
+			process_inline_separate_instruction,
 			process_inspect_expression,
 			process_inspect_instruction,
 			process_loop_instruction,
@@ -679,6 +681,39 @@ feature {ET_AST_NODE} -- Processing
 		do
 			an_expression.left.process (Current)
 			an_expression.right.process (Current)
+		end
+
+	process_inline_separate_argument (a_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Process `a_argument'.
+		do
+			a_argument.expression.process (Current)
+		end
+
+	process_inline_separate_argument_comma (a_argument_comma: ET_INLINE_SEPARATE_ARGUMENT_COMMA)
+			-- Process `a_argument_comma'.
+		do
+			process_inline_separate_argument (a_argument_comma.argument)
+		end
+
+	process_inline_separate_arguments (a_arguments: ET_INLINE_SEPARATE_ARGUMENTS)
+			-- Process `a_arguments'.
+		local
+			i, nb: INTEGER
+		do
+			nb := a_arguments.count
+			from i := 1 until i > nb loop
+				process_inline_separate_argument (a_arguments.argument (i))
+				i := i + 1
+			end
+		end
+
+	process_inline_separate_instruction (a_instruction: ET_INLINE_SEPARATE_INSTRUCTION)
+			-- Process `a_instruction'.
+		do
+			process_inline_separate_arguments (a_instruction.arguments)
+			if attached a_instruction.compound as l_compound then
+				process_compound (l_compound)
+			end
 		end
 
 	process_inspect_expression (a_expression: ET_INSPECT_EXPRESSION)

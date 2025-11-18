@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel feature call handlers: traverse features and report when feature calls are found."
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2008-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2008-2023, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_FEATURE_CALL_HANDLER
 
@@ -85,6 +83,10 @@ inherit
 			process_if_instruction,
 			process_infix_cast_expression,
 			process_infix_expression,
+			process_inline_separate_argument,
+			process_inline_separate_argument_comma,
+			process_inline_separate_arguments,
+			process_inline_separate_instruction,
 			process_inspect_expression,
 			process_inspect_instruction,
 			process_invariants,
@@ -1041,6 +1043,7 @@ feature {ET_AST_NODE} -- Processing
 			l_seed: INTEGER
 			l_context: ET_NESTED_TYPE_CONTEXT
 			l_class: ET_CLASS
+			l_name: ET_FEATURE_NAME
 			had_error: BOOLEAN
 		do
 			reset_fatal_error (False)
@@ -1049,8 +1052,9 @@ feature {ET_AST_NODE} -- Processing
 				process_type (l_type)
 				had_error := has_fatal_error
 			end
-			if attached an_expression.name as l_name then
-				if attached an_expression.arguments as l_arguments then
+			if attached an_expression.creation_call as l_creation_call then
+				l_name := l_creation_call.name
+				if attached l_creation_call.arguments as l_arguments then
 					process_actual_arguments (l_arguments)
 					had_error := had_error or has_fatal_error
 				end
@@ -1710,6 +1714,47 @@ feature {ET_AST_NODE} -- Processing
 			-- Set `has_fatal_error' if a fatal error occurred.
 		do
 			process_qualified_feature_call_expression (an_expression)
+		end
+
+	process_inline_separate_argument (a_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Process `a_argument'.
+		do
+			process_expression (a_argument.expression)
+		end
+
+	process_inline_separate_argument_comma (a_argument_comma: ET_INLINE_SEPARATE_ARGUMENT_COMMA)
+			-- Process `a_argument_comma'.
+		do
+			process_inline_separate_argument (a_argument_comma.argument)
+		end
+
+	process_inline_separate_arguments (a_arguments: ET_INLINE_SEPARATE_ARGUMENTS)
+			-- Process `a_arguments'.
+		local
+			i, nb: INTEGER
+			had_error: BOOLEAN
+		do
+			nb := a_arguments.count
+			from i := 1 until i > nb loop
+				process_inline_separate_argument (a_arguments.argument (i))
+				had_error := had_error or has_fatal_error
+				i := i + 1
+			end
+			reset_fatal_error (had_error)
+		end
+
+	process_inline_separate_instruction (a_instruction: ET_INLINE_SEPARATE_INSTRUCTION)
+			-- Process `a_instruction'.
+		local
+			had_error: BOOLEAN
+		do
+			process_inline_separate_arguments (a_instruction.arguments)
+			had_error := has_fatal_error
+			if attached a_instruction.compound as l_compound then
+				process_compound (l_compound)
+				had_error := had_error or has_fatal_error
+			end
+			reset_fatal_error (had_error)
 		end
 
 	process_inspect_expression (a_expression: ET_INSPECT_EXPRESSION)
@@ -3192,11 +3237,11 @@ feature {NONE} -- Expression types
 		do
 			reset_fatal_error (False)
 			if attached current_inline_agent as l_current_inline_agent then
-				expression_type_finder.find_expression_type_in_agent (a_expression, l_current_inline_agent, current_feature, a_context, current_system.detachable_any_type)
+				expression_type_finder.find_expression_type_in_agent (a_expression, l_current_inline_agent, current_feature, a_context, current_system.detachable_separate_any_type)
 			elseif current_feature.is_feature then
-				expression_type_finder.find_expression_type_in_feature (a_expression, current_feature.as_feature, a_context, current_system.detachable_any_type)
+				expression_type_finder.find_expression_type_in_feature (a_expression, current_feature.as_feature, a_context, current_system.detachable_separate_any_type)
 			else
-				expression_type_finder.find_expression_type_in_invariant (a_expression, current_feature.as_invariants, a_context, current_system.detachable_any_type)
+				expression_type_finder.find_expression_type_in_invariant (a_expression, current_feature.as_invariants, a_context, current_system.detachable_separate_any_type)
 			end
 			reset_fatal_error (expression_type_finder.has_fatal_error)
 		end

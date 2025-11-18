@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel object-test expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2009-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2009-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_OBJECT_TEST
 
@@ -17,7 +15,12 @@ inherit
 	ET_EXPRESSION
 		redefine
 			reset,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 create
@@ -44,6 +47,7 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor
 			if attached type as l_type then
 				l_type.reset
 			end
@@ -114,6 +118,34 @@ feature -- Status report
 			Result := expression.is_instance_free
 		end
 
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := expression.has_result
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := expression.has_address_expression
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := expression.has_agent
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := type /= Void or expression.has_typed_object_test
+		end
+
 feature -- Setting
 
 	set_attached_keyword (a_attached: like attached_keyword)
@@ -124,6 +156,15 @@ feature -- Setting
 			attached_keyword := a_attached
 		ensure
 			attached_keyword_set: attached_keyword = a_attached
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current expression
+			-- and (recursively) in its subexpressions.
+		do
+			expression.add_old_expressions (a_list)
 		end
 
 feature -- Processing

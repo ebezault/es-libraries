@@ -1,20 +1,21 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel create instructions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_CREATE_INSTRUCTION
 
 inherit
 
 	ET_CREATION_INSTRUCTION
+		redefine
+			is_scoop_region_passive
+		end
 
 create
 
@@ -83,6 +84,14 @@ feature -- Access
 			else
 				Result := target.last_leaf
 			end
+		end
+
+feature -- Status report
+
+	is_scoop_region_passive: BOOLEAN
+			-- Is the SCOOP region created by the current creation (if any) a passive region?
+		do
+			Result := attached creation_region as l_creation_region and then l_creation_region.class_name.same_class_name (tokens.none_class_name)
 		end
 
 feature -- Setting

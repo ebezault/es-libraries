@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Objects that compare text strings according to case order"
 
 	library: "Gobo Eiffel XSLT Library"
-	copyright: "Copyright (c) 2007-2017, Colin Adams and others"
+	copyright: "Copyright (c) 2007-2022, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class XM_XSLT_CASE_ORDER_COMPARER
 
@@ -71,8 +69,8 @@ feature -- Comparison
 					until
 						l_finished or l_index > l_count
 					loop
-						l_first_code := l_first.item_code (l_index)
-						l_second_code := l_second.item_code (l_index)
+						l_first_code := l_first.code (l_index).to_integer_32
+						l_second_code := l_second.code (l_index).to_integer_32
 						if l_first_code = l_second_code then
 							l_index := l_index + 1
 						else

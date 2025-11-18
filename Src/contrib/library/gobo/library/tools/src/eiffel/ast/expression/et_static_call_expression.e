@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel static call expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2016, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_STATIC_CALL_EXPRESSION
 
@@ -16,17 +14,43 @@ inherit
 
 	ET_STATIC_FEATURE_CALL
 		redefine
-			parenthesis_call
+			parenthesis_call,
+			reset
+		end
+
+	ET_CALL_EXPRESSION_WITH_ACTUAL_ARGUMENT_LIST
+		undefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
+		redefine
+			reset
 		end
 
 	ET_CHOICE_CONSTANT
 		undefine
-			reset
+			reset,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 create
 
 	make
+
+feature -- Initialization
+
+	reset
+			-- Reset call as it was when it was last parsed.
+		do
+			precursor {ET_CALL_EXPRESSION_WITH_ACTUAL_ARGUMENT_LIST}
+			precursor {ET_STATIC_FEATURE_CALL}
+		end
 
 feature -- Access
 

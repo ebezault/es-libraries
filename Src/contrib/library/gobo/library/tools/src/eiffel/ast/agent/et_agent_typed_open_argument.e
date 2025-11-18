@@ -1,28 +1,26 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel agent open arguments for the form '{TYPE} ?'"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2014, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_AGENT_TYPED_OPEN_ARGUMENT
 
 inherit
 
 	ET_AGENT_ARGUMENT_OPERAND
-		undefine
-			reset
 		redefine
+			reset,
 			is_open_operand
 		end
 
 	ET_BRACED_TYPE
 		redefine
+			reset,
 			make, process, last_leaf
 		end
 
@@ -39,6 +37,16 @@ feature {NONE} -- Initialization
 			left_brace := tokens.left_brace_symbol
 			right_brace := tokens.right_brace_symbol
 			question_mark := tokens.question_mark_symbol
+		end
+
+feature -- Initialization
+
+	reset
+			-- Reset operand as it was when it was last parsed.
+		do
+			precursor {ET_AGENT_ARGUMENT_OPERAND}
+			precursor {ET_BRACED_TYPE}
+			question_mark.reset
 		end
 
 feature -- Status report

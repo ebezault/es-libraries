@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel bracket expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2005-2016, Eric Bezault and others"
+	copyright: "Copyright (c) 2005-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_BRACKET_EXPRESSION
 
@@ -19,7 +17,18 @@ inherit
 			reset
 		end
 
-	ET_CALL_WITH_ACTUAL_ARGUMENT_LIST
+	ET_CALL_EXPRESSION_WITH_ACTUAL_ARGUMENT_LIST
+		undefine
+			is_call_agent,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			is_instance_free,
+			reset,
+			add_old_expressions,
+			add_separate_arguments
+		end
 
 create
 
@@ -47,6 +56,7 @@ feature -- Initialization
 	reset
 			-- Reset call as it was just after it was last parsed.
 		do
+			precursor {ET_QUALIFIED_FEATURE_CALL_EXPRESSION}
 			target.reset
 			name.reset
 			reset_arguments

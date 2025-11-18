@@ -1,15 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Test features of class KL_WINDOWS_FILE_SYSTEM"
 
-	test_status: "ok_to_run"
 	library: "Gobo Eiffel Kernel Library"
 	copyright: "Copyright (c) 2001-2018, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class KL_TEST_WINDOWS_FILE_SYSTEM
 
@@ -1126,7 +1123,7 @@ feature -- Working directory
 					-- The current working directory is a readable directory.
 				cwd := a_file_system.current_working_directory
 				assert ("readable0", a_file_system.is_directory_readable (cwd))
-					-- Change directory to '$GOBO/test/kernel'.
+					-- Change directory to '$GOBO/library/kernel/test/unit'.
 				a_name := kernel_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("readable1", a_file_system.is_directory_readable (a_name))
@@ -1134,10 +1131,10 @@ feature -- Working directory
 				assert ("readable2", a_file_system.is_directory_readable (a_name))
 				assert ("readable3", a_file_system.is_directory_readable (a_file_system.current_working_directory))
 				assert ("cwd1", a_file_system.same_pathnames (a_name, a_file_system.current_working_directory))
-					-- Change directory to '$GOBO/test/kernel/data'.
+					-- Change directory to '$GOBO/library/kernel/test/unit/data'.
 				a_name := "data"
 				a_file_system.set_current_working_directory (a_name)
-					-- There is no directory 'data' in '$GOBO/test/kernel/data'.
+					-- There is no directory 'data' in '$GOBO/library/kernel/test/unit/data'.
 				assert ("not_readable1", not a_file_system.is_directory_readable (a_name))
 				assert ("readable4", a_file_system.is_directory_readable (a_file_system.current_working_directory))
 				a_name := data_dirname
@@ -1163,7 +1160,7 @@ feature -- Working directory
 					-- The current working directory is a readable directory.
 				cwd := a_file_system.cwd
 				assert ("readable0", a_file_system.is_directory_readable (cwd))
-					-- Change directory to '$GOBO/test/kernel'.
+					-- Change directory to '$GOBO/library/kernel/test/unit'.
 				a_name := kernel_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("readable1", a_file_system.is_directory_readable (a_name))
@@ -1171,10 +1168,10 @@ feature -- Working directory
 				assert ("readable2", a_file_system.is_directory_readable (a_name))
 				assert ("readable3", a_file_system.is_directory_readable (a_file_system.cwd))
 				assert ("cwd1", a_file_system.same_pathnames (a_name, a_file_system.cwd))
-					-- Change directory to 'data' ('$GOBO/test/kernel/data').
+					-- Change directory to 'data' ('$GOBO/library/kernel/test/unit/data').
 				a_name := "data"
 				a_file_system.cd (a_name)
-					-- There is no directory 'data' in '$GOBO/test/kernel/data'.
+					-- There is no directory 'data' in '$GOBO/library/kernel/test/unit/data'.
 				assert ("not_readable1", not a_file_system.is_directory_readable (a_name))
 				assert ("readable4", a_file_system.is_directory_readable (a_file_system.cwd))
 				a_name := data_dirname
@@ -1200,7 +1197,7 @@ feature -- Working directory
 			if a_file_system.is_current_file_system then
 				cwd := a_file_system.current_working_directory
 				assert ("readable0", a_file_system.is_directory_readable (cwd))
-					-- Change directory to '$GOBO/test/kernel'.
+					-- Change directory to '$GOBO/library/kernel/test/unit'.
 				a_name := kernel_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("readable1", a_file_system.is_directory_readable (a_name))
@@ -1208,17 +1205,17 @@ feature -- Working directory
 				assert ("readable2", a_file_system.is_directory_readable (a_name))
 				assert ("readable3", a_file_system.is_directory_readable (a_file_system.current_working_directory))
 				assert ("cwd1", a_file_system.same_pathnames (a_name, a_file_system.current_working_directory))
-					-- Change directory to 'data' ('$GOBO/test/kernel/data').
+					-- Change directory to 'data' ('$GOBO/library/kernel/test/unit/data').
 				a_name := "data"
 				assert ("readable4", a_file_system.is_directory_readable (a_name))
 				a_file_system.set_current_working_directory (a_name)
-					-- There is no directory 'data' in '$GOBO/test/kernel/data'.
+					-- There is no directory 'data' in '$GOBO/library/kernel/test/unit/data'.
 				assert ("not_readable1", not a_file_system.is_directory_readable (a_name))
 				assert ("readable5", a_file_system.is_directory_readable (a_file_system.current_working_directory))
 				a_name := data_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("cwd2", a_file_system.same_pathnames (a_name, a_file_system.current_working_directory))
-					-- Change directory to current directory '.' ('$GOBO/test/kernel/data').
+					-- Change directory to current directory '.' ('$GOBO/library/kernel/test/unit/data').
 				a_name := file_system.relative_current_directory
 				assert ("readable6", a_file_system.is_directory_readable (a_name))
 				a_file_system.set_current_working_directory (a_name)
@@ -1226,7 +1223,7 @@ feature -- Working directory
 				a_name := data_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("cwd3", a_file_system.same_pathnames (a_name, a_file_system.current_working_directory))
-					-- Change directory to parent directory '..' ('$GOBO/test/kernel').
+					-- Change directory to parent directory '..' ('$GOBO/library/kernel/test/unit').
 				a_name := file_system.relative_parent_directory
 				assert ("readable8", a_file_system.is_directory_readable (a_name))
 				a_file_system.set_current_working_directory (a_name)
@@ -1234,7 +1231,7 @@ feature -- Working directory
 				a_name := kernel_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("cwd4", a_file_system.same_pathnames (a_name, a_file_system.current_working_directory))
-					-- Change directory to 'data' ('$GOBO/test/kernel/data').
+					-- Change directory to 'data' ('$GOBO/library/kernel/test/unit/data').
 				a_name := "data"
 				assert ("readable10", a_file_system.is_directory_readable (a_name))
 				a_file_system.set_current_working_directory (a_name)
@@ -1262,7 +1259,7 @@ feature -- Working directory
 			if a_file_system.is_current_file_system then
 				cwd := a_file_system.cwd
 				assert ("readable0", a_file_system.is_directory_readable (cwd))
-					-- Change directory to '$GOBO/test/kernel'.
+					-- Change directory to '$GOBO/library/kernel/test/unit'.
 				a_name := kernel_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("readable1", a_file_system.is_directory_readable (a_name))
@@ -1270,17 +1267,17 @@ feature -- Working directory
 				assert ("readable2", a_file_system.is_directory_readable (a_name))
 				assert ("readable3", a_file_system.is_directory_readable (a_file_system.cwd))
 				assert ("cwd1", a_file_system.same_pathnames (a_name, a_file_system.cwd))
-					-- Change directory to 'data' ('$GOBO/test/kernel/data').
+					-- Change directory to 'data' ('$GOBO/library/kernel/test/unit/data').
 				a_name := "data"
 				assert ("readable4", a_file_system.is_directory_readable (a_name))
 				a_file_system.cd (a_name)
-					-- There is no directory 'data' in '$GOBO/test/kernel/data'.
+					-- There is no directory 'data' in '$GOBO/library/kernel/test/unit/data'.
 				assert ("not_readable1", not a_file_system.is_directory_readable (a_name))
 				assert ("readable5", a_file_system.is_directory_readable (a_file_system.cwd))
 				a_name := data_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("cwd2", a_file_system.same_pathnames (a_name, a_file_system.cwd))
-					-- Change directory to current directory '.' ('$GOBO/test/kernel/data').
+					-- Change directory to current directory '.' ('$GOBO/library/kernel/test/unit/data').
 				a_name := file_system.relative_current_directory
 				assert ("readable6", a_file_system.is_directory_readable (a_name))
 				a_file_system.cd (a_name)
@@ -1288,7 +1285,7 @@ feature -- Working directory
 				a_name := data_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("cwd3", a_file_system.same_pathnames (a_name, a_file_system.cwd))
-					-- Change directory to parent directory '..' ('$GOBO/test/kernel').
+					-- Change directory to parent directory '..' ('$GOBO/library/kernel/test/unit').
 				a_name := file_system.relative_parent_directory
 				assert ("readable8", a_file_system.is_directory_readable (a_name))
 				a_file_system.cd (a_name)
@@ -1296,7 +1293,7 @@ feature -- Working directory
 				a_name := kernel_dirname
 				a_name := Execution_environment.interpreted_string (a_name)
 				assert ("cwd4", a_file_system.same_pathnames (a_name, a_file_system.cwd))
-					-- Change directory to 'data' ('$GOBO/test/kernel/data').
+					-- Change directory to 'data' ('$GOBO/library/kernel/test/unit/data').
 				a_name := "data"
 				assert ("readable10", a_file_system.is_directory_readable (a_name))
 				a_file_system.cd (a_name)

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel types directly based on a class"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_BASE_TYPE
 
@@ -35,7 +33,8 @@ inherit
 			resolved_formal_parameters,
 			resolved_formal_parameters_with_type_mark,
 			type_with_type_mark,
-			is_valid_context_type
+			is_valid_context_type,
+			append_canonical_actual_parameter_to_string
 		end
 
 	ET_TYPE_CONTEXT
@@ -48,6 +47,10 @@ inherit
 			base_type_index_of_label as context_base_type_index_of_label,
 			named_type as context_named_type,
 			named_type_with_type_mark as context_named_type_with_type_mark,
+			is_type_separate as context_is_type_separate,
+			is_type_separate_with_type_mark as context_is_type_separate_with_type_mark,
+			is_type_non_separate as context_is_type_non_separate,
+			is_type_non_separate_with_type_mark as context_is_type_non_separate_with_type_mark,
 			is_type_expanded as context_is_type_expanded,
 			is_type_expanded_with_type_mark as context_is_type_expanded_with_type_mark,
 			is_type_reference as context_is_type_reference,
@@ -76,6 +79,7 @@ inherit
 			conforms_from_tuple_type_with_type_marks as context_conforms_from_tuple_type_with_type_marks,
 			base_type_has_class as context_base_type_has_class,
 			named_type_has_class as context_named_type_has_class,
+			named_type_has_class_with_ancestors_not_built_successfully as context_named_type_has_class_with_ancestors_not_built_successfully,
 			named_type_is_formal_type as context_named_type_is_formal_type
 		redefine
 			base_class,
@@ -353,6 +357,29 @@ feature -- Status report
 			end
 		end
 
+	base_type_has_class (a_class: ET_CLASS; a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Does the base type of current type contain `a_class'
+			-- when it appears in `a_context'?
+		do
+			if a_class = base_class then
+				Result := True
+			elseif attached actual_parameters as l_actual_parameters then
+				Result := l_actual_parameters.named_types_have_class (a_class, a_context)
+			end
+		end
+
+	named_type_has_class_with_ancestors_not_built_successfully (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Does the named type of current type contain a class
+			-- whose ancestors have not been built successfully
+			-- when it appears in `a_context'?
+		do
+			if not base_class.ancestors_built_successfully then
+				Result := True
+			elseif attached actual_parameters as l_actual_parameters then
+				Result := l_actual_parameters.named_types_has_class_with_ancestors_not_built_successfully (a_context)
+			end
+		end
+
 feature -- Comparison
 
 	same_as_base_class: BOOLEAN
@@ -522,7 +549,7 @@ feature -- Type context
 			-- A context is valid if its `root_context' is only made up
 			-- of class names and formal generic parameter names, and if
 			-- the actual parameters of these formal parameters are
-			-- themselves
+			-- themselves in `root_context'?
 		do
 			Result := is_valid_context_type (Current)
 		end
@@ -547,6 +574,20 @@ feature -- Type context
 					end
 				end
 			end
+		end
+
+	context_is_type_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
+			-- Same as `context_is_type_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		do
+			Result := is_type_separate_with_type_mark (a_type_mark, Current)
+		end
+
+	context_is_type_non_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
+			-- Same as `context_is_type_non_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		do
+			Result := is_type_non_separate_with_type_mark (a_type_mark, Current)
 		end
 
 	context_is_type_expanded_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
@@ -587,6 +628,13 @@ feature -- Type context
 			-- Does the named type of current context contain `a_class'?
 		do
 			Result := named_type_has_class (a_class, Current)
+		end
+
+	context_named_type_has_class_with_ancestors_not_built_successfully: BOOLEAN
+			-- Does the named type of current context contain a class
+			-- whose ancestors have not been built successfully?
+		do
+			Result := named_type_has_class_with_ancestors_not_built_successfully (Current)
 		end
 
 	context_named_type_is_formal_type: BOOLEAN
@@ -721,6 +769,50 @@ feature {ET_TYPE, ET_TYPE_CONTEXT} -- Type context
 			-- whose ancestors need to be built in order to check for conformance.)
 		do
 			Result := conforms_from_tuple_type_with_type_marks (other, other_type_mark, other_context, a_type_mark, Current, a_system_processor)
+		end
+
+feature -- Output
+
+	append_canonical_actual_parameter_to_string (a_string: STRING)
+			-- Append textual representation of canonical version of current
+			-- actual generic parameter to `a_string'.
+			-- A canonical version is an unaliased version, that is when
+			-- aliased types such as INTEGER are replaced with the associated
+			-- types such as INTEGER_32. Also, implicit type marks are
+			-- replaced with explicit type marks, except when the actual
+			-- generic parameters are base types where the type mark is not
+			-- shown at all if 'attached', or if 'expanded' and the base class
+			-- is expanded, or if 'separate' and the base class is separate
+			-- (e.g. "FOO [BAR, INTEGER_8, detachable BAZ]" instead of
+			-- "FOO [attached BAR, expanded INTEGER_8, detachable BAZ]").
+			-- Do not show the 'detachable' type mark for base types in
+			-- non-void-safe mode.
+			-- Also, tuple types have no labels.
+		local
+			l_base_class: ET_CLASS
+		do
+			l_base_class := base_class
+			if attached type.type_mark as l_type_mark then
+				if not l_type_mark.is_expanded_mark and not l_base_class.is_expanded then
+					if l_type_mark.is_detachable_mark and l_base_class.current_system.attachment_type_conformance_mode then
+						a_string.append_string (tokens.detachable_keyword.text)
+						a_string.append_character (' ')
+					end
+				end
+				if l_type_mark.is_expanded_mark and not l_base_class.is_expanded then
+					a_string.append_string (tokens.expanded_keyword.text)
+					a_string.append_character (' ')
+				end
+				if l_type_mark.is_reference_mark and l_base_class.is_expanded then
+					a_string.append_string (tokens.reference_keyword.text)
+					a_string.append_character (' ')
+				end
+				if scoop_mode and l_type_mark.is_separate_mark and not l_base_class.is_separate then
+					a_string.append_string (tokens.separate_keyword.text)
+					a_string.append_character (' ')
+				end
+			end
+			append_canonical_to_string (a_string)
 		end
 
 invariant

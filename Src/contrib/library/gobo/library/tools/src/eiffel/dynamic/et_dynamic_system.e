@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel dynamic systems at run-time"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_DYNAMIC_SYSTEM
 
@@ -79,6 +77,7 @@ feature {NONE} -- Initialization
 			string_32_type := unknown_type
 			special_character_8_type := unknown_type
 			special_character_32_type := unknown_type
+			type_none_type := unknown_type
 			ise_exception_manager_type := unknown_type
 			any_type := unknown_type
 			none_type := unknown_type
@@ -105,6 +104,7 @@ feature {NONE} -- Initialization
 			string_32_type_not_void: string_32_type /= Void
 			special_character_8_type_not_void: special_character_8_type /= Void
 			special_character_32_type_not_void: special_character_32_type /= Void
+			type_none_type_not_void: type_none_type /= Void
 			ise_exception_manager_type_not_void: ise_exception_manager_type /= Void
 			unknown_type_not_void: unknown_type /= Void
 		end
@@ -137,6 +137,16 @@ feature -- Status report
 			-- Should the whole content of classes to be checked (even
 			-- features not reachable from the root creation procedure)?
 
+	has_separate_creation: BOOLEAN
+			-- Is there some separate creations in the current system?
+
+	has_special_once_per_object_routines: BOOLEAN
+			-- Is there at least one "SPECIAL" type with at least one
+			-- once-per-object routine?
+
+	independent_store_used: BOOLEAN
+			-- Is Storable independent_store used in the current system?
+
 	all_attributes_used: BOOLEAN
 			-- Should all attributes of all types are marked as used
 			-- and hence included in the generated run-time instances?
@@ -167,17 +177,45 @@ feature -- Status setting
 			full_class_checking_set: full_class_checking = b
 		end
 
+	set_has_separate_creation (b: BOOLEAN)
+			-- Set `has_separate_creation' to `b'.
+		do
+			has_separate_creation := b
+		ensure
+			has_separate_creation_set: has_separate_creation = b
+		end
+
+	set_has_special_once_per_object_routines (b: BOOLEAN)
+			-- Set `has_special_once_per_object_routines' to `b'.
+		do
+			has_special_once_per_object_routines := b
+		ensure
+			has_special_once_per_object_routines_set: has_special_once_per_object_routines = b
+		end
+
+	set_independent_store_used (b: BOOLEAN)
+			-- Set `independent_store_used' to `b'.
+		do
+			independent_store_used := b
+		ensure
+			independent_store_used_set: independent_store_used = b
+		end
+
 	use_all_attributes
 			-- Set `all_attributes_used' to True.
 		local
 			i, nb: INTEGER
 			l_dynamic_types: like dynamic_types
+			l_dynamic_type: ET_DYNAMIC_PRIMARY_TYPE
 		do
 			all_attributes_used := True
 			l_dynamic_types := dynamic_types
 			nb := dynamic_types.count
 			from i := 1 until i > nb loop
-				l_dynamic_types.item (i).use_all_attributes (Current)
+				l_dynamic_type := l_dynamic_types.item (i)
+				if l_dynamic_type.is_alive then
+					l_dynamic_type.use_all_attributes (Current)
+				end
 				i := i + 1
 			end
 		ensure
@@ -252,6 +290,9 @@ feature -- Types
 	special_character_32_type: ET_DYNAMIC_PRIMARY_TYPE
 			-- Type "SPECIAL [CHARACTER_32]"
 
+	type_none_type: ET_DYNAMIC_PRIMARY_TYPE
+			-- Type "TYPE [NONE]"
+
 	ise_exception_manager_type: ET_DYNAMIC_PRIMARY_TYPE
 			-- Type "ISE_EXCEPTION_MANAGER"
 
@@ -268,10 +309,36 @@ feature -- Types
 		local
 			l_primary_type: ET_DYNAMIC_PRIMARY_TYPE
 			l_secondary_type: ET_DYNAMIC_SECONDARY_TYPE
+			l_is_separate: BOOLEAN
+			l_is_detachable: BOOLEAN
+			l_is_expanded: BOOLEAN
 		do
 			l_primary_type := dynamic_primary_type (a_type, a_context)
 			if current_system.attachment_type_conformance_mode then
-				if a_type.is_type_expanded (a_context) or a_type.is_type_detachable (a_context) then
+				l_is_separate := a_type.is_type_separate (a_context)
+				l_is_detachable := a_type.is_type_detachable (a_context)
+				l_is_expanded := a_type.is_type_expanded (a_context)
+				if current_system.scoop_mode and l_is_separate then
+					if l_is_detachable then
+						if attached l_primary_type.separate_type as l_separate_type then
+							Result := l_separate_type
+						else
+							create l_secondary_type.make (l_primary_type, tokens.implicit_separate_type_mark)
+							l_primary_type.set_separate_type (l_secondary_type)
+							propagate_type_of_type_result_type (l_secondary_type)
+							Result := l_secondary_type
+						end
+					else
+						if attached l_primary_type.attached_separate_type as l_attached_separate_type then
+							Result := l_attached_separate_type
+						else
+							create l_secondary_type.make (l_primary_type, tokens.implicit_attached_separate_type_mark)
+							l_primary_type.set_attached_separate_type (l_secondary_type)
+							propagate_type_of_type_result_type (l_secondary_type)
+							Result := l_secondary_type
+						end
+					end
+				elseif l_is_expanded or l_is_detachable then
 					Result := l_primary_type
 				elseif attached l_primary_type.attached_type as l_attached_type then
 					Result := l_attached_type
@@ -312,7 +379,7 @@ feature -- Types
 				in_dynamic_primary_type := True
 				l_old_dynamic_types_count := dynamic_types.count
 			end
-			l_implicit_type_mark := tokens.implicit_detachable_type_mark
+			l_implicit_type_mark := tokens.implicit_detachable_non_separate_type_mark
 			l_base_class := a_type.base_class (a_context)
 			i := l_base_class.index
 			if i >= 1 and i <= dynamic_types.count then
@@ -335,7 +402,7 @@ feature -- Types
 					l_base_type := a_type.base_type_with_type_mark (l_implicit_type_mark, a_context)
 					l_type_name := type_name_buffer
 					l_type_name.wipe_out
-					l_base_type.append_runtime_name_to_string (l_type_name)
+					l_base_type.append_canonical_to_string (l_type_name)
 					dynamic_generic_types_by_name.search (l_type_name)
 					if dynamic_generic_types_by_name.found then
 						l_result := dynamic_generic_types_by_name.found_item
@@ -367,7 +434,7 @@ feature -- Types
 				l_base_type := a_type.base_type_with_type_mark (l_implicit_type_mark, a_context)
 				Result := new_dynamic_primary_type (l_base_type)
 				if l_base_class.is_generic or l_base_class.is_tuple_class then
-					l_type_name := l_base_type.runtime_name_to_text
+					l_type_name := l_base_type.canonical_to_text
 					dynamic_generic_types_by_name.force_last (Result, l_type_name)
 				end
 			end
@@ -379,25 +446,105 @@ feature -- Types
 			dynamic_primary_type_not_void: Result /= Void
 		end
 
-	attached_type (a_type: ET_DYNAMIC_PRIMARY_TYPE): ET_DYNAMIC_TYPE
+	attached_type (a_type: ET_DYNAMIC_TYPE): ET_DYNAMIC_TYPE
 			-- Attached version of `a_type', or `a_type' itself if it
-			-- is expanded or we are in non-void-safe mode
+			-- is expanded or we are in non-void-safe mode.
+			-- Keep the separateness status of `a_type'.
+		require
+			a_type_not_void: a_type /= Void
+		local
+			l_primary_type: ET_DYNAMIC_PRIMARY_TYPE
+		do
+			if current_system.scoop_mode and a_type.is_separate then
+				Result := attached_separate_type (a_type.primary_type)
+			elseif current_system.attachment_type_conformance_mode then
+				l_primary_type := a_type.primary_type
+				if attached l_primary_type.attached_type as l_attached_type then
+					Result := l_attached_type
+				elseif l_primary_type.is_expanded then
+					Result := l_primary_type
+				else
+					Result := dynamic_type (tokens.attached_type_modifier, a_type.base_type)
+				end
+			else
+				Result := a_type.primary_type
+			end
+		ensure
+			attached_type_not_void: Result /= Void
+			same_separateness_status: current_system.scoop_mode implies Result.is_separate = a_type.is_separate
+		end
+
+	attached_separate_type (a_type: ET_DYNAMIC_PRIMARY_TYPE): ET_DYNAMIC_TYPE
+			-- Attached separate version of `a_type', or just
+			-- or the separate version if we are in non-void-safe mode.
+		require
+			a_type_not_void: a_type /= Void
+			scoop_mode: current_system.scoop_mode
+		do
+			if current_system.attachment_type_conformance_mode then
+				if attached a_type.attached_separate_type as l_attached_separate_type then
+					Result := l_attached_separate_type
+				else
+					Result := dynamic_type (tokens.attached_separate_type_modifier, a_type.base_type)
+				end
+			elseif attached a_type.separate_type as l_separate_type then
+				Result := l_separate_type
+			else
+				Result := dynamic_type (tokens.separate_type_modifier, a_type.base_type)
+			end
+		ensure
+			attached_separate_type_not_void: Result /= Void
+		end
+
+	detachable_type (a_type: ET_DYNAMIC_TYPE): ET_DYNAMIC_TYPE
+			-- Detachable version of `a_type'.
+			-- Keep the separateness status of `a_type'.
 		require
 			a_type_not_void: a_type /= Void
 		do
-			if current_system.attachment_type_conformance_mode then
-				if attached a_type.attached_type as l_attached_type then
-					Result := l_attached_type
-				elseif a_type.is_expanded then
-					Result := a_type
+			if current_system.scoop_mode and a_type.is_separate then
+				Result := detachable_separate_type (a_type.primary_type)
+			else
+				Result := a_type.primary_type
+			end
+		ensure
+			detachable_type_not_void: Result /= Void
+			same_separateness_status: current_system.scoop_mode implies Result.is_separate = a_type.is_separate
+		end
+
+	detachable_separate_type (a_type: ET_DYNAMIC_PRIMARY_TYPE): ET_DYNAMIC_TYPE
+			-- Detachable separate version of `a_type'
+		require
+			a_type_not_void: a_type /= Void
+			scoop_mode: current_system.scoop_mode
+		do
+			if attached a_type.separate_type as l_separate_type then
+				Result := l_separate_type
+			else
+				Result := dynamic_type (tokens.separate_type_modifier, a_type.base_type)
+			end
+		ensure
+			detachable_separate_type_not_void: Result /= Void
+		end
+
+	separate_type (a_type: ET_DYNAMIC_TYPE): ET_DYNAMIC_TYPE
+			-- Separate version of `a_type'.
+			-- Keep the attachment status of `a_type'.
+		require
+			a_type_not_void: a_type /= Void
+		do
+			if current_system.scoop_mode then
+				if a_type.is_attached then
+					Result := attached_separate_type (a_type.primary_type)
 				else
-					Result := dynamic_type (tokens.attached_like_current, a_type.base_type)
+					Result := detachable_separate_type (a_type.primary_type)
 				end
 			else
 				Result := a_type
 			end
 		ensure
-			attached_type_not_void: Result /= Void
+			separate_type_not_void: Result /= Void
+			same_attachment_status: current_system.attachment_type_conformance_mode implies Result.is_attached = a_type.is_attached
 		end
 
 	meta_type (a_type: ET_DYNAMIC_TYPE): ET_DYNAMIC_PRIMARY_TYPE
@@ -796,7 +943,6 @@ feature {NONE} -- Types
 					initialize_predicate_type (l_type)
 				end
 				propagate_type_of_type_result_type (l_type)
-				propagate_attribute_type_sets (l_type)
 				propagate_alive_conforming_descendants (l_type)
 				i := i + 1
 			end
@@ -810,13 +956,13 @@ feature {NONE} -- Types
 		local
 			l_feature: ET_DYNAMIC_FEATURE
 		do
-				-- Make attributes 'count' and 'capacity' alive at the first two
+				-- Make attributes 'capacity' and 'count' alive at the first two
 				-- positions in the attribute list of the "SPECIAL" type.
-			if attached special_count_feature as l_special_count_feature then
-				a_type.set_attribute_position (a_type.dynamic_query (l_special_count_feature, Current), 1)
-			end
 			if attached special_capacity_feature as l_special_capacity_feature then
-				a_type.set_attribute_position (a_type.dynamic_query (l_special_capacity_feature, Current), 2)
+				a_type.set_attribute_position (a_type.dynamic_query (l_special_capacity_feature, Current), 1)
+			end
+			if attached special_count_feature as l_special_count_feature then
+				a_type.set_attribute_position (a_type.dynamic_query (l_special_count_feature, Current), 2)
 			end
 			if attached special_item_feature as l_special_item_feature then
 				l_feature := a_type.dynamic_query (l_special_item_feature, Current)
@@ -969,24 +1115,6 @@ feature {NONE} -- Types
 			end
 		end
 
-	propagate_attribute_type_sets (a_type: ET_DYNAMIC_PRIMARY_TYPE)
-			-- If `all_attributes_used' is set, then make sure that all
-			-- attributes of `a_type' are marked as used and their type sets
-			-- propagated to `ise_runtime_reference_field' and
-			-- `ise_runtime_set_reference_field'.
-		require
-			a_type_not_void: a_type /= Void
-		local
-			l_old_in_create_meta_type: BOOLEAN
-		do
-			if all_attributes_used then
-				l_old_in_create_meta_type := in_create_meta_type
-				in_create_meta_type := False
-				a_type.use_all_attributes (Current)
-				in_create_meta_type := l_old_in_create_meta_type
-			end
-		end
-
 	propagate_alive_conforming_descendants (a_type: ET_DYNAMIC_PRIMARY_TYPE)
 			-- If `a_type' is alive, then propagage `a_type' to all
 			-- `dynamic_type_set_builder.alive_conforming_descendants' to
@@ -1016,7 +1144,7 @@ feature {NONE} -- Types
 			l_other_base_class: ET_CLASS
 		do
 			l_base_class := a_type.base_class
-			if not l_base_class.is_none then
+			if not l_base_class.is_none and not l_base_class.is_formal then
 				l_base_type := a_type.base_type
 				l_conforming_ancestors := a_type.conforming_ancestors
 				l_conforming_ancestors.force_last (a_type)
@@ -1034,7 +1162,7 @@ feature {NONE} -- Types
 						until
 							l_other_type = Void
 						loop
-							if l_other_type /= a_type and then not l_other_type.base_class.is_none then
+							if l_other_type /= a_type and then not l_other_type.base_class.is_none and then not l_other_type.base_class.is_formal then
 								l_other_base_type := l_other_type.base_type
 								if l_base_type.conforms_to_type_with_type_marks (l_other_base_type, l_other_type.type_mark, l_other_base_type, a_type.type_mark, l_base_type, tokens.null_system_processor) then
 									l_conforming_ancestors.force_last (l_other_type)
@@ -1052,7 +1180,7 @@ feature {NONE} -- Types
 				from i := 1 until i > nb loop
 					l_other_type := dynamic_types.item (i)
 					l_other_base_class := l_other_type.base_class
-					if l_other_base_class.index = i and then not l_other_base_class.is_none and then (l_other_base_class = l_base_class or else l_other_base_class.conforming_ancestors.has_class (l_base_class)) then
+					if l_other_base_class.index = i and then not l_other_base_class.is_none and then not l_other_base_class.is_formal and then (l_other_base_class = l_base_class or else l_other_base_class.conforming_ancestors.has_class (l_base_class)) then
 						from
 						until
 							l_other_type = Void
@@ -1064,6 +1192,56 @@ feature {NONE} -- Types
 								end
 							end
 							l_other_type := l_other_type.next_type
+						end
+					end
+					i := i + 1
+				end
+			end
+		end
+
+	build_storable_types
+			-- Build the Storable types of attributes (types with formal generic parameters)
+			-- if 'independent_store' is used.
+		local
+			i, nb_types: INTEGER
+			l_dynamic_types: like dynamic_types
+			l_dynamic_type: ET_DYNAMIC_PRIMARY_TYPE
+			j, nb_attributes: INTEGER
+			l_queries: ET_DYNAMIC_FEATURE_LIST
+			l_attribute: ET_DYNAMIC_FEATURE
+			k, nb_generics: INTEGER
+			l_storable_formal_parameters: DS_ARRAYED_LIST [ET_BASE_TYPE]
+		do
+			if independent_store_used then
+				create l_storable_formal_parameters.make (10)
+				l_dynamic_types := dynamic_types
+				nb_types := dynamic_types.count
+				from i := 1 until i > nb_types loop
+					l_dynamic_type := l_dynamic_types.item (i)
+					if l_dynamic_type.is_alive then
+						l_queries := l_dynamic_type.queries
+						nb_attributes := l_dynamic_type.attribute_count
+						from j := 1 until j > nb_attributes loop
+							l_attribute := l_queries.item (j)
+							if attached {ET_CLASS_TYPE} l_attribute.target_type.base_type as l_class_type and then l_class_type.has_non_basic_actual_generic_parameter then
+								nb_generics := l_class_type.actual_parameter_count
+								from
+									k := l_storable_formal_parameters.count + 1
+								until
+									k > nb_generics
+								loop
+									l_storable_formal_parameters.force_last (create {ET_CLASS}.make_formal (k, current_system))
+									k := k + 1
+								end
+								check attached l_attribute.static_feature.type as l_attribute_type then
+									l_attribute.set_storable_type (dynamic_type (l_attribute_type, l_class_type.type_without_non_basic_actual_generic_parameters (l_storable_formal_parameters)))
+								end
+							else
+								check attached l_attribute.result_type_set as l_result_type_set then
+									l_attribute.set_storable_type (l_result_type_set.static_type)
+								end
+							end
+							j := j + 1
 						end
 					end
 					i := i + 1
@@ -1100,16 +1278,9 @@ feature -- New instance types
 			-- created by 'TYPE.new_instance' or 'TYPE.new_special_any_instance'?
 		require
 			a_type_not_void: a_type /= Void
-		local
-			l_name: STRING
 		do
 			if attached new_instance_types as l_new_instance_types then
-				l_name := a_type.base_type.unaliased_to_text
-				l_name.replace_substring_all ("attached ", "")
-				l_name.replace_substring_all ("[attached] ", "")
-				l_name.replace_substring_all ("detachable ", "")
-				l_name.replace_substring_all ("[detachable] ", "")
-				Result := l_new_instance_types.has (l_name)
+				Result := l_new_instance_types.has (a_type.base_type.canonical_to_text)
 			else
 				Result := True
 			end
@@ -1143,9 +1314,13 @@ feature -- Compilation
 		local
 			l_root_type: detachable ET_BASE_TYPE
 		do
+			a_system_processor.set_root_type (current_system)
 			l_root_type := current_system.root_type
-			if l_root_type = Void then
+			if current_system.root_type_name = Void then
 				compile_all (a_system_processor)
+			elseif l_root_type = Void then
+					-- Error already reported in "ET_SYSTEM_PROCESSOR.set_root_type".
+				set_fatal_error
 			elseif l_root_type.same_named_type (current_system.none_type, tokens.unknown_class, tokens.unknown_class) then
 				compile_all (a_system_processor)
 			elseif l_root_type.same_named_type (current_system.any_type, tokens.unknown_class, tokens.unknown_class) then
@@ -1171,93 +1346,111 @@ feature -- Compilation
 			l_procedure: detachable ET_PROCEDURE
 			l_query: detachable ET_QUERY
 			l_root_creation_procedure: like root_creation_procedure
+			l_arguments_class: ET_CLASS
+			l_dynamic_arguments_type: ET_DYNAMIC_PRIMARY_TYPE
+			l_arguments_query: ET_DYNAMIC_FEATURE
 			l_class: ET_CLASS
+			dt1: detachable DT_DATE_TIME
 		do
 			has_fatal_error := False
 			activate_dynamic_type_set_builder (a_system_processor)
-			a_system_processor.compile_degree_6 (current_system)
-			compile_kernel (a_system_processor)
-			if not a_system_processor.stop_requested then
+			if full_class_checking then
+				a_system_processor.compile (current_system)
+			else
+				a_system_processor.compile_degree_6 (current_system)
+				a_system_processor.check_root_type (current_system)
+			end
+			if error_handler.has_fatal_error then
+				set_fatal_error
+			elseif full_class_checking then
+				dt1 := a_system_processor.benchmark_start_time
+			end
+			if not has_fatal_error and not a_system_processor.stop_requested then
+				compile_kernel (a_system_processor)
+			end
+			if not has_fatal_error and not a_system_processor.stop_requested then
 				l_root_type := current_system.root_type
 				if l_root_type = Void then
 						-- Error: missing root class.
-					set_fatal_error
-					error_handler.report_gvsrc3a_error
-				elseif l_root_type.same_named_type (current_system.none_type, tokens.unknown_class, tokens.unknown_class) then
-						-- Error: the root creation feature is not declared as a
-						-- publicly available creation procedure in the root class.
-					l_name := current_system.root_creation
-					if l_name = Void then
-						l_name := tokens.default_create_feature_name
-					end
-					set_fatal_error
-					error_handler.report_gvsrc6a_error (l_root_type.base_class, l_name)
+						-- Error already reported.
 				else
 					l_class := l_root_type.base_class
-					l_class.process (a_system_processor.eiffel_parser)
-					if not l_class.is_preparsed then
-							-- Error: unknown root class.
-						set_fatal_error
-						error_handler.report_gvsrc4a_error (l_class)
-					elseif not l_class.is_parsed or else l_class.has_syntax_error then
-							-- Error already reported.
-						set_fatal_error
-					elseif l_class.is_generic then
-							-- Error: the root class should not be generic.
-						set_fatal_error
-						error_handler.report_vsrc1a_error (l_class)
+					l_dynamic_root_type := dynamic_primary_type (l_root_type, l_class)
+					root_type := l_dynamic_root_type
+					l_name := current_system.root_creation
+					if l_name /= Void then
+						l_procedure := l_class.named_procedure (l_name)
+					elseif current_system.default_create_seed /= 0 then
+						l_procedure := l_class.seeded_procedure (current_system.default_create_seed)
+						l_name := tokens.default_create_feature_name
 					else
-						l_dynamic_root_type := dynamic_primary_type (l_class, l_class)
-						root_type := l_dynamic_root_type
-						if l_class.has_interface_error then
-								-- Error already reported.
-							set_fatal_error
-						else
-							l_name := current_system.root_creation
-							if l_name /= Void then
-								l_procedure := l_class.named_procedure (l_name)
-							elseif current_system.default_create_seed /= 0 then
-								l_procedure := l_class.seeded_procedure (current_system.default_create_seed)
-								l_name := tokens.default_create_feature_name
-							else
-								l_name := tokens.default_create_feature_name
-								l_procedure := l_class.named_procedure (l_name)
-							end
-							if l_procedure = Void then
-								if l_name /= Void then
-									l_query := l_class.named_query (l_name)
-								elseif current_system.default_create_seed /= 0 then
-									l_query := l_class.seeded_query (current_system.default_create_seed)
-									l_name := tokens.default_create_feature_name
-								else
-									l_name := tokens.default_create_feature_name
-									l_query := l_class.named_query (l_name)
-								end
-								if l_query = Void then
-										-- Error: the root creation procedure is not
-										-- a feature of the root class.
-									set_fatal_error
-									error_handler.report_gvsrc5a_error (l_class, l_name)
-								else
-										-- Internal error: the root creation feature is not a procedure.
-									set_fatal_error
-									error_handler.report_giaaa_error
-								end
-							elseif not l_class.is_creation_directly_exported_to (l_procedure.name, current_system.any_type.base_class) then
+						l_name := tokens.default_create_feature_name
+						l_procedure := l_class.named_procedure (l_name)
+					end
+					if l_procedure = Void then
+							-- Error already reported in "ET_SYSTEM_PROCESSOR.check_root_type".
+						set_fatal_error
+						error_handler.report_giaac_error (generator, "compile_system", 1, "unknown root creation procedure.")
+					else
+						l_root_creation_procedure := l_dynamic_root_type.dynamic_procedure (l_procedure, Current)
+						l_root_creation_procedure.set_creation (True)
+						root_creation_procedure := l_root_creation_procedure
+						dynamic_type_set_builder.mark_type_alive (l_dynamic_root_type)
+							-- Type "ISE_EXCEPTION_MANAGER" is used from the runtime.
+						dynamic_type_set_builder.mark_type_alive (ise_exception_manager_type)
+						if l_procedure.arguments_count = 1 then
+								-- Type "ARRAY [STRING_8]" is used for command-line arguments.
+							l_arguments_class := current_system.arguments_type.base_class
+							l_arguments_class.process (a_system_processor.eiffel_parser)
+							if not l_arguments_class.is_preparsed then
+									-- Error: unknown "ARGUMENTS" class.
 								set_fatal_error
-								error_handler.report_gvsrc6a_error (l_class, l_procedure.name)
+								error_handler.report_gvknl1a_error (l_arguments_class)
+							elseif not l_arguments_class.is_parsed or l_arguments_class.has_syntax_error then
+									-- Error already reported.
+								set_fatal_error
 							else
-								l_root_creation_procedure := l_dynamic_root_type.dynamic_procedure (l_procedure, Current)
-								l_root_creation_procedure.set_creation (True)
-								root_creation_procedure := l_root_creation_procedure
-								dynamic_type_set_builder.mark_type_alive (l_dynamic_root_type)
-									-- Type "ISE_EXCEPTION_MANAGER" is used from the runtime.
-								dynamic_type_set_builder.mark_type_alive (ise_exception_manager_type)
-								build_dynamic_type_sets
+								l_dynamic_arguments_type := dynamic_primary_type (l_arguments_class, l_arguments_class)
+								if l_arguments_class.has_interface_error then
+										-- Error already reported.
+									set_fatal_error
+								else
+									l_name := tokens.argument_array_feature_name
+									l_query := l_arguments_class.named_query (l_name)
+									if l_query /= Void then
+										l_arguments_query := l_dynamic_arguments_type.dynamic_query (l_query, Current)
+										if not attached l_arguments_query.result_type_set as l_result_type_set then
+												-- Internal error: a query should have a result type set.
+											set_fatal_error
+											error_handler.report_giaac_error (generator, "compile_system", 2, "a query should have a result type set.")
+										elseif l_query.arguments_count /= 0 then
+												-- Error: feature "ARGUMENTS.argument_array" should have no argument.
+											set_fatal_error
+											error_handler.report_gvkfe6a_error (l_arguments_class, l_query, Void, current_system.array_string_8_type)
+										else
+											arguments_argument_array_feature := l_arguments_query
+											l_arguments_query.set_regular (True)
+											l_dynamic_arguments_type.set_static (True)
+											dynamic_type_set_builder.propagate_builtin_actual_argument_dynamic_types (l_result_type_set, 1, l_root_creation_procedure)
+										end
+									elseif attached l_arguments_class.named_procedure (l_name) as l_arguments_procedure then
+											-- Error: feature "ARGUMENTS.argument_array" should be a query.
+										set_fatal_error
+										error_handler.report_gvkfe5a_error (l_arguments_class, l_arguments_procedure)
+									else
+											-- Error: feature 'argument_array' not found in class "ARGUMENTS".
+										set_fatal_error
+										error_handler.report_gvkfe1a_error (l_arguments_class, l_name)
+									end
+								end
 							end
 						end
+						build_dynamic_type_sets
 					end
 				end
+			end
+			if dt1 /= Void then
+				a_system_processor.record_end_time (dt1, "Degree -2")
 			end
 		end
 
@@ -1278,13 +1471,13 @@ feature -- Compilation
 			a_system_processor.compile_all (current_system)
 			dt1 := a_system_processor.benchmark_start_time
 			compile_kernel (a_system_processor)
-			current_system.classes_do_recursive_until (agent compile_all_features, a_system_processor.stop_request)
+			current_system.classes_do_recursive_until (agent mark_all_features, a_system_processor.stop_request)
 			build_dynamic_type_sets
-			a_system_processor.record_end_time (dt1, "Degree Dynamic Type Set")
+			a_system_processor.record_end_time (dt1, "Degree -2")
 		end
 
-	compile_feature (a_feature_name: ET_FEATURE_NAME; a_class: ET_CLASS; a_system_processor: ET_SYSTEM_PROCESSOR)
-			-- Compile all code reachable from the feature `a_feature_name' from `a_class'.
+	compile_feature (a_feature_name: ET_FEATURE_NAME; a_target_type: ET_BASE_TYPE; a_system_processor: ET_SYSTEM_PROCESSOR)
+			-- Compile all code reachable from the feature `a_feature_name' from `a_target_type'.
 			-- Set `has_fatal_error' if a fatal error occurred.
 			--
 			-- Note that this operation will be interrupted if a stop request
@@ -1292,51 +1485,54 @@ feature -- Compilation
 			-- True. No interruption if `a_system_processor.stop_request' is Void.
 		require
 			a_feature_name_not_void: a_feature_name /= Void
-			a_class_not_void: a_class /= Void
+			a_target_type_not_void: a_target_type /= Void
+			a_target_type_valid: a_target_type.is_valid_context
 			a_system_processor_not_void: a_system_processor /= Void
 		local
+			l_class: ET_CLASS
 			l_dynamic_type: ET_DYNAMIC_PRIMARY_TYPE
 			l_dynamic_feature: ET_DYNAMIC_FEATURE
+			dt1: detachable DT_DATE_TIME
 		do
 			has_fatal_error := False
+			l_class := a_target_type.base_class
 			activate_dynamic_type_set_builder (a_system_processor)
 			a_system_processor.compile_degree_6 (current_system)
 			compile_kernel (a_system_processor)
 			if not a_system_processor.stop_requested then
-				if not a_class.is_preparsed then
+				if not l_class.is_preparsed then
 						-- Error: unknown class.
 					set_fatal_error
-					error_handler.report_gvsrc4a_error (a_class)
+					error_handler.report_vsrt2a_error (l_class)
 				else
-					a_class.process (a_system_processor.eiffel_parser)
-					if not a_class.is_parsed or else a_class.has_syntax_error then
+					l_class.process (a_system_processor.eiffel_parser)
+					if not l_class.is_parsed or else l_class.has_syntax_error then
 							-- Error already reported.
 						set_fatal_error
-					elseif a_class.is_generic then
-							-- Error: the root class should not be generic.
-						set_fatal_error
-						error_handler.report_vsrc1a_error (a_class)
 					else
-						l_dynamic_type := dynamic_primary_type (a_class, a_class)
-						if a_class.has_interface_error then
+						l_dynamic_type := dynamic_primary_type (a_target_type, a_target_type)
+						if l_class.has_interface_error then
 								-- Error already reported.
 							set_fatal_error
-						elseif attached a_class.named_procedure (a_feature_name) as l_procedure then
+						elseif attached l_class.named_procedure (a_feature_name) as l_procedure then
 							l_dynamic_feature := l_dynamic_type.dynamic_procedure (l_procedure, Current)
 							dynamic_type_set_builder.mark_type_alive (l_dynamic_type)
 							build_dynamic_type_sets
-						elseif attached a_class.named_query (a_feature_name) as l_query then
+						elseif attached l_class.named_query (a_feature_name) as l_query then
 							l_dynamic_feature := l_dynamic_type.dynamic_query (l_query, Current)
 							dynamic_type_set_builder.mark_type_alive (l_dynamic_type)
 							build_dynamic_type_sets
 						else
 								-- Error: the feature `a_feature_name' is not
-								-- a feature of the `a_class'.
+								-- a feature of the `l_class'.
 							set_fatal_error
-							error_handler.report_gvsrc5a_error (a_class, a_feature_name)
+							error_handler.report_vsrp1a_error (l_class, a_feature_name)
 						end
 					end
 				end
+			end
+			if dt1 /= Void then
+				a_system_processor.record_end_time (dt1, "Degree -2")
 			end
 		end
 
@@ -2125,6 +2321,12 @@ feature {NONE} -- Compilation
 						end
 					end
 				end
+					-- Type "TYPE [NONE]"
+				l_class := current_system.type_detachable_any_type.base_class
+				create l_actual_parameters.make_with_capacity (1)
+				l_actual_parameters.put_first (current_system.none_type)
+				create l_generic_class_type.make_generic (Void, l_class.name, l_actual_parameters, l_class)
+				type_none_type := dynamic_primary_type (l_generic_class_type, l_any)
 					-- Type "ANY".
 				any_type := dynamic_primary_type (current_system.any_type, l_any)
 					-- Type "NONE".
@@ -2132,7 +2334,7 @@ feature {NONE} -- Compilation
 			end
 		end
 
-	compile_all_features (a_class: ET_CLASS)
+	mark_all_features (a_class: ET_CLASS)
 			-- Make sure that all features declared in non-deferred non-generic
 			-- classes will be included in the compilation: their dynamic type sets
 			-- will be computed.
@@ -2180,10 +2382,10 @@ feature {NONE} -- Compilation
 			if not system_processor.stop_requested then
 				l_builder := dynamic_type_set_builder
 				l_builder.set_no_debug (True)
-				l_builder.set_no_assertion (True)
 				l_builder.set_catcall_error_mode (catcall_error_mode)
 				l_builder.set_catcall_warning_mode (catcall_warning_mode)
 				l_builder.build_dynamic_type_sets
+				build_storable_types
 				if l_builder.has_fatal_error then
 					set_fatal_error
 				end
@@ -2244,6 +2446,10 @@ feature -- Processors
 		end
 
 feature -- Features
+
+	arguments_argument_array_feature: detachable ET_DYNAMIC_FEATURE
+			-- Expected feature 'argument_array' in class "ARGUMENTS".
+			-- Void if this feature is not called.
 
 	ise_exception_manager_init_exception_manager_feature: detachable ET_DYNAMIC_FEATURE
 			-- Expected procedure 'init_exception_manager' in class "ISE_EXCEPTION_MANAGER"
@@ -2503,6 +2709,7 @@ invariant
 	string_32_type_not_void: string_32_type /= Void
 	special_character_8_type_not_void: special_character_8_type /= Void
 	special_character_32_type_not_void: special_character_32_type /= Void
+	type_none_type_not_void: type_none_type /= Void
 	ise_exception_manager_type_not_void: ise_exception_manager_type /= Void
 	unknown_type_not_void: unknown_type /= Void
 	root_creation_procedure: attached root_creation_procedure as l_root_creation_procedure implies l_root_creation_procedure.is_procedure

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel validity errors"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_VALIDITY_ERROR
 
@@ -26,6 +24,18 @@ inherit
 create
 
 	make,
+	make_v1ea1ga,
+	make_v1ea1gb,
+	make_v1ea1gc,
+	make_v1ea1gd,
+	make_v1se1ga,
+	make_v1se2ga,
+	make_v1se2gb,
+	make_v1se2gc,
+	make_v1se2gd,
+	make_v1se2ge,
+	make_v1se2gf,
+	make_v1se3ga,
 	make_vaol1a,
 	make_vape1a,
 	make_vape1b,
@@ -93,6 +103,9 @@ create
 	make_veen8b,
 	make_veen9a,
 	make_veen9b,
+	make_veen10a,
+	make_veen10b,
+	make_veen11a,
 	make_vevi0a,
 	make_vevi0b,
 	make_vevi0c,
@@ -149,6 +162,7 @@ create
 	make_vffd4a,
 	make_vffd7a,
 	make_vffd7b,
+	make_vffd11ga,
 	make_vgcc1a,
 	make_vgcc3a,
 	make_vgcc5a,
@@ -199,6 +213,8 @@ create
 	make_vkcn1c,
 	make_vkcn2a,
 	make_vkcn2c,
+	make_vkex4ga,
+	make_vkin5ga,
 	make_vlel1a,
 	make_vlel2a,
 	make_vlel3a,
@@ -239,6 +255,8 @@ create
 	make_vpir1f,
 	make_vpir1g,
 	make_vpir1h,
+	make_vpir1i,
+	make_vpir1j,
 	make_vpir3a,
 	make_vpir3b,
 	make_vqmc1a,
@@ -281,7 +299,8 @@ create
 	make_vuar1c,
 	make_vuar2a,
 	make_vuar2b,
-	make_vuar4a,
+	make_vuar3ga,
+	make_vuar3gb,
 	make_vucr0a,
 	make_vucr0b,
 	make_vucr0c,
@@ -304,12 +323,15 @@ create
 	make_vuot1d,
 	make_vuot1e,
 	make_vuot1f,
+	make_vuot1g,
 	make_vuot3a,
 	make_vuot3b,
 	make_vuot4a,
 	make_vuot4b,
 	make_vuta2a,
 	make_vuta2b,
+	make_vuta4ga,
+	make_vuta4gb,
 	make_vvok1a,
 	make_vvok1b,
 	make_vvok1c,
@@ -356,6 +378,9 @@ create
 	make_gvuao0a,
 	make_gvuao0b,
 	make_gvuao0c,
+	make_gvuas0a,
+	make_gvuas0b,
+	make_gvuas0c,
 	make_gvuia0a,
 	make_gvuia0b,
 	make_gvuic0a,
@@ -366,6 +391,9 @@ create
 	make_gvuio0a,
 	make_gvuio0b,
 	make_gvuio0c,
+	make_gvuis0a,
+	make_gvuis0b,
+	make_gvuis0c,
 	make_gvwmc2a,
 	make_gvwmc2b,
 	make_gvwmc2c
@@ -406,6 +434,530 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
+		end
+
+	make_v1ea1ga (a_class, a_class_impl: ET_CLASS; a_attribute: ET_ATTRIBUTE; a_type: ET_NAMED_TYPE)
+			-- Create a new V1EA-1G error: the type `a_type' of the attribute `a_attribute' declared in
+			-- `a_class_impl' and viewed from one of its expanded descendants `a_class' (possibly itself),
+			-- is a reference type, but is not separate.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_is_expanded: a_class.is_expanded
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_attribute_not_void: a_attribute /= Void
+			a_type_not_void: a_type /= Void
+			a_type_named_type: a_type.is_named_type
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_attribute.name.position
+			code := template_code (v1ea1ga_template_code)
+			etl_code := v1ea1g_etl_code
+			default_template := default_message_template (v1ea1ga_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_attribute.lower_name, 7)
+			parameters.put (a_type.to_text, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = name of attribute
+			-- dollar8: $8 = type of attribute
+		end
+
+	make_v1ea1gb (a_class, a_class_impl: ET_CLASS; a_attribute: ET_ATTRIBUTE; a_type: ET_NAMED_TYPE)
+			-- Create a new V1EA-1G error: the type `a_type' of the attribute `a_attribute' declared in
+			-- `a_class_impl' and viewed from one of its expanded descendants `a_class' (possibly itself),
+			-- may be a reference type, but is not separate.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_is_expanded: a_class.is_expanded
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_attribute_not_void: a_attribute /= Void
+			a_type_not_void: a_type /= Void
+			a_type_named_type: a_type.is_named_type
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_attribute.name.position
+			code := template_code (v1ea1gb_template_code)
+			etl_code := v1ea1g_etl_code
+			default_template := default_message_template (v1ea1gb_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_attribute.lower_name, 7)
+			parameters.put (a_type.to_text, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = name of attribute
+			-- dollar8: $8 = type of attribute
+		end
+
+	make_v1ea1gc (a_class, a_class_impl: ET_CLASS; a_attribute: ET_ATTRIBUTE; a_type: ET_NAMED_TYPE)
+			-- Create a new V1EA-1G error: the type `a_type' of the attribute `a_attribute' declared in
+			-- `a_class_impl' and viewed from one of its expanded descendants `a_class' (possibly itself),
+			-- is a reference type, but may not be separate.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_is_expanded: a_class.is_expanded
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_attribute_not_void: a_attribute /= Void
+			a_type_not_void: a_type /= Void
+			a_type_named_type: a_type.is_named_type
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_attribute.name.position
+			code := template_code (v1ea1gc_template_code)
+			etl_code := v1ea1g_etl_code
+			default_template := default_message_template (v1ea1gc_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_attribute.lower_name, 7)
+			parameters.put (a_type.to_text, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = name of attribute
+			-- dollar8: $8 = type of attribute
+		end
+
+	make_v1ea1gd (a_class, a_class_impl: ET_CLASS; a_attribute: ET_ATTRIBUTE; a_type: ET_NAMED_TYPE)
+			-- Create a new V1EA-1G error: the type `a_type' of the attribute `a_attribute' declared in
+			-- `a_class_impl' and viewed from one of its expanded descendants `a_class' (possibly itself),
+			-- may be a reference type, but may not be separate.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_is_expanded: a_class.is_expanded
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_attribute_not_void: a_attribute /= Void
+			a_type_not_void: a_type /= Void
+			a_type_named_type: a_type.is_named_type
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_attribute.name.position
+			code := template_code (v1ea1gd_template_code)
+			etl_code := v1ea1g_etl_code
+			default_template := default_message_template (v1ea1gd_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_attribute.lower_name, 7)
+			parameters.put (a_type.to_text, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = name of attribute
+			-- dollar8: $8 = type of attribute
+		end
+
+	make_v1se1ga (a_class: ET_CLASS; arg1, arg2: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Create a new V1SE-1G error: `arg1' and `arg2' are two arguments of
+			-- of an inline separate instruction in `a_class' with the same name.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			arg1_not_void: arg1 /= Void
+			arg2_not_void: arg2 /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := arg2.name.position
+			code := template_code (v1se1ga_template_code)
+			etl_code := v1se1g_etl_code
+			default_template := default_message_template (v1se1ga_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (arg2.name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+		end
+
+	make_v1se2ga (a_class: ET_CLASS; arg: ET_INLINE_SEPARATE_ARGUMENT; a_feature: ET_FEATURE)
+			-- Create a new V1SE-2G error: argument `arg' of an inline separate instruction
+		 	-- has the same name as `a_feature' in `a_class'.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			arg_not_void: arg /= Void
+			a_feature_not_void: a_feature /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := arg.name.position
+			code := template_code (v1se2ga_template_code)
+			etl_code := v1se2g_etl_code
+			default_template := default_message_template (v1se2ga_default_template)
+			create parameters.make_filled (empty_string, 1, 6)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (arg.name.lower_name, 6)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = inline separate argument name
+		end
+
+	make_v1se2gb (a_class: ET_CLASS; a_inline_separate_arg: ET_INLINE_SEPARATE_ARGUMENT; a_formal_arg: ET_FORMAL_ARGUMENT)
+			-- Create a new V1SE-2G error: argument `a_inline_separate_arg' of an inline
+			-- separate instruction has the same name as argument `a_formal_arg' of an
+			-- enclosing feature or inline agent.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_inline_separate_arg_not_void: a_inline_separate_arg /= Void
+			a_formal_arg_not_void: a_formal_arg /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_inline_separate_arg.name.position
+			code := template_code (v1se2gb_template_code)
+			etl_code := v1se2g_etl_code
+			default_template := default_message_template (v1se2gb_default_template)
+			create parameters.make_filled (empty_string, 1, 6)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (a_inline_separate_arg.name.lower_name, 6)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = inline separate argument name
+		end
+
+	make_v1se2gc (a_class: ET_CLASS; arg: ET_INLINE_SEPARATE_ARGUMENT; a_local: ET_LOCAL_VARIABLE)
+			-- Create a new V1SE-2G error: argument `arg' of an inline separate instruction
+		 	-- has the same name as local variable `a_local' of an enclosing
+			-- feature or inline agent.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			arg_not_void: arg /= Void
+			a_local_not_void: a_local /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := arg.name.position
+			code := template_code (v1se2gc_template_code)
+			etl_code := v1se2g_etl_code
+			default_template := default_message_template (v1se2gc_default_template)
+			create parameters.make_filled (empty_string, 1, 6)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (arg.name.lower_name, 6)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = inlineseparate argument name
+		end
+
+	make_v1se2gd (a_class: ET_CLASS; arg: ET_INLINE_SEPARATE_ARGUMENT; a_object_test: ET_NAMED_OBJECT_TEST)
+			-- Create a new V1SE-2G error: argument `arg' of an inline separate instruction
+			-- appears in the scope of the local of `a_object_test' with the same name.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			arg_not_void: arg /= Void
+			a_object_test_not_void: a_object_test /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := arg.name.position
+			code := template_code (v1se2gd_template_code)
+			etl_code := v1se2g_etl_code
+			default_template := default_message_template (v1se2gd_default_template)
+			create parameters.make_filled (empty_string, 1, 6)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (arg.name.lower_name, 6)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = aeparate argument name
+		end
+
+	make_v1se2ge (a_class: ET_CLASS; arg: ET_INLINE_SEPARATE_ARGUMENT; a_iteration_component: ET_ITERATION_COMPONENT)
+			-- Create a new V1SE-2G error: argument `arg' of an inline separate instruction
+			-- appears in the scope of the cursor of `a_iteration_component' with
+			-- the same name.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			arg_not_void: arg /= Void
+			a_iteration_component_not_void: a_iteration_component /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := arg.name.position
+			code := template_code (v1se2ge_template_code)
+			etl_code := v1se2g_etl_code
+			default_template := default_message_template (v1se2ge_default_template)
+			create parameters.make_filled (empty_string, 1, 6)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (arg.name.lower_name, 6)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = inline separate argument name
+		end
+
+	make_v1se2gf (a_class: ET_CLASS; arg1, arg2: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Create a new V1SE-2G error: argument `arg1' of an inline separate instruction
+			-- as the same name as argument `arg2' of another enclosing inline separate
+			-- instruction.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			arg1_not_void: arg1 /= Void
+			arg2_not_void: arg2 /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := arg1.name.position
+			code := template_code (v1se2gf_template_code)
+			etl_code := v1se2g_etl_code
+			default_template := default_message_template (v1se2gf_default_template)
+			create parameters.make_filled (empty_string, 1, 6)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (arg1.name.lower_name, 6)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = inline separate argument name
+		end
+
+	make_v1se3ga (a_class, a_class_impl: ET_CLASS; arg: ET_INLINE_SEPARATE_ARGUMENT; a_type: ET_NAMED_TYPE)
+			-- Report V1SE-3G error: the type of the argument `arg'
+			-- of an inline separate instruction in `a_class_impl' and view from
+			-- one of its descendants `a_class' (possibly itself)
+			-- is not separate.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			arg_not_void: arg /= Void
+			a_type_not_void: a_type /= Void
+			a_type_is_named_type: a_type.is_named_type
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := arg.expression.position
+			code := template_code (v1se3ga_template_code)
+			etl_code := v1se3g_etl_code
+			default_template := default_message_template (v1se3ga_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (arg.name.lower_name, 6)
+			parameters.put (a_type.to_text, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = inline separate argument name
+			-- dollar7: $7 = type of inline separate argument
 		end
 
 	make_vaol1a (a_class: ET_CLASS; an_expression: ET_OLD_EXPRESSION)
@@ -3485,6 +4037,134 @@ feature {NONE} -- Initialization
 			-- dollar7: $7 = iteration item
 		end
 
+	make_veen10a (a_class: ET_CLASS; a_identifier: ET_IDENTIFIER; a_feature: ET_FEATURE)
+			-- Create a new VEEN-10 error: `a_identifier', appearing in `a_feature'
+			-- of `a_class' or one of its (possibly nested) inline agents, is the
+			-- name of an inline separate argument that is used outside of its scope.
+			--
+			-- Not in ECMA-367-2.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_identifier_not_void: a_identifier /= Void
+			a_identifier_inline_separate_argument: a_identifier.is_inline_separate_argument
+			a_feature_not_void: a_feature /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_identifier.position
+			code := template_code (veen10a_template_code)
+			etl_code := veen10_etl_code
+			default_template := default_message_template (veen10a_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_identifier.lower_name, 7)
+			parameters.put (a_feature.lower_name, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+			-- dollar8: $8 = feature name
+		end
+
+	make_veen10b (a_class: ET_CLASS; a_identifier: ET_IDENTIFIER)
+			-- Create a new VEEN-10 error: `a_identifier', appearing in the invariant
+			-- of `a_class' or one of its (possibly nested) inline agents, is the
+			-- name of an inline separate argument that is used outside of its scope.
+			--
+			-- Not in ECMA-367-2.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_identifier_not_void: a_identifier /= Void
+			a_identifier_inline_separate_argument: a_identifier.is_inline_separate_argument
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_identifier.position
+			code := template_code (veen10b_template_code)
+			etl_code := veen10_etl_code
+			default_template := default_message_template (veen10b_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_identifier.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+		end
+
+	make_veen11a (a_class: ET_CLASS; a_name: ET_FEATURE_NAME)
+			-- Create a new VEEN-11 error: `a_name', appearing in an
+			-- expression of Address form $`a_name' in `a_class', is
+			-- not the final name of a feature in `a_class'.
+			--
+			-- This used to be VUAR-4 in ETL2: p.369
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_name_not_void: a_name /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_name.position
+			code := template_code (veen11a_template_code)
+			etl_code := veen11_etl_code
+			default_template := default_message_template (veen11a_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = feature name in the Address form
+		end
+
 	make_vevi0a (a_class, a_class_impl: ET_CLASS; a_name: ET_IDENTIFIER; a_local: ET_LOCAL_VARIABLE)
 			-- Create a new VEVI error: the local variable `a_local', declared of attached type
 			-- is used before being initialized in class `a_class_impl' and viewed from
@@ -6266,6 +6946,54 @@ feature {NONE} -- Initialization
 			-- dollar7: $7 = feature name
 		end
 
+	make_vffd11ga (a_class, a_class_impl: ET_CLASS; a_once_function: ET_ONCE_FUNCTION; a_result_type: ET_NAMED_TYPE)
+			-- Create a new VFFD-11G error: the result type of the once-per-process function declared in
+			-- `a_class_impl' and viewed from one of its descendants `a_class' (possibly itself),
+			-- is a reference type but is not separate.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_once_function_not_void: a_once_function /= Void
+			once_per_process: a_once_function.is_once_per_process
+			a_result_type_not_void: a_result_type /= Void
+			a_result_type_named_type: a_result_type.is_named_type
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_once_function.name.position
+			code := template_code (vffd11ga_template_code)
+			etl_code := vffd11g_etl_code
+			default_template := default_message_template (vffd11ga_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_once_function.lower_name, 7)
+			parameters.put (a_result_type.to_text, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = name of once function
+			-- dollar8: $8 = type of result
+		end
+
 	make_vgcc1a (a_class, a_class_impl: ET_CLASS; a_creation: ET_CREATION_COMPONENT; a_target: ET_CLASS)
 			-- Create a new VGCC-1 error: the creation instruction or
 			-- expression `a_creation', appearing in `a_class_impl' and
@@ -8605,6 +9333,84 @@ feature {NONE} -- Initialization
 			-- dollar8: $8 = name of corresponding feature in class $5
 		end
 
+	make_vkex4ga (a_class, a_class_imp: ET_CLASS; a_region: ET_CREATION_REGION)
+			-- Create a new VKEX-4G error: creation region `a_region' appearing in
+			-- a creation expression in `a_class' is not '<NONE>'.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_imp_not_void: a_class_imp /= Void
+			a_class_imp_preparsed: a_class_imp.is_preparsed
+			a_region_not_void: a_region /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_region.class_name.position
+			code := template_code (vkex4ga_template_code)
+			etl_code := vkex4g_etl_code
+			default_template := default_message_template (vkex4ga_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_region.class_name.upper_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = creation region name
+		end
+
+	make_vkin5ga (a_class, a_class_imp: ET_CLASS; a_region: ET_CREATION_REGION)
+			-- Create a new VKIN-5G error: creation region `a_region' appearing in
+			-- a creation instruction in `a_class' is not '<NONE>'.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_imp_not_void: a_class_imp /= Void
+			a_class_imp_preparsed: a_class_imp.is_preparsed
+			a_region_not_void: a_region /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_region.class_name.position
+			code := template_code (vkin5ga_template_code)
+			etl_code := vkin5g_etl_code
+			default_template := default_message_template (vkin5ga_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_region.class_name.upper_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = creation region name
+		end
+
 	make_vlel1a (a_class: ET_CLASS; a_parent: ET_PARENT; all1, all2: ET_ALL_EXPORT)
 			-- Create a new VLEL-1 error: the 'all' keyword appears twice in the
 			-- Export subclause of parent `a_parent' in `a_class'.
@@ -9254,7 +10060,7 @@ feature {NONE} -- Initialization
 		end
 
 	make_voit1a (a_class, a_class_impl: ET_CLASS; an_expression: ET_EXPRESSION; a_type: ET_NAMED_TYPE)
-			-- Create a new VOIT-1 error: the type `a_type' of the across iterable expression
+			-- Create a new VOIT-1 error: the type `a_type' of the iterable expression
 			-- `an_expression' appearing in `a_class_impl' and viewed from one of its
 			-- descendants `a_class' (possibly itself) does not conform to "ITERABLE".
 			--
@@ -9293,7 +10099,7 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = base type of across iterable expression
+			-- dollar7: $7 = base type of iterable expression
 		end
 
 	make_voit2a (a_class: ET_CLASS; a_iteration_component: ET_ITERATION_COMPONENT; a_feature: ET_FEATURE)
@@ -9456,7 +10262,7 @@ feature {NONE} -- Initialization
 
 	make_voit2e (a_class: ET_CLASS; a_iteration_component1, a_iteration_component2: ET_ITERATION_COMPONENT)
 			-- Create a new VUOT-2 error: `a_iteration_component1' appears in the scope
-			-- of the iteration item of `a_iteration_component2' with the same iteration 
+			-- of the iteration item of `a_iteration_component2' with the same iteration
 			-- item name.
 			--
 			-- Not in ECMA.
@@ -10459,6 +11265,96 @@ feature {NONE} -- Initialization
 			code := template_code (vpir1h_template_code)
 			etl_code := vpir1_etl_code
 			default_template := default_message_template (vpir1h_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_local.name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = local name
+		end
+
+	make_vpir1i (a_class: ET_CLASS; arg: ET_FORMAL_ARGUMENT; a_agent: ET_INLINE_AGENT; a_inline_separate_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Create a new VPIR-1 error: `arg' in inline agent `a_agent' has
+			-- the same name as the argument `a_inline_separate_argument' of an
+			-- inline separate instruction in an enclosing feature or inline agent
+			-- whose compound (of the inline separate instruction) contains the
+			-- inline agent.
+			--
+			-- Not in ECMA.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			arg_not_void: arg /= Void
+			a_agent_not_void: a_agent /= Void
+			a_inline_separate_argument_not_void: a_inline_separate_argument /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := arg.name.position
+			code := template_code (vpir1i_template_code)
+			etl_code := vpir1_etl_code
+			default_template := default_message_template (vpir1i_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (arg.name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = argument name
+		end
+
+	make_vpir1j (a_class: ET_CLASS; a_local: ET_LOCAL_VARIABLE; a_agent: ET_INLINE_AGENT; a_inline_separate_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Create a new VPIR-1 error: `a_local' in inline agent `an_agent' has
+			-- the same name as the argument `a_inline_separate_argument' of an
+			-- inline separate instruction in an enclosing feature or inline agent
+			-- whose compound (of the inline separate instruction) contains
+			-- the inline agent.
+			--
+			-- Not in ECMA.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_local_not_void: a_local /= Void
+			a_agent_not_void: a_agent /= Void
+			a_inline_separate_argument_not_void: a_inline_separate_argument /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_local.name.position
+			code := template_code (vpir1j_template_code)
+			etl_code := vpir1_etl_code
+			default_template := default_message_template (vpir1j_default_template)
 			create parameters.make_filled (empty_string, 1, 7)
 			parameters.put (etl_code, 1)
 			parameters.put (filename, 2)
@@ -12502,24 +13398,33 @@ feature {NONE} -- Initialization
 			-- dollar11: $11 = formal type
 		end
 
-	make_vuar4a (a_class: ET_CLASS; a_name: ET_FEATURE_NAME)
-			-- Create a new VUAR-4 error: `a_name', appearing in an
-			-- expression of Address form $`a_name' in `a_class', is
-			-- not the final name of a feature in `a_class'.
+	make_vuar3ga (a_class, a_class_impl: ET_CLASS; a_name: ET_CALL_NAME; a_feature: ET_FEATURE; a_target_class: ET_CLASS; arg: INTEGER; an_actual_type, a_formal_type: ET_NAMED_TYPE)
+			-- Create a new VUAR-3G error: the `arg'-th actual argument of the separate call `a_name', appearing
+			-- in `a_class_impl' and viewed from one of its descendants `a_class' (possibly itself), has a
+			-- reference type, but the type of the formal argument of feature `a_feature' in class `a_target'
+			-- is not separate.
 			--
-			-- ETL2: p.369
+			-- Not in ECMA-367-2.
+			-- SCOOP.
 		require
 			a_class_not_void: a_class /= Void
-			a_class_preparsed: a_class.is_preparsed
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
 			a_name_not_void: a_name /= Void
+			a_feature_not_void: a_feature /= Void
+			a_target_class_not_void: a_target_class /= Void
+			an_actual_type_not_void: an_actual_type /= Void
+			an_actual_type_named_type: an_actual_type.is_named_type
+			a_formal_type_not_void: a_formal_type /= Void
+			a_formal_type_named_type: a_formal_type.is_named_type
 		do
 			current_class := a_class
-			class_impl := a_class
+			class_impl := a_class_impl
 			position := a_name.position
-			code := template_code (vuar4a_template_code)
-			etl_code := vuar4_etl_code
-			default_template := default_message_template (vuar4a_default_template)
-			create parameters.make_filled (empty_string, 1, 7)
+			code := template_code (vuar3ga_template_code)
+			etl_code := vuar3g_etl_code
+			default_template := default_message_template (vuar3ga_default_template)
+			create parameters.make_filled (empty_string, 1, 12)
 			parameters.put (etl_code, 1)
 			parameters.put (filename, 2)
 			parameters.put (position.line.out, 3)
@@ -12527,10 +13432,15 @@ feature {NONE} -- Initialization
 			parameters.put (current_class.upper_name, 5)
 			parameters.put (class_impl.upper_name, 6)
 			parameters.put (a_name.lower_name, 7)
+			parameters.put (a_feature.lower_name, 8)
+			parameters.put (a_target_class.upper_name, 9)
+			parameters.put (arg.out, 10)
+			parameters.put (an_actual_type.to_text, 11)
+			parameters.put (a_formal_type.to_text, 12)
 			set_compilers (True)
 		ensure
 			current_class_set: current_class = a_class
-			class_impl_set: class_impl = a_class
+			class_impl_set: class_impl = a_class_impl
 			all_reported: all_reported
 			all_fatal: all_fatal
 			-- dollar0: $0 = program name
@@ -12540,7 +13450,69 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = feature name in the Address form
+			-- dollar7: $7 = feature name of the call
+			-- dollar8: $8 = name of corresponding feature in class $9
+			-- dollar9: $9 = base class of target of the call
+			-- dollar10: $10 = argument index
+			-- dollar11: $11 = type of actual argument
+			-- dollar12: $12 = type of formal argument
+		end
+
+	make_vuar3gb (a_class, a_class_impl: ET_CLASS; a_name: ET_CALL_NAME; a_target_type, a_source_type, a_label_type: ET_NAMED_TYPE)
+			-- Create a new VUAR-3G error: the source of the separate assigner call `a_name', appearing in
+			-- `a_class_impl' and viewed from one of its descendants `a_class' (possibly itself),
+			-- has a reference type, but the type of the tuple label `a_name' in tuple type `a_target_type'
+			-- is not separate.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_name_not_void: a_name /= Void
+			a_name_is_tuple_label: a_name.is_tuple_label
+			a_target_type_not_void: a_target_type /= Void
+			a_target_type_named_type: a_target_type.is_named_type
+			a_source_type_not_void: a_source_type /= Void
+			a_source_type_named_type: a_source_type.is_named_type
+			a_label_type_not_void: a_label_type /= Void
+			a_label_type_named_type: a_label_type.is_named_type
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_name.position
+			code := template_code (vuar3gb_template_code)
+			etl_code := vuar3g_etl_code
+			default_template := default_message_template (vuar3gb_default_template)
+			create parameters.make_filled (empty_string, 1, 10)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			parameters.put (a_target_type.to_text, 8)
+			parameters.put (a_source_type.to_text, 9)
+			parameters.put (a_label_type.to_text, 10)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = name of tuple label in type $8
+			-- dollar8: $8 = tuple type of target
+			-- dollar9: $9 = source type
+			-- dollar10: $10 = label type
 		end
 
 	make_vucr0a (a_class: ET_CLASS; a_feature: ET_FEATURE)
@@ -13429,7 +14401,46 @@ feature {NONE} -- Initialization
 			-- dollar6: $6 = object-test local name
 		end
 
-	make_vuot1f (a_class: ET_CLASS; a_object_test1, a_object_test2: ET_NAMED_OBJECT_TEST)
+	make_vuot1f (a_class: ET_CLASS; a_object_test: ET_NAMED_OBJECT_TEST; a_inline_separate_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Create a new VUOT-1 error: `a_object_test' appears in the scope
+			-- of `a_inline_separate_argument' with the same local name.
+			--
+			-- Not in ECMA.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_object_test_not_void: a_object_test /= Void
+			a_inline_separate_argument_not_void: a_inline_separate_argument /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_object_test.name.position
+			code := template_code (vuot1f_template_code)
+			etl_code := vuot1_etl_code
+			default_template := default_message_template (vuot1f_default_template)
+			create parameters.make_filled (empty_string, 1, 6)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (a_object_test.name.lower_name, 6)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = object-test local name
+		end
+
+	make_vuot1g (a_class: ET_CLASS; a_object_test1, a_object_test2: ET_NAMED_OBJECT_TEST)
 			-- Create a new VUOT-1 error: `a_object_test1' and `a_object_test2' have the same
 			-- local name and their scope overlap.
 			--
@@ -13443,9 +14454,9 @@ feature {NONE} -- Initialization
 			current_class := a_class
 			class_impl := a_class
 			position := a_object_test1.name.position
-			code := template_code (vuot1f_template_code)
+			code := template_code (vuot1g_template_code)
 			etl_code := vuot1_etl_code
-			default_template := default_message_template (vuot1f_default_template)
+			default_template := default_message_template (vuot1g_default_template)
 			create parameters.make_filled (empty_string, 1, 6)
 			parameters.put (etl_code, 1)
 			parameters.put (filename, 2)
@@ -13723,6 +14734,102 @@ feature {NONE} -- Initialization
 			-- dollar8: $8 = type of the target
 		end
 
+	make_vuta4ga (a_class, a_class_impl: ET_CLASS; a_name: ET_CALL_NAME; a_feature: ET_FEATURE; a_target_type: ET_NAMED_TYPE)
+			-- Create a new VUTA-4G error: the target, of type `a_target_type', of the call to feature `a_feature'
+			-- is not controlled when viewed from `a_class', one of the descendants of `a_class_impl' (possibly itself)
+			-- where the qualified call `a_name' appears.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_name_not_void: a_name /= Void
+			a_feature_not_void: a_feature /= Void
+			a_target_type_not_void: a_target_type /= Void
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_name.position
+			code := template_code (vuta4ga_template_code)
+			etl_code := vuta4g_etl_code
+			default_template := default_message_template (vuta4ga_default_template)
+			create parameters.make_filled (empty_string, 1, 9)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			parameters.put (a_feature.lower_name, 8)
+			parameters.put (a_target_type.to_text, 9)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = feature name of the call
+			-- dollar8: $8 = name of corresponding feature in base class of $9
+			-- dollar9: $9 = type of the target
+		end
+
+	make_vuta4gb (a_class, a_class_impl: ET_CLASS; a_name: ET_CALL_NAME; a_target_type: ET_NAMED_TYPE)
+			-- Create a new VUTA-4G error: the target, of type `a_target_type', of the call to Tuple label `a_name'
+			-- appearing in `a_class_impl' and viewed from one of its descendants `a_class'
+			-- (possibly itself), is not controlled.
+			--
+			-- Not in ECMA-367-2.
+			-- SCOOP.
+		require
+			a_class_not_void: a_class /= Void
+			a_class_impl_not_void: a_class_impl /= Void
+			a_class_impl_preparsed: a_class_impl.is_preparsed
+			a_name_not_void: a_name /= Void
+			a_name_is_tuple_label: a_name.is_tuple_label
+			a_target_type_not_void: a_target_type /= Void
+		do
+			current_class := a_class
+			class_impl := a_class_impl
+			position := a_name.position
+			code := template_code (vuta4gb_template_code)
+			etl_code := vuta4g_etl_code
+			default_template := default_message_template (vuta4gb_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			parameters.put (a_target_type.to_text, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class_impl
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = Tuple label
+			-- dollar8: $8 = type of the target
+		end
+
 	make_vvok1a (a_class: ET_CLASS; a_once_key1, a_once_key2: ET_MANIFEST_STRING)
 			-- Create a new VVOK-1 error: `a_once_key1' and `a_once_key2' cannot be
 			-- combined. The supported once keys "PROCESS", "THREAD" and "OBJECT"
@@ -13765,8 +14872,8 @@ feature {NONE} -- Initialization
 			-- dollar7: $7 = second once key
 		end
 
-	make_vvok1b (a_class: ET_CLASS; a_indexing_term1: ET_INDEXING_TERM; a_once_key2: ET_MANIFEST_STRING)
-			-- Create a new VVOK-1 error: `a_indexing_term1' and `a_once_key2' cannot be
+	make_vvok1b (a_class: ET_CLASS; a_note_term1: ET_NOTE_TERM; a_once_key2: ET_MANIFEST_STRING)
+			-- Create a new VVOK-1 error: `a_note_term1' and `a_once_key2' cannot be
 			-- combined. The supported once keys "PROCESS", "THREAD" and "OBJECT"
 			-- cannot be combined.
 			--
@@ -13774,7 +14881,7 @@ feature {NONE} -- Initialization
 		require
 			a_class_not_void: a_class /= Void
 			a_class_preparsed: a_class.is_preparsed
-			a_indexing_term1_not_void: a_indexing_term1 /= Void
+			a_note_term1_not_void: a_note_term1 /= Void
 			a_once_key2_not_void: a_once_key2 /= Void
 		do
 			current_class := a_class
@@ -13789,7 +14896,7 @@ feature {NONE} -- Initialization
 			parameters.put (position.line.out, 3)
 			parameters.put (position.column.out, 4)
 			parameters.put (current_class.upper_name, 5)
-			parameters.put (a_indexing_term1.indexing_term_value, 6)
+			parameters.put (a_note_term1.note_term_value, 6)
 			parameters.put (a_once_key2.value, 7)
 			set_compilers (True)
 		ensure
@@ -13803,12 +14910,12 @@ feature {NONE} -- Initialization
 			-- dollar3: $3 = line
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
-			-- dollar6: $6 = first once indexing term
+			-- dollar6: $6 = first once note term
 			-- dollar7: $7 = second once key
 		end
 
-	make_vvok1c (a_class: ET_CLASS; a_indexing_term1, a_indexing_term2: ET_INDEXING_TERM)
-			-- Create a new VVOK-1 error: `a_indexing_term1' and `a_indexing_term2' cannot be
+	make_vvok1c (a_class: ET_CLASS; a_note_term1, a_note_term2: ET_NOTE_TERM)
+			-- Create a new VVOK-1 error: `a_note_term1' and `a_note_term2' cannot be
 			-- combined. The supported once keys "PROCESS", "THREAD" and "OBJECT"
 			-- cannot be combined.
 			--
@@ -13816,12 +14923,12 @@ feature {NONE} -- Initialization
 		require
 			a_class_not_void: a_class /= Void
 			a_class_preparsed: a_class.is_preparsed
-			a_indexing_term1_not_void: a_indexing_term1 /= Void
-			a_indexing_term2_not_void: a_indexing_term2 /= Void
+			a_note_term1_not_void: a_note_term1 /= Void
+			a_note_term2_not_void: a_note_term2 /= Void
 		do
 			current_class := a_class
 			class_impl := a_class
-			position := a_indexing_term2.position
+			position := a_note_term2.position
 			code := template_code (vvok1c_template_code)
 			etl_code := vvok1_etl_code
 			default_template := default_message_template (vvok1c_default_template)
@@ -13831,8 +14938,8 @@ feature {NONE} -- Initialization
 			parameters.put (position.line.out, 3)
 			parameters.put (position.column.out, 4)
 			parameters.put (current_class.upper_name, 5)
-			parameters.put (a_indexing_term1.indexing_term_value, 6)
-			parameters.put (a_indexing_term2.indexing_term_value, 7)
+			parameters.put (a_note_term1.note_term_value, 6)
+			parameters.put (a_note_term2.note_term_value, 7)
 			set_compilers (True)
 		ensure
 			current_class_set: current_class = a_class
@@ -13845,8 +14952,8 @@ feature {NONE} -- Initialization
 			-- dollar3: $3 = line
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
-			-- dollar6: $6 = first once indexing term
-			-- dollar7: $7 = second once indexing term
+			-- dollar6: $6 = first once note term
+			-- dollar7: $7 = second once note term
 		end
 
 	make_vvok2a (a_class: ET_CLASS; a_once_key: ET_MANIFEST_STRING)
@@ -13887,19 +14994,19 @@ feature {NONE} -- Initialization
 			-- dollar6: $6 = once key
 		end
 
-	make_vvok2b (a_class: ET_CLASS; a_indexing_term: ET_INDEXING_TERM)
-			-- Create a new VVOK-2 error: `a_indexing_term' is not one of the supported
+	make_vvok2b (a_class: ET_CLASS; a_note_term: ET_NOTE_TERM)
+			-- Create a new VVOK-2 error: `a_note_term' is not one of the supported
 			-- once keys. The supported once keys are "PROCESS", "THREAD" and "OBJECT".
 			--
 			-- Not in ECMA, only in ISE
 		require
 			a_class_not_void: a_class /= Void
 			a_class_preparsed: a_class.is_preparsed
-			a_indexing_term_not_void: a_indexing_term /= Void
+			a_note_term_not_void: a_note_term /= Void
 		do
 			current_class := a_class
 			class_impl := a_class
-			position := a_indexing_term.position
+			position := a_note_term.position
 			code := template_code (vvok2b_template_code)
 			etl_code := vvok2_etl_code
 			default_template := default_message_template (vvok2b_default_template)
@@ -13909,7 +15016,7 @@ feature {NONE} -- Initialization
 			parameters.put (position.line.out, 3)
 			parameters.put (position.column.out, 4)
 			parameters.put (current_class.upper_name, 5)
-			parameters.put (a_indexing_term.indexing_term_value, 6)
+			parameters.put (a_note_term.note_term_value, 6)
 			set_compilers (True)
 		ensure
 			current_class_set: current_class = a_class
@@ -13922,7 +15029,7 @@ feature {NONE} -- Initialization
 			-- dollar3: $3 = line
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
-			-- dollar6: $6 = once indexing term
+			-- dollar6: $6 = once note term
 		end
 
 	make_vwab0a (a_class, a_class_impl: ET_CLASS; a_attribute: ET_EXTENDED_ATTRIBUTE)
@@ -15427,7 +16534,7 @@ feature {NONE} -- Initialization
 		end
 
 	make_gvuac0a (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_feature: ET_FEATURE)
-			-- Create a new GVUAC error: `a_name' is an across cursor of
+			-- Create a new GVUAC error: `a_name' is an iteration item in
 			-- `a_feature' in `a_class', and hence cannot have actual
 			-- arguments.
 			--
@@ -15467,12 +16574,12 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = across cursor name
+			-- dollar7: $7 = iteration item name
 			-- dollar8: $8 = feature name
 		end
 
 	make_gvuac0b (a_class: ET_CLASS; a_name: ET_IDENTIFIER; an_agent: ET_INLINE_AGENT)
-			-- Create a new GVUAC error: `a_name' is an across cursor of
+			-- Create a new GVUAC error: `a_name' is an iteration item in
 			-- inline agent `an_agent' in `a_class', and hence cannot have actual
 			-- arguments.
 			--
@@ -15511,11 +16618,11 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = across cursor name
+			-- dollar7: $7 = iteration item name
 		end
 
 	make_gvuac0c (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_invariants: ET_INVARIANTS)
-			-- Create a new GVUAC error: `a_name' is an across cursor of
+			-- Create a new GVUAC error: `a_name' is an iteration item in
 			-- invariants `a_invariants' in `a_class', and hence cannot have actual
 			-- arguments.
 			--
@@ -15554,7 +16661,7 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = across cursor name
+			-- dollar7: $7 = iteration item name
 		end
 
 	make_gvual0a (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_feature: ET_FEATURE)
@@ -15776,6 +16883,137 @@ feature {NONE} -- Initialization
 			-- dollar7: $7 = object-test local name
 		end
 
+	make_gvuas0a (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_feature: ET_FEATURE)
+			-- Create a new GVUAS error: `a_name' is the name of an argument of
+			-- an inline separate instruction in `a_feature' in `a_class', and hence
+			-- cannot have actual arguments.
+			--
+			-- Not in ETL as validity error but as syntax error
+			-- GVUAS: See ETL2 VUAR
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_name_not_void: a_name /= Void
+			a_feature_not_void: a_feature /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_name.position
+			code := template_code (gvuas0a_template_code)
+			etl_code := gvuas_etl_code
+			default_template := default_message_template (gvuas0a_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			parameters.put (a_feature.lower_name, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+			-- dollar8: $8 = feature name
+		end
+
+	make_gvuas0b (a_class: ET_CLASS; a_name: ET_IDENTIFIER; an_agent: ET_INLINE_AGENT)
+			-- Create a new GVUAS error: `a_name' is the name of an argument
+			-- of an inline separate instruction in inline agent `an_agent' in
+			-- `a_class', and hence cannot have actual arguments.
+			--
+			-- Not in ETL as validity error but as syntax error
+			-- GVUAS: See ETL2 VUAR
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_name_not_void: a_name /= Void
+			an_agent_not_void: an_agent /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_name.position
+			code := template_code (gvuas0b_template_code)
+			etl_code := gvuas_etl_code
+			default_template := default_message_template (gvuas0b_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+		end
+
+	make_gvuas0c (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_invariants: ET_INVARIANTS)
+			-- Create a new GVUAS error: `a_name' is the name of an argument of
+			-- an inline separate instruction in invariants `a_invariants' in
+			-- `a_class', and hence cannot have actual arguments.
+			--
+			-- Not in ETL as validity error but as syntax error
+			-- GVUAS: See ETL2 VUAR
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_name_not_void: a_name /= Void
+			a_invariants_not_void: a_invariants /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_name.position
+			code := template_code (gvuas0c_template_code)
+			etl_code := gvuas_etl_code
+			default_template := default_message_template (gvuas0c_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+		end
+
 	make_gvuia0a (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_feature: ET_FEATURE)
 			-- Create a new GVUIA error: `a_name' is a formal argument of
 			-- `a_feature' in `a_class', and hence cannot be an
@@ -15863,7 +17101,7 @@ feature {NONE} -- Initialization
 		end
 
 	make_gvuic0a (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_feature: ET_FEATURE)
-			-- Create a new GVUIC error: `a_name' is an across cursor of
+			-- Create a new GVUIC error: `a_name' is an iteration item in
 			-- `a_feature' in `a_class', and hence cannot be an
 			-- instruction.
 			--
@@ -15902,12 +17140,12 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = across cursor name
+			-- dollar7: $7 = iteration item name
 			-- dollar8: $8 = feature name
 		end
 
 	make_gvuic0b (a_class: ET_CLASS; a_name: ET_IDENTIFIER; an_agent: ET_INLINE_AGENT)
-			-- Create a new GVUIC error: `a_name' is an across cursor of
+			-- Create a new GVUIC error: `a_name' is an iteration item in
 			-- inline agent `an_agent' in `a_class', and hence cannot be an
 			-- instruction.
 			--
@@ -15945,11 +17183,11 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = across cursor name
+			-- dollar7: $7 = iteration item name
 		end
 
 	make_gvuic0c (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_invariants: ET_INVARIANTS)
-			-- Create a new GVUIC error: `a_name' is an across cursor of
+			-- Create a new GVUIC error: `a_name' is an iteration item in
 			-- invariants `a_invariants' in `a_class', and hence cannot be an
 			-- instruction.
 			--
@@ -15987,7 +17225,7 @@ feature {NONE} -- Initialization
 			-- dollar4: $4 = column
 			-- dollar5: $5 = class name
 			-- dollar6: $6 = implementation class name
-			-- dollar7: $7 = across cursor name
+			-- dollar7: $7 = iteration item name
 		end
 
 	make_gvuil0a (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_feature: ET_FEATURE)
@@ -16204,6 +17442,134 @@ feature {NONE} -- Initialization
 			-- dollar7: $7 = object-test local name
 		end
 
+	make_gvuis0a (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_feature: ET_FEATURE)
+			-- Create a new GVUIS error: `a_name' is the name of an argument
+			-- of an inline separate instruction in `a_feature' in `a_class',
+			-- and hence cannot be an instruction.
+			--
+			-- Not in ETL as validity error but as syntax error
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_name_not_void: a_name /= Void
+			a_feature_not_void: a_feature /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_name.position
+			code := template_code (gvuis0a_template_code)
+			etl_code := gvuis_etl_code
+			default_template := default_message_template (gvuis0a_default_template)
+			create parameters.make_filled (empty_string, 1, 8)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			parameters.put (a_feature.lower_name, 8)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+			-- dollar8: $8 = feature name
+		end
+
+	make_gvuis0b (a_class: ET_CLASS; a_name: ET_IDENTIFIER; an_agent: ET_INLINE_AGENT)
+			-- Create a new GVUIS error: `a_name' is the name of an argument
+			-- of an inline separate instruction in inline agent `an_agent' in
+			-- `a_class', and hence cannot be an instruction.
+			--
+			-- Not in ETL as validity error but as syntax error
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_name_not_void: a_name /= Void
+			an_agent_not_void: an_agent /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_name.position
+			code := template_code (gvuis0b_template_code)
+			etl_code := gvuis_etl_code
+			default_template := default_message_template (gvuis0b_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+		end
+
+	make_gvuis0c (a_class: ET_CLASS; a_name: ET_IDENTIFIER; a_invariants: ET_INVARIANTS)
+			-- Create a new GVUIS error: `a_name' is the name of an argument of
+			-- an inline separate instruction in invariants `a_invariants' in `a_class',
+			-- and hence cannot be an instruction.
+			--
+			-- Not in ETL as validity error but as syntax error
+		require
+			a_class_not_void: a_class /= Void
+			a_class_preparsed: a_class.is_preparsed
+			a_name_not_void: a_name /= Void
+			a_invariants_not_void: a_invariants /= Void
+		do
+			current_class := a_class
+			class_impl := a_class
+			position := a_name.position
+			code := template_code (gvuis0c_template_code)
+			etl_code := gvuis_etl_code
+			default_template := default_message_template (gvuis0c_default_template)
+			create parameters.make_filled (empty_string, 1, 7)
+			parameters.put (etl_code, 1)
+			parameters.put (filename, 2)
+			parameters.put (position.line.out, 3)
+			parameters.put (position.column.out, 4)
+			parameters.put (current_class.upper_name, 5)
+			parameters.put (class_impl.upper_name, 6)
+			parameters.put (a_name.lower_name, 7)
+			set_compilers (True)
+		ensure
+			current_class_set: current_class = a_class
+			class_impl_set: class_impl = a_class
+			all_reported: all_reported
+			all_fatal: all_fatal
+			-- dollar0: $0 = program name
+			-- dollar1: $1 = ETL code
+			-- dollar2: $2 = filename
+			-- dollar3: $3 = line
+			-- dollar4: $4 = column
+			-- dollar5: $5 = class name
+			-- dollar6: $6 = implementation class name
+			-- dollar7: $7 = inline separate argument name
+		end
+
 	make_gvwmc2a (a_class, a_class_impl: ET_CLASS; a_constant: ET_INTEGER_CONSTANT; a_type: ET_NAMED_TYPE)
 			-- Create a new GVWMC-2 error: `a_constant' in `a_class_impl' and viewed
 			-- from one of its descendants `a_class' (possibly itself) is not
@@ -16417,23 +17783,48 @@ feature {NONE} -- Implementation
 			--    $4 = column
 			--    $5 = class name
 			--    $6 = implementation class name
-			-- Omit parantheses when no location is provided.
+			-- Omit parentheses when no location is provided.
+			-- Add the filenames of `current_class' and `class_imp' on
+			-- separate lines.
 		require
 			a_template_not_void: a_template /= Void
 		do
-			if class_impl = current_class then
+			if current_class.is_root then
+				Result := "[$1] root type: " + a_template
+			elseif class_impl = current_class then
 				if position = null_position then
 					Result := "[$1] class $5: " + a_template
 				else
 					Result := "[$1] class $5 ($3,$4): " + a_template
 				end
+				if attached current_class.filename as l_filename then
+					Result := Result + "%N%Tclass $5: " + l_filename
+				end
 			else
 				Result := "[$1] class $5 ($6,$3,$4): " + a_template
+				if attached current_class.filename as l_filename then
+					Result := Result + "%N%Tclass $5: " + l_filename
+				end
+				if attached class_impl.filename as l_filename then
+					Result := Result + "%N%Tclass $6: " + l_filename
+				end
 			end
 		ensure
 			template_not_void: Result /= Void
 		end
 
+	v1ea1ga_default_template: STRING = "the type '$8' of the attribute `$7' of the expanded class `$5' is a reference type, but it is not separate."
+	v1ea1gb_default_template: STRING = "the type '$8' of the attribute `$7' of the expanded class `$5' may be a reference type, but it is not separate."
+	v1ea1gc_default_template: STRING = "the type '$8' of the attribute `$7' of the expanded class `$5' is a reference type, but it may not be separate."
+	v1ea1gd_default_template: STRING = "the type '$8' of the attribute `$7' of the expanded class `$5' may be a reference type, but may not be separate."
+	v1se1ga_default_template: STRING = "two arguments of an inline separate instruction have the same name '$7'."
+	v1se2ga_default_template: STRING = "argument name '$6' of an inline separate instruction is also the final name of a feature."
+	v1se2gb_default_template: STRING = "argument '$6' of an inline separate instruction has the same name as a formal argument of an enclosing feature or inline agent."
+	v1se2gc_default_template: STRING = "argument '$6' of an inline separate instruction has the same name as a local variable of an enclosing feature or inline agent."
+	v1se2gd_default_template: STRING = "argument '$6' of an inline separate instruction appears in the scope of an object-test local with the same name."
+	v1se2ge_default_template: STRING = "argument '$6' of an inline separate instruction appears in the scope of an iteration item with the same name."
+	v1se2gf_default_template: STRING = "argument '$6' of an inline separate instruction appears in another enclosing inline separate instruction with an argument of the same name."
+	v1se3ga_default_template: STRING = "the type '$7' of the argument '$6' of an inline separate instruction is not separate."
 	vaol1a_default_template: STRING = "old expression does not appear in a postcondition."
 	vape1a_default_template: STRING = "feature `$8' of class $5 appearing in the precondition of `$9' is not exported to class $10 to which feature `$9' is exported."
 	vape1b_default_template: STRING = "feature `$8' of class $9 appearing in the precondition of `$10' is not exported to class $11 to which feature `$10' is exported."
@@ -16501,6 +17892,9 @@ feature {NONE} -- Implementation
 	veen8b_default_template: STRING = "`$7' appearing in the invariant or one of its possibly nested inline agents, is an object-test local that is used outside of its scope."
 	veen9a_default_template: STRING = "`$7' appearing in feature `$8' or one of its possibly nested inline agents, is an iteration item that is used outside of its scope."
 	veen9b_default_template: STRING = "`$7' appearing in the invariant or one of its possibly nested inline agents, is an iteration item that is used outside of its scope."
+	veen10a_default_template: STRING = "`$7' appearing in feature `$8' or one of its possibly nested inline agents, is the name of an inline separate argument that is used outside of its scope."
+	veen10b_default_template: STRING = "`$7' appearing in the invariant or one of its possibly nested inline agents, is the name of an inline separate argument that is used outside of its scope."
+	veen11a_default_template: STRING = "`$7' is not the final name of a feature in class $5."
 	vevi0a_default_template: STRING = "local entity `$7' declared as attached is used before being initialized."
 	vevi0b_default_template: STRING = "entity 'Result' declared as attached is used before being initialized."
 	vevi0c_default_template: STRING = "entity 'Result' declared as attached is not initialized at the end of the body of function `$7'."
@@ -16557,6 +17951,7 @@ feature {NONE} -- Implementation
 	vffd4a_default_template: STRING = "deferred feature `$7' is marked as frozen."
 	vffd7a_default_template: STRING = "feature `$7' is a once funtion but its type contains an anchored type."
 	vffd7b_default_template: STRING = "feature `$7' is a once funtion but its type contains a formal generic parameter."
+	vffd11ga_default_template: STRING = "the result type '$8' of the once-per-process function `$7' is a reference type, but it is not separate."
 	vgcc1a_default_template: STRING = "creation with no Creation_call part, but $7 is deferred."
 	vgcc3a_default_template: STRING = "explicit creation type '$7' does not conform to target entity type '$8'."
 	vgcc5a_default_template: STRING = "creation with no Creation_call part, but $7 has a Creators part."
@@ -16607,6 +18002,8 @@ feature {NONE} -- Implementation
 	vkcn1c_default_template: STRING = "query `$8' appears in a call instruction."
 	vkcn2a_default_template: STRING = "procedure `$8' of class $9 appears in a call expression."
 	vkcn2c_default_template: STRING = "procedure `$8' appears in a call expression."
+	vkex4ga_default_template: STRING = "the creation region '<$7>' does not have the expected name '<NONE>'."
+	vkin5ga_default_template: STRING = "the creation region '<$7>' does not have the expected name '<NONE>'."
 	vlel1a_default_template: STRING = "'all' keyword appears twice in the Export subclause of parent $7."
 	vlel2a_default_template: STRING = "`$7' is not the final name of a feature inherited from $8."
 	vlel3a_default_template: STRING = "feature name `$7' appears twice in the Export subclause of parent $8."
@@ -16647,6 +18044,8 @@ feature {NONE} -- Implementation
 	vpir1f_default_template: STRING = "local variable name '$7' in inline agent is also the name of an object-test local of an enclosing feature or inline agent whose scope contains the inline agent."
 	vpir1g_default_template: STRING = "argument name '$7' in inline agent is also the name of an iteration item of an enclosing feature or inline agent whose scope contains the inline agent."
 	vpir1h_default_template: STRING = "local variable name '$7' in inline agent is also the name of an iteration item of an enclosing feature or inline agent whose scope contains the inline agent."
+	vpir1i_default_template: STRING = "argument name '$7' in inline agent is also the name of the argument of an inline separate instruction of an enclosing feature or inline agent whose scope contains the inline agent."
+	vpir1j_default_template: STRING = "local variable name '$7' in inline agent is also the name of the argument of an inline separate instruction of an enclosing feature or inline agent whose scope contains the inline agent."
 	vpir3a_default_template: STRING = "inline agents cannot be of the once form."
 	vpir3b_default_template: STRING = "inline agents cannot be of the external form."
 	vqmc1a_default_template: STRING = "boolean constant attribute `$7' is not declared of type BOOLEAN."
@@ -16689,7 +18088,8 @@ feature {NONE} -- Implementation
 	vuar1c_default_template: STRING = "call to Tuple label `$7' cannot have arguments."
 	vuar2a_default_template: STRING = "the $10-th actual argument (of type '$11') does not conform to the corresponding formal argument (of type '$12') of feature `$8' in class $9."
 	vuar2b_default_template: STRING = "the $9-th actual argument (of type '$10') does not conform to the corresponding formal argument (of type '$11') of feature `$8'."
-	vuar4a_default_template: STRING = "`$7' is not the final name of a feature in class $5."
+	vuar3ga_default_template: STRING = "the $10-th actual argument of the separate call `$7' has a reference type '$11', but the type '$12' of the formal argument of feature `$8' in class $9 is not separate."
+	vuar3gb_default_template: STRING = "the source of separate assigner call has a reference type '$9', but the type '$10' of the tuple label `$7' in type '$8' is not separate."
 	vucr0a_default_template: STRING = "feature `$7' is an attribute, so it cannot be used in static calls."
 	vucr0b_default_template: STRING = "feature `$7' is a once-per-object feature, so it cannot be used in static calls."
 	vucr0c_default_template: STRING = "attribute '$7' cannot be used as target of an assignment or creation instruction in a static feature."
@@ -16711,18 +18111,21 @@ feature {NONE} -- Implementation
 	vuot1c_default_template: STRING = "object-test local name '$6' is also the name of a local variable of an enclosing feature or inline agent."
 	vuot1d_default_template: STRING = "object-test with local name '$6' appears in the scope of another object-test local with the same name."
 	vuot1e_default_template: STRING = "object-test with local name '$6' appears in the scope of an iteration item with the same name."
-	vuot1f_default_template: STRING = "the scope of object-test with local name '$6' overlaps with the scope of another object-test with the same local name."
+	vuot1f_default_template: STRING = "object-test with local name '$6' appears in an inline separate instruction with an argument of the same name."
+	vuot1g_default_template: STRING = "the scope of object-test with local name '$6' overlaps with the scope of another object-test with the same local name."
 	vuot3a_default_template: STRING = "object-test with local name '$6' has the same name as another object-test local appearing in the same feature `$7' or in the same inline agent."
 	vuot3b_default_template: STRING = "object-test with local name '$6' has the same name as another object-test local appearing in the invariant or in the same inline agent."
 	vuot4a_default_template: STRING = "ISE does not support object-tests in preconditions."
 	vuot4b_default_template: STRING = "ISE does not support object-tests in check instructions."
 	vuta2a_default_template: STRING = "the target (of type '$9') of the call to feature `$8' is not attached."
 	vuta2b_default_template: STRING = "the target (of type '$8') of the call to Tuple label `$7' is not attached."
+	vuta4ga_default_template: STRING = "the target (of type '$9') of the call to feature `$8' is not controlled."
+	vuta4gb_default_template: STRING = "the target (of type '$8') of the call to Tuple label `$7' is not controlled."
 	vvok1a_default_template: STRING = "once keys %"$6%" and %"$7%" cannot be combined."
-	vvok1b_default_template: STRING = "indexing once status %"$6%" and once key %"$7%" cannot be combined."
-	vvok1c_default_template: STRING = "indexing once status %"$6%" and %"$7%" cannot be combined."
+	vvok1b_default_template: STRING = "note once status %"$6%" and once key %"$7%" cannot be combined."
+	vvok1c_default_template: STRING = "note once status %"$6%" and %"$7%" cannot be combined."
 	vvok2a_default_template: STRING = "once key %"$6%" is not supported. The supported once keys are %"THREAD%", %"PROCESS%" and %"OBJECT%"."
-	vvok2b_default_template: STRING = "indexing once status %"$6%" is not supported. Use one of the supported once keys %"THREAD%", %"PROCESS%" or %"OBJECT%"."
+	vvok2b_default_template: STRING = "note once status %"$6%" is not supported. Use one of the supported once keys %"THREAD%", %"PROCESS%" or %"OBJECT%"."
 	vwab0a_default_template: STRING = "self-initializing code for attribue `$7' will never be executed because its type is either detachable or expanded."
 	vwbe0a_default_template: STRING = "boolean expression of non-BOOLEAN type '$7'."
 	vwce0a_default_template: STRING = "expressions of types '$8' and '$7' in branches of conditional expression do not conform to each other."
@@ -16756,30 +18159,40 @@ feature {NONE} -- Implementation
 	gvtcg5b_default_template: STRING = "actual generic parameter '$7' in type '$8' is not expanded type but the corresponding formal parameter is marked as expanded."
 	gvuaa0a_default_template: STRING = "`$7' is a formal argument of feature `$8' and hence cannot have actual arguments."
 	gvuaa0b_default_template: STRING = "`$7' is a formal argument of an inline agent and hence cannot have actual arguments."
-	gvuac0a_default_template: STRING = "`$7' is an across cursor of feature `$8' and hence cannot have actual arguments."
-	gvuac0b_default_template: STRING = "`$7' is an across cursor of an inline agent and hence cannot have actual arguments."
-	gvuac0c_default_template: STRING = "`$7' is an across cursor of in an invariant and hence cannot have actual arguments."
+	gvuac0a_default_template: STRING = "`$7' is an iteration cursor in feature `$8' and hence cannot have actual arguments."
+	gvuac0b_default_template: STRING = "`$7' is an iteration cursor in an inline agent and hence cannot have actual arguments."
+	gvuac0c_default_template: STRING = "`$7' is an iteration cursor in an invariant and hence cannot have actual arguments."
 	gvual0a_default_template: STRING = "`$7' is a local variable of feature `$8' and hence cannot have actual arguments."
 	gvual0b_default_template: STRING = "`$7' is a local variable of an inline agent and hence cannot have actual arguments."
-	gvuao0a_default_template: STRING = "`$7' is an object-test local of feature `$8' and hence cannot have actual arguments."
-	gvuao0b_default_template: STRING = "`$7' is an object-test local of an inline agent and hence cannot have actual arguments."
-	gvuao0c_default_template: STRING = "`$7' is an object-test local of in an invariant and hence cannot have actual arguments."
+	gvuao0a_default_template: STRING = "`$7' is an object-test local in feature `$8' and hence cannot have actual arguments."
+	gvuao0b_default_template: STRING = "`$7' is an object-test local in an inline agent and hence cannot have actual arguments."
+	gvuao0c_default_template: STRING = "`$7' is an object-test local in an invariant and hence cannot have actual arguments."
+	gvuas0a_default_template: STRING = "`$7' is an inline separate argument in feature `$8' and hence cannot have actual arguments."
+	gvuas0b_default_template: STRING = "`$7' is an inline separate argument in an inline agent and hence cannot have actual arguments."
+	gvuas0c_default_template: STRING = "`$7' is an inline separate argument in an invariant and hence cannot have actual arguments."
 	gvuia0a_default_template: STRING = "`$7' is a formal argument of feature `$8' and hence cannot be an instruction."
 	gvuia0b_default_template: STRING = "`$7' is a formal argument of an inline agent and hence cannot be an instruction."
-	gvuic0a_default_template: STRING = "`$7' is an across cursor of feature `$8' and hence cannot be an instruction."
-	gvuic0b_default_template: STRING = "`$7' is an across cursor of an inline agent and hence cannot be an instruction."
-	gvuic0c_default_template: STRING = "`$7' is an across cursor of an invariant and hence cannot be an instruction."
+	gvuic0a_default_template: STRING = "`$7' is an iteration item in feature `$8' and hence cannot be an instruction."
+	gvuic0b_default_template: STRING = "`$7' is an iteration item in an inline agent and hence cannot be an instruction."
+	gvuic0c_default_template: STRING = "`$7' is an iteration item in an invariant and hence cannot be an instruction."
 	gvuil0a_default_template: STRING = "`$7' is a local variable of feature `$8' and hence cannot be an instruction."
 	gvuil0b_default_template: STRING = "`$7' is a local variable of an inline agent and hence cannot be an instruction."
-	gvuio0a_default_template: STRING = "`$7' is an object-test local of feature `$8' and hence cannot be an instruction."
-	gvuio0b_default_template: STRING = "`$7' is an object-test local of an inline agent and hence cannot be an instruction."
-	gvuio0c_default_template: STRING = "`$7' is an object-test local of an invariant and hence cannot be an instruction."
+	gvuio0a_default_template: STRING = "`$7' is an object-test local in feature `$8' and hence cannot be an instruction."
+	gvuio0b_default_template: STRING = "`$7' is an object-test local in an inline agent and hence cannot be an instruction."
+	gvuio0c_default_template: STRING = "`$7' is an object-test local in an invariant and hence cannot be an instruction."
+	gvuis0a_default_template: STRING = "`$7' is an inline separate argument in feature `$8' and hence cannot be an instruction."
+	gvuis0b_default_template: STRING = "`$7' is an inline separate argument in an inline agent and hence cannot be an instruction."
+	gvuis0c_default_template: STRING = "`$7' is an inline separate argument in an invariant and hence cannot be an instruction."
 	gvwmc2a_default_template: STRING = "integer constant '$7' is not representable as an instance of '$8'."
 	gvwmc2b_default_template: STRING = "character constant $7 is not representable (too big or surrogate) as an instance of '$8'."
 	gvwmc2c_default_template: STRING = "manifest string is not representable (contains too big or surrogate characters) as an instance of '$7'."
 	gvzzz0a_default_template: STRING = "validity error"
 			-- Default templates
 
+	v1ea1g_etl_code: STRING = "V1EA-1G"
+	v1se1g_etl_code: STRING = "V1SE-1G"
+	v1se2g_etl_code: STRING = "V1SE-2G"
+	v1se3g_etl_code: STRING = "V1SE-3G"
 	vaol1_etl_code: STRING = "VAOL-1"
 	vape1_etl_code: STRING = "VAPE-1"
 	vape2_etl_code: STRING = "VAPE-2"
@@ -16815,6 +18228,8 @@ feature {NONE} -- Implementation
 	veen2_etl_code: STRING = "VEEN-2"
 	veen8_etl_code: STRING = "VEEN-8"
 	veen9_etl_code: STRING = "VEEN-9"
+	veen10_etl_code: STRING = "VEEN-10"
+	veen11_etl_code: STRING = "VEEN-11"
 	vevi_etl_code: STRING = "VEVI"
 	vfac1_etl_code: STRING = "VFAC-1"
 	vfac2_etl_code: STRING = "VFAC-2"
@@ -16827,6 +18242,7 @@ feature {NONE} -- Implementation
 	vfav5_etl_code: STRING = "VFAV-5"
 	vffd4_etl_code: STRING = "VFFD-4"
 	vffd7_etl_code: STRING = "VFFD-7"
+	vffd11g_etl_code: STRING = "VFFD-11G"
 	vhpr1_etl_code: STRING = "VHPR-1"
 	vhpr2_etl_code: STRING = "VHPR-2"
 	vgcc1_etl_code: STRING = "VGCC-1"
@@ -16850,6 +18266,8 @@ feature {NONE} -- Implementation
 	vjrv_etl_code: STRING = "VJRV"
 	vkcn1_etl_code: STRING = "VKCN-1"
 	vkcn2_etl_code: STRING = "VKCN-2"
+	vkex4g_etl_code: STRING = "VKEX-4G"
+	vkin5g_etl_code: STRING = "VKIN-5G"
 	vlel1_etl_code: STRING = "VLEL-1"
 	vlel2_etl_code: STRING = "VLEL-2"
 	vlel3_etl_code: STRING = "VLEL-3"
@@ -16894,7 +18312,7 @@ feature {NONE} -- Implementation
 	vtug2_etl_code: STRING = "VTUG-2"
 	vuar1_etl_code: STRING = "VUAR-1"
 	vuar2_etl_code: STRING = "VUAR-2"
-	vuar4_etl_code: STRING = "VUAR-4"
+	vuar3g_etl_code: STRING = "VUAR-3G"
 	vucr_etl_code: STRING = "VUCR"
 	vuex1_etl_code: STRING = "VUEX-1"
 	vuex2_etl_code: STRING = "VUEX-2"
@@ -16904,6 +18322,7 @@ feature {NONE} -- Implementation
 	vuot3_etl_code: STRING = "VUOT-3"
 	vuot4_etl_code: STRING = "VUOT-4"
 	vuta2_etl_code: STRING = "VUTA-2"
+	vuta4g_etl_code: STRING = "VUTA-4G"
 	vvok1_etl_code: STRING = "VVOK-1"
 	vvok2_etl_code: STRING = "VVOK-2"
 	vwab_etl_code: STRING = "VWAB"
@@ -16935,10 +18354,12 @@ feature {NONE} -- Implementation
 	gvuac_etl_code: STRING = "GVUAC"
 	gvual_etl_code: STRING = "GVUAL"
 	gvuao_etl_code: STRING = "GVUAO"
+	gvuas_etl_code: STRING = "GVUAS"
 	gvuia_etl_code: STRING = "GVUIA"
 	gvuic_etl_code: STRING = "GVUIC"
 	gvuil_etl_code: STRING = "GVUIL"
 	gvuio_etl_code: STRING = "GVUIO"
+	gvuis_etl_code: STRING = "GVUIS"
 	gvwmc2_etl_code: STRING = "GVWMC-2"
 	gvzzz_etl_code: STRING = "GVZZZ"
 			-- ETL validity codes
@@ -16961,6 +18382,18 @@ feature {NONE} -- Implementation
 			template_code_not_void: Result /= Void
 		end
 
+	v1ea1ga_template_code: STRING = "v1ea1ga"
+	v1ea1gb_template_code: STRING = "v1ea1gb"
+	v1ea1gc_template_code: STRING = "v1ea1gc"
+	v1ea1gd_template_code: STRING = "v1ea1gd"
+	v1se1ga_template_code: STRING = "v1se1ga"
+	v1se2ga_template_code: STRING = "v1se2ga"
+	v1se2gb_template_code: STRING = "v1se2gb"
+	v1se2gc_template_code: STRING = "v1se2gc"
+	v1se2gd_template_code: STRING = "v1se2gd"
+	v1se2ge_template_code: STRING = "v1se2ge"
+	v1se2gf_template_code: STRING = "v1se2gf"
+	v1se3ga_template_code: STRING = "v1se3ga"
 	vaol1a_template_code: STRING = "vaol1a"
 	vape1a_template_code: STRING = "vape1a"
 	vape1b_template_code: STRING = "vape1b"
@@ -17028,6 +18461,9 @@ feature {NONE} -- Implementation
 	veen8b_template_code: STRING = "veen8b"
 	veen9a_template_code: STRING = "veen9a"
 	veen9b_template_code: STRING = "veen9b"
+	veen10a_template_code: STRING = "veen10a"
+	veen10b_template_code: STRING = "veen10b"
+	veen11a_template_code: STRING = "veen11a"
 	vevi0a_template_code: STRING = "vevi0a"
 	vevi0b_template_code: STRING = "vevi0b"
 	vevi0c_template_code: STRING = "vevi0c"
@@ -17086,6 +18522,7 @@ feature {NONE} -- Implementation
 	vffd6a_template_code: STRING = "vffd6a"
 	vffd7a_template_code: STRING = "vffd7a"
 	vffd7b_template_code: STRING = "vffd7b"
+	vffd11ga_template_code: STRING = "vffd11ga"
 	vgcc1a_template_code: STRING = "vgcc1a"
 	vgcc3a_template_code: STRING = "vgcc3a"
 	vgcc5a_template_code: STRING = "vgcc5a"
@@ -17137,6 +18574,8 @@ feature {NONE} -- Implementation
 	vkcn1c_template_code: STRING = "vkcn1c"
 	vkcn2a_template_code: STRING = "vkcn2a"
 	vkcn2c_template_code: STRING = "vkcn2c"
+	vkex4ga_template_code: STRING = "vkex4ga"
+	vkin5ga_template_code: STRING = "vkin5ga"
 	vlel1a_template_code: STRING = "vlel1a"
 	vlel2a_template_code: STRING = "vlel2a"
 	vlel3a_template_code: STRING = "vlel3a"
@@ -17177,6 +18616,8 @@ feature {NONE} -- Implementation
 	vpir1f_template_code: STRING = "vpir1f"
 	vpir1g_template_code: STRING = "vpir1g"
 	vpir1h_template_code: STRING = "vpir1h"
+	vpir1i_template_code: STRING = "vpir1i"
+	vpir1j_template_code: STRING = "vpir1j"
 	vpir3a_template_code: STRING = "vpir3a"
 	vpir3b_template_code: STRING = "vpir3b"
 	vqmc1a_template_code: STRING = "vqmc1a"
@@ -17221,7 +18662,8 @@ feature {NONE} -- Implementation
 	vuar1c_template_code: STRING = "vuar1c"
 	vuar2a_template_code: STRING = "vuar2a"
 	vuar2b_template_code: STRING = "vuar2b"
-	vuar4a_template_code: STRING = "vuar4a"
+	vuar3ga_template_code: STRING = "vuar3ga"
+	vuar3gb_template_code: STRING = "vuar3gb"
 	vucr0a_template_code: STRING = "vucr0a"
 	vucr0b_template_code: STRING = "vucr0b"
 	vucr0c_template_code: STRING = "vucr0c"
@@ -17244,12 +18686,15 @@ feature {NONE} -- Implementation
 	vuot1d_template_code: STRING = "vuot1d"
 	vuot1e_template_code: STRING = "vuot1e"
 	vuot1f_template_code: STRING = "vuot1f"
+	vuot1g_template_code: STRING = "vuot1g"
 	vuot3a_template_code: STRING = "vuot3a"
 	vuot3b_template_code: STRING = "vuot3b"
 	vuot4a_template_code: STRING = "vuot4a"
 	vuot4b_template_code: STRING = "vuot4b"
 	vuta2a_template_code: STRING = "vuta2a"
 	vuta2b_template_code: STRING = "vuta2b"
+	vuta4ga_template_code: STRING = "vuta4ga"
+	vuta4gb_template_code: STRING = "vuta4gb"
 	vvok1a_template_code: STRING = "vvok1a"
 	vvok1b_template_code: STRING = "vvok1b"
 	vvok1c_template_code: STRING = "vvok1c"
@@ -17296,6 +18741,9 @@ feature {NONE} -- Implementation
 	gvuao0a_template_code: STRING = "gvuao0a"
 	gvuao0b_template_code: STRING = "gvuao0b"
 	gvuao0c_template_code: STRING = "gvuao0c"
+	gvuas0a_template_code: STRING = "gvuas0a"
+	gvuas0b_template_code: STRING = "gvuas0b"
+	gvuas0c_template_code: STRING = "gvuas0c"
 	gvuia0a_template_code: STRING = "gvuia0a"
 	gvuia0b_template_code: STRING = "gvuia0b"
 	gvuic0a_template_code: STRING = "gvuic0a"
@@ -17306,6 +18754,9 @@ feature {NONE} -- Implementation
 	gvuio0a_template_code: STRING = "gvuio0a"
 	gvuio0b_template_code: STRING = "gvuio0b"
 	gvuio0c_template_code: STRING = "gvuio0c"
+	gvuis0a_template_code: STRING = "gvuis0a"
+	gvuis0b_template_code: STRING = "gvuis0b"
+	gvuis0c_template_code: STRING = "gvuis0c"
 	gvwmc2a_template_code: STRING = "gvwmc2a"
 	gvwmc2b_template_code: STRING = "gvwmc2b"
 	gvwmc2c_template_code: STRING = "gvwmc2c"

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Standard tree text nodes"
 
 	library: "Gobo Eiffel XML Library"
-	copyright: "Copyright (c) 2004, Colin Adams and others"
+	copyright: "Copyright (c) 2004-2022, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class XM_XPATH_TREE_TEXT
 
@@ -72,7 +70,7 @@ feature -- Status report
 			until
 				Result = False or else l_counter > string_value.count
 			loop
-				if not is_space (string_value.item_code (l_counter)) then
+				if not is_space (string_value.code (l_counter)) then
 					Result := False
 				end
 				l_counter := l_counter + 1

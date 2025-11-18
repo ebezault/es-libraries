@@ -1,13 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Full Unicode case mappings"
 
-	copyright: "Copyright (c) 2007-2018, Colin Adams and others"
+	library: "Gobo Eiffel String Library"
+	copyright: "Copyright (c) 2007-2022, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ST_UNICODE_CASE_MAPPING_INTERFACE
 
@@ -37,7 +36,7 @@ feature -- Access
 			until
 				i > l_count
 			loop
-				l_code := a_string.item_code (i)
+				l_code := a_string.code (i).to_integer_32
 				l_codes := lower_codes (l_code)
 				if l_codes /= Void then
 					l_codes.do_all (agent Result.append_item_code)
@@ -72,7 +71,7 @@ feature -- Access
 			until
 				i > l_count
 			loop
-				l_code := a_string.item_code (i)
+				l_code := a_string.code (i).to_integer_32
 				l_codes := upper_codes (l_code)
 				if l_codes /= Void then
 					l_codes.do_all (agent Result.append_item_code)

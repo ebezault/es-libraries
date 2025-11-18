@@ -1,30 +1,29 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel strip expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_STRIP_EXPRESSION
 
 inherit
 
 	ET_EXPRESSION
-		undefine
-			reset
 		redefine
+			reset,
 			is_never_void,
 			is_instance_free
 		end
 
 	ET_FEATURE_NAME_LIST
 		redefine
-			make, make_with_capacity
+			make,
+			make_with_capacity,
+			reset
 		end
 
 create
@@ -49,6 +48,15 @@ feature {NONE} -- Initialization
 			left_parenthesis := tokens.left_parenthesis_symbol
 			right_parenthesis := tokens.right_parenthesis_symbol
 			precursor (nb)
+		end
+
+feature -- Initialization
+
+	reset
+			-- Reset expression as they were when they were last parsed.
+		do
+			precursor {ET_EXPRESSION}
+			precursor {ET_FEATURE_NAME_LIST}
 		end
 
 feature -- Access

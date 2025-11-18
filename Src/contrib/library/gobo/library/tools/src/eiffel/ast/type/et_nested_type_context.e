@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Nested contexts to evaluate Eiffel types"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_NESTED_TYPE_CONTEXT
 
@@ -378,7 +376,7 @@ feature -- Status report
 			-- A context is valid if its `root_context' is only made up
 			-- of class names and formal generic parameter names, and if
 			-- the actual parameters of these formal parameters are
-			-- themselves
+			-- themselves in `root_context'?
 
 	is_root_context: BOOLEAN
 			-- Is current context its own root context?
@@ -386,6 +384,68 @@ feature -- Status report
 			Result := count = 0 or else (attached {ET_LIKE_N} last as l_like_n and then l_like_n.index = 0)
 		ensure then
 			not_empty: not Result implies not is_empty
+		end
+
+	is_type_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
+			-- Same as `is_type_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		local
+			l_type: ET_TYPE
+			l_index: INTEGER
+		do
+			if count = 0 then
+				Result := root_context.is_type_separate_with_type_mark (a_type_mark, Current)
+			elseif attached {ET_LIKE_N} last as l_like_n then
+				l_index := l_like_n.index
+				if l_index = 0 then
+					Result := root_context.is_type_separate_with_type_mark (a_type_mark, Current)
+				elseif l_index >= count then
+					force_last (tokens.like_0)
+					Result := root_context.is_type_separate_with_type_mark (a_type_mark, Current)
+					remove_last
+				else
+					l_type := item (l_index)
+					put (l_like_n.previous, count)
+					Result := l_type.is_type_separate_with_type_mark (a_type_mark, Current)
+					put (l_like_n, count)
+				end
+			else
+				l_type := last
+				remove_last
+				Result := l_type.is_type_separate_with_type_mark (a_type_mark, Current)
+				put_last (l_type)
+			end
+		end
+
+	is_type_non_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
+			-- Same as `is_type_non_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		local
+			l_type: ET_TYPE
+			l_index: INTEGER
+		do
+			if count = 0 then
+				Result := root_context.is_type_non_separate_with_type_mark (a_type_mark, Current)
+			elseif attached {ET_LIKE_N} last as l_like_n then
+				l_index := l_like_n.index
+				if l_index = 0 then
+					Result := root_context.is_type_non_separate_with_type_mark (a_type_mark, Current)
+				elseif l_index >= count then
+					force_last (tokens.like_0)
+					Result := root_context.is_type_non_separate_with_type_mark (a_type_mark, Current)
+					remove_last
+				else
+					l_type := item (l_index)
+					put (l_like_n.previous, count)
+					Result := l_type.is_type_non_separate_with_type_mark (a_type_mark, Current)
+					put (l_like_n, count)
+				end
+			else
+				l_type := last
+				remove_last
+				Result := l_type.is_type_non_separate_with_type_mark (a_type_mark, Current)
+				put_last (l_type)
+			end
 		end
 
 	is_type_expanded_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
@@ -512,6 +572,27 @@ feature -- Status report
 			end
 		end
 
+	is_controlled: BOOLEAN
+			-- Is current type a controlled separate type?
+		local
+			l_index: INTEGER
+		do
+			if count = 0 then
+				Result := root_context.is_controlled
+			elseif attached {ET_LIKE_N} last as l_like_n then
+				l_index := l_like_n.index
+				if l_index = 0 then
+					Result := root_context.is_controlled
+				elseif l_index >= count then
+					Result := root_context.is_controlled
+				else
+					Result := item (l_index).is_controlled
+				end
+			else
+				Result := last.is_controlled
+			end
+		end
+
 	base_type_has_class (a_class: ET_CLASS): BOOLEAN
 			-- Does the base type of current context contain `a_class'?
 		local
@@ -568,6 +649,37 @@ feature -- Status report
 				l_type := last
 				remove_last
 				Result := l_type.named_type_has_class (a_class, Current)
+				put_last (l_type)
+			end
+		end
+
+	named_type_has_class_with_ancestors_not_built_successfully: BOOLEAN
+			-- Does the named type of current context contain a class
+			-- whose ancestors have not been built successfully?
+		local
+			l_type: ET_TYPE
+			l_index: INTEGER
+		do
+			if count = 0 then
+				Result := root_context.named_type_has_class_with_ancestors_not_built_successfully (Current)
+			elseif attached {ET_LIKE_N} last as l_like_n then
+				l_index := l_like_n.index
+				if l_index = 0 then
+					Result := root_context.named_type_has_class_with_ancestors_not_built_successfully (Current)
+				elseif l_index >= count then
+					force_last (tokens.like_0)
+					Result := root_context.named_type_has_class_with_ancestors_not_built_successfully (Current)
+					remove_last
+				else
+					l_type := item (l_index)
+					put (l_like_n.previous, count)
+					Result := l_type.named_type_has_class_with_ancestors_not_built_successfully (Current)
+					put (l_like_n, count)
+				end
+			else
+				l_type := last
+				remove_last
+				Result := l_type.named_type_has_class_with_ancestors_not_built_successfully (Current)
 				put_last (l_type)
 			end
 		end

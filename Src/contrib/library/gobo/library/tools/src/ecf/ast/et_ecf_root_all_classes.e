@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"ECF all classes roots"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2008-2009, Eric Bezault and others"
+	copyright: "Copyright (c) 2008-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ECF_ROOT_ALL_CLASSES
 
@@ -32,7 +30,8 @@ feature -- Element change
 	fill_root (a_system: ET_ECF_SYSTEM)
 			-- Fill `a_system' with root information.
 		do
-			a_system.unset_root_type
+			a_system.set_root_type_name (Void)
+			a_system.set_root_type (Void)
 			a_system.set_root_creation (Void)
 		end
 

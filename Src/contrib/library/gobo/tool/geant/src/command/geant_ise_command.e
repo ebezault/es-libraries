@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel Ant"
 	copyright: "Copyright (c) 2001-2020, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_ISE_COMMAND
 
@@ -314,6 +312,7 @@ feature -- Execution
 			is_cleanable: is_cleanable
 		local
 			a_name: STRING
+			l_file: KL_TEXT_INPUT_FILE
 		do
 			check is_cleanable: attached clean as l_clean then
 				a_name := l_clean + ".epr"
@@ -324,10 +323,16 @@ feature -- Execution
 					end
 				end
 				a_name := l_clean + ".rc"
-				if file_system.file_exists (a_name) then
-					project.trace (<<"  [ise] delete ", a_name>>)
-					if not project.options.no_exec then
-						file_system.delete_file (a_name)
+				create l_file.make (a_name)
+				l_file.open_read
+				if l_file.is_open_read then
+					l_file.read_string (500)
+					l_file.close
+					if l_file.last_string ~ default_rc_file_content then
+						project.trace (<<"  [ise] delete ", a_name>>)
+						if not project.options.no_exec then
+							file_system.delete_file (a_name)
+						end
 					end
 				end
 				a_name := l_clean + ".res"
@@ -379,6 +384,18 @@ feature -- Execution
 				end
 			end
 		end
+
+feature {NONE} -- Constants
+
+	default_rc_file_content: STRING = "[
+#include <windows.h>
+
+STRINGTABLE
+BEGIN
+	1 "This Program was made using EiffelStudio using Visual Studio C++"
+END
+
+]"
 
 invariant
 

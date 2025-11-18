@@ -1,13 +1,11 @@
-note
+﻿note
 
 	description:
 
 		"Gobo Eiffel Lint"
 
-	copyright: "Copyright (c) 1999-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GELINT
 
@@ -19,6 +17,7 @@ inherit
 	KL_SHARED_ARGUMENTS
 	KL_SHARED_EXECUTION_ENVIRONMENT
 	KL_SHARED_STANDARD_FILES
+	KL_SHARED_FILE_SYSTEM
 
 	UC_SHARED_STRING_EQUALITY_TESTER
 		export {NONE} all end
@@ -26,10 +25,16 @@ inherit
 	UT_SHARED_ISE_VERSIONS
 		export {NONE} all end
 
-	ET_SHARED_ISE_VARIABLES
+	UT_SHARED_ISE_VARIABLES
+		export {NONE} all end
+
+	UT_SHARED_GOBO_VARIABLES
 		export {NONE} all end
 
 	UT_SHARED_ECMA_VERSIONS
+		export {NONE} all end
+
+	ET_SHARED_TOKEN_CONSTANTS
 		export {NONE} all end
 
 	KL_IMPORTED_STRING_ROUTINES
@@ -49,6 +54,9 @@ feature -- Execution
 			execute_with_arguments (Arguments.to_array)
 			Exceptions.die (exit_code)
 		rescue
+			if attached {EXCEPTIONS}.exception_trace as l_trace then
+				std.error.put_string ({UTF_CONVERTER}.escaped_utf_32_string_to_utf_8_string_8 (l_trace))
+			end
 			Exceptions.die (4)
 		end
 
@@ -77,6 +85,9 @@ feature -- Execution
 			l_file: KL_TEXT_INPUT_FILE
 		do
 			Arguments.set_program_name ("gelint")
+				-- Set environment variables "$GOBO", "$GOBO_LIBRARY",
+				-- "$BOEHM_GC" and "$ZIG" if not set yet.
+			gobo_variables.set_gobo_variables
 				-- For compatibility with ISE's tools, define the environment
 				-- variables "$ISE_LIBRARY", "$EIFFEL_LIBRARY", "$ISE_PLATFORM"
 				-- and "$ISE_C_COMPILER" if not set yet.
@@ -84,30 +95,48 @@ feature -- Execution
 			error_handler := a_error_handler
 			parse_arguments (a_args)
 			if exit_code = 0 and then not version_flag.was_found then
-				l_filename := ecf_filename
-				create l_file.make (l_filename)
-				l_file.open_read
-				if l_file.is_open_read then
-					last_system := Void
-					parse_ecf_file (l_file)
-					l_file.close
-					if attached last_system as l_last_system then
-						process_system (l_last_system)
-						debug ("stop")
-							std.output.put_line ("Press Enter...")
-							io.read_line
-						end
-						if error_handler.has_eiffel_error then
-							exit_code := 2
-						elseif error_handler.has_internal_error then
-							exit_code := 5
+				l_filename := input_filename
+				if file_system.has_extension (l_filename, file_system.eiffel_extension) then
+					create l_file.make (l_filename)
+					l_file.open_read
+					if l_file.is_open_read then
+						parse_eiffel_file (l_file)
+						l_file.close
+						if override_root_type = Void then
+							exit_code := 1
 						end
 					else
-						exit_code := 3
+						report_cannot_read_error (l_filename)
+						exit_code := 1
 					end
-				else
-					report_cannot_read_error (l_filename)
-					exit_code := 1
+					l_filename := file_system.nested_pathname ("${GOBO}", <<"library", "common", "config", "ecf", "default.ecf">>)
+					l_filename := Execution_environment.interpreted_string (l_filename)
+				end
+				if exit_code = 0 then
+					create l_file.make (l_filename)
+					l_file.open_read
+					if l_file.is_open_read then
+						last_system := Void
+						parse_ecf_file (l_file)
+						l_file.close
+						if attached last_system as l_last_system then
+							process_system (l_last_system)
+							debug ("stop")
+								std.output.put_line ("Press Enter...")
+								io.read_line
+							end
+							if error_handler.has_eiffel_error then
+								exit_code := 2
+							elseif error_handler.has_internal_error then
+								exit_code := 5
+							end
+						else
+							exit_code := 3
+						end
+					else
+						report_cannot_read_error (l_filename)
+						exit_code := 1
+					end
 				end
 			end
 		rescue
@@ -121,6 +150,62 @@ feature -- Access
 
 feature {NONE} -- Eiffel config file parsing
 
+	parse_eiffel_file (a_file: KL_TEXT_INPUT_FILE)
+			-- Read Eiffel file `a_file' containing the root class.
+			-- Put result in `override_root_cluster_pathname',
+			-- `override_root_type' and `override_root_creation'
+			-- if no error occurred.
+		require
+			a_file_not_void: a_file /= Void
+			a_file_open_read: a_file.is_open_read
+		local
+			l_system: ET_SYSTEM
+			l_ast_factory: ET_AST_FACTORY
+			l_system_processor: ET_SYSTEM_PROCESSOR
+			l_cluster: ET_CLUSTER
+			l_time_stamp: INTEGER
+			l_parser: ET_EIFFEL_PARSER
+			l_classes: DS_ARRAYED_LIST [ET_CLASS]
+			l_class: ET_CLASS
+			l_root_cluster_pathname: STRING
+		do
+			override_root_cluster_pathname := Void
+			override_root_type := Void
+			override_root_creation := Void
+			create l_system.make ("system_name")
+			create l_system_processor.make
+			l_system_processor.set_ise_version (ise_version)
+			create l_ast_factory.make
+			l_system_processor.set_ast_factory (l_ast_factory)
+			l_system_processor.set_error_handler (error_handler)
+			l_root_cluster_pathname := file_system.absolute_pathname (file_system.dirname (a_file.name))
+			create l_cluster.make ("root_cluster", l_root_cluster_pathname, l_system)
+			create l_parser.make (l_system_processor)
+			l_time_stamp := a_file.time_stamp
+			l_parser.parse_file (a_file, a_file.name, l_time_stamp, l_cluster)
+			if not l_parser.syntax_error then
+				create l_classes.make (1)
+				l_system.classes_do_if_recursive (agent l_classes.force_last, agent {ET_CLASS}.is_parsed)
+				if l_classes.is_empty then
+						-- Internal error: No class found.
+						-- At syntax error should already have been reported.
+				else
+						-- Use the first class in the file.
+					l_class := l_classes.first
+					override_root_cluster_pathname := l_root_cluster_pathname
+					create override_root_type.make (l_class.upper_name)
+					if not attached l_class.creators as l_creators or else l_creators.is_empty then
+						override_root_creation := tokens.default_create_feature_name
+					elseif l_creators.first.is_empty then
+						override_root_creation := tokens.default_create_feature_name
+					else
+							-- Use the first creation procedure.
+						override_root_creation := l_creators.first.feature_name (1)
+					end
+				end
+			end
+		end
+
 	parse_ecf_file (a_file: KI_CHARACTER_INPUT_STREAM)
 			-- Read ECF file `a_file'.
 			-- Put result in `last_system' if no error occurred.
@@ -130,6 +215,9 @@ feature {NONE} -- Eiffel config file parsing
 		local
 			l_ecf_parser: ET_ECF_SYSTEM_PARSER
 			l_ecf_error_handler: ET_ECF_ERROR_HANDLER
+			l_ecf_system: ET_ECF_SYSTEM
+			l_target: ET_ECF_TARGET
+			l_root_cluster: ET_ECF_CLUSTER
 		do
 			last_system := Void
 			if is_silent then
@@ -146,7 +234,24 @@ feature {NONE} -- Eiffel config file parsing
 			end
 			l_ecf_parser.parse_file (a_file, target_name)
 			if not l_ecf_error_handler.has_error then
-				last_system := l_ecf_parser.last_system
+				l_ecf_system := l_ecf_parser.last_system
+				if l_ecf_system /= Void then
+					l_target := l_ecf_system.selected_target
+					if l_target /= Void then
+						if attached override_root_cluster_pathname as l_override_root_cluster_pathname then
+							create l_root_cluster.make ("root_cluster", l_override_root_cluster_pathname, l_ecf_system, l_target)
+							l_ecf_system.clusters.put_last (l_root_cluster)
+						end
+						if attached override_root_type as l_override_root_type then
+							l_ecf_system.set_root_type_name (l_override_root_type)
+							l_ecf_system.set_root_type (Void)
+						end
+						if attached override_root_creation as l_override_root_creation then
+							l_ecf_system.set_root_creation (l_override_root_creation)
+						end
+					end
+					last_system := l_ecf_system
+				end
 			end
 		end
 
@@ -180,6 +285,7 @@ feature {NONE} -- Processing
 			dt1 := l_system_processor.benchmark_start_time
 			if is_catcall then
 				create a_dynamic_system.make (a_system, l_system_processor)
+				a_dynamic_system.set_full_class_checking (True)
 				a_dynamic_system.set_catcall_error_mode (True)
 				create {ET_DYNAMIC_PULL_TYPE_SET_BUILDER} a_builder.make (a_dynamic_system, l_system_processor)
 				a_dynamic_system.set_dynamic_type_set_builder (a_builder)
@@ -194,8 +300,8 @@ feature {NONE} -- Processing
 
 feature -- Arguments
 
-	ecf_filename: STRING
-			-- Name of the ECF file
+	input_filename: STRING
+			-- Name of the ECF or Eiffel file
 
 	target_name: detachable STRING
 			-- Name of target to be used in ECF file.
@@ -214,6 +320,15 @@ feature -- Arguments
 
 	override_variables: detachable ET_ECF_VARIABLES
 			-- Variables overriding those specified for the selected ECF target
+
+	override_root_type: detachable ET_IDENTIFIER
+			-- Root type to be used instead of the one specified in the selected ECF target
+
+	override_root_creation: detachable ET_FEATURE_NAME
+			-- Root creation to be used instead of the one specified in the selected ECF target
+
+	override_root_cluster_pathname: detachable STRING
+			-- Pathname of cluster containing `override_root_type'
 
 	is_flat: BOOLEAN
 			-- For each class, not only check the validity of the features declared
@@ -283,7 +398,7 @@ feature -- Arguments
 	thread_count: INTEGER
 			-- Number of threads to be used
 		do
-			Result := {EXECUTION_ENVIRONMENT}.available_cpu_count.as_integer_32
+			Result := {EXECUTION_ENVIRONMENT}.available_cpu_count.as_integer_32 - 3
 			if thread_option.was_found then
 				Result := thread_option.parameter
 				if Result <= 0 then
@@ -358,7 +473,7 @@ feature -- Argument parsing
 		do
 			create l_parser.make
 			l_parser.set_application_description ("Gobo Eiffel Lint, Eiffel code analyzer.")
-			l_parser.set_parameters_description ("ecf_filename")
+			l_parser.set_parameters_description ("eiffel_filename|ecf_filename")
 				-- target.
 			create target_option.make_with_long_form ("target")
 			target_option.set_description ("Name of target to be used in ECF file. (default: last target in ECF file)")
@@ -423,7 +538,7 @@ feature -- Argument parsing
 			l_parser.options.force_last (variable_option)
 				-- thread.
 			create thread_option.make_with_long_form ("thread")
-			thread_option.set_description ("Number of threads to be used. Negative numbers -N mean %"number of CPUs - N%". (default: number of CPUs)")
+			thread_option.set_description ("Number of threads to be used. Negative numbers -N mean %"number of CPUs - N%". (default: -3)")
 			thread_option.set_parameter_description ("thread_count")
 			if {PLATFORM}.is_thread_capable then
 				l_parser.options.force_last (thread_option)
@@ -440,14 +555,14 @@ feature -- Argument parsing
 			end
 			if version_flag.was_found then
 				report_version_number
-				ecf_filename := ""
+				input_filename := ""
 				exit_code := 40
 			elseif l_parser.parameters.count /= 1 then
 				report_usage_message (l_parser)
-				ecf_filename := ""
+				input_filename := ""
 				exit_code := 1
 			else
-				ecf_filename := l_parser.parameters.first
+				input_filename := l_parser.parameters.first
 				set_ise_version (ise_option, l_parser)
 				set_override_variables (variable_option, l_parser)
 				set_override_settings (setting_option, l_parser)
@@ -666,7 +781,7 @@ feature -- Error handling
 invariant
 
 	error_handler_not_void: error_handler /= Void
-	ecf_filename_not_void: ecf_filename /= Void
+	input_filename_not_void: input_filename /= Void
 	target_option_not_void: target_option /= Void
 	verbose_flag_not_void: verbose_flag /= Void
 	no_benchmark_flag_not_void: no_benchmark_flag /= Void

@@ -1,25 +1,34 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel creation instructions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_CREATION_INSTRUCTION
 
 inherit
 
 	ET_INSTRUCTION
+		undefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test
 		redefine
 			reset
 		end
 
 	ET_CREATION_COMPONENT
+		redefine
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test
+		end
 
 feature -- Initialization
 
@@ -33,6 +42,12 @@ feature -- Initialization
 			if attached creation_call as l_creation_call then
 				l_creation_call.reset
 			end
+			if attached default_create_name as l_default_create_name then
+				l_default_create_name.reset
+			end
+			if attached internal_separate_target as l_internal_separate_target then
+				l_internal_separate_target.reset
+			end
 		end
 
 feature -- Access
@@ -43,12 +58,38 @@ feature -- Access
 	creation_call: detachable ET_QUALIFIED_CALL
 			-- Call to creation procedure
 
-	arguments: detachable ET_ACTUAL_ARGUMENT_LIST
-			-- Arguments of creation call
+feature -- Status report
+
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current instruction
+			-- or (recursively) in one of its subexpressions?
 		do
-			if attached creation_call as l_creation_call then
-				Result := l_creation_call.arguments
-			end
+			Result := target.has_result or
+				attached arguments as l_arguments and then l_arguments.has_result
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current instruction
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := target.has_address_expression or
+				attached arguments as l_arguments and then l_arguments.has_address_expression
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current instruction
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := target.has_agent or
+				attached arguments as l_arguments and then l_arguments.has_agent
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current instruction
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := target.has_typed_object_test or
+				attached arguments as l_arguments and then l_arguments.has_typed_object_test
 		end
 
 invariant

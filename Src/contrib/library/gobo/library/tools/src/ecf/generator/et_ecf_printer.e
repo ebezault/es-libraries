@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"ECF file printers"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2017-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2017-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ECF_PRINTER
 
@@ -261,7 +259,7 @@ feature -- Output
 			if
 				a_assembly.description /= Void or
 				(attached a_assembly.notes as l_notes and then not l_notes.is_empty) or
-				a_assembly.options /= Void or
+				not a_assembly.options.is_empty or
 				a_assembly.class_renamings /= Void or
 				(attached a_assembly.class_options as l_class_options and then not l_class_options.is_empty) or
 				a_assembly.conditions /= Void
@@ -446,7 +444,7 @@ feature -- Output
 				a_cluster.description /= Void or
 				(attached a_cluster.notes as l_notes and then not l_notes.is_empty) or
 				a_cluster.conditioned_file_rules /= Void or
-				a_cluster.options /= Void or
+				not a_cluster.options.is_empty or
 				a_cluster.class_mappings /= Void or
 				a_cluster.class_renamings /= Void or
 				(attached a_cluster.class_options as l_class_options and then not l_class_options.is_empty) or
@@ -789,7 +787,7 @@ feature -- Output
 		end
 
 	print_file_rules (a_file_rules: ET_ECF_FILE_RULES)
-			-- Print `a_file_rules' to _file'.
+			-- Print `a_file_rules' to `file'.
 		require
 			a_file_rules_not_void: a_file_rules /= Void
 		local
@@ -889,7 +887,7 @@ feature -- Output
 			if
 				a_library.description /= Void or
 				(attached a_library.notes as l_notes and then not l_notes.is_empty) or
-				a_library.options /= Void or
+				not a_library.options.is_empty or
 				a_library.class_renamings /= Void or
 				(attached a_library.class_options as l_class_options and then not l_class_options.is_empty) or
 				a_library.visible_classes /= Void or
@@ -988,10 +986,73 @@ feature -- Output
 			file.put_new_line
 		end
 
+	print_namespaces (a_namespaces: ET_ECF_NAMESPACES)
+			-- Print `a_namespaces' to `file'.
+		require
+			a_namespaces_not_void: a_namespaces /= Void
+		do
+			if ecf_version >= ecf_1_23_0 then
+					-- The <namespace> element was introducted in ECF 1.23.0.
+				across a_namespaces.namespaces as i_namespace loop
+					print_namespace (i_namespace)
+				end
+			end
+		end
+
+	print_namespace (a_namespace: ET_ECF_NAMESPACE)
+			-- Print `a_namespacs' to _file'.
+		require
+			a_namespace_not_void: a_namespace /= Void
+		do
+			print_indentation
+			file.put_character ('<')
+			file.put_string ({ET_ECF_ELEMENT_NAMES}.xml_namespace)
+			file.put_character (' ')
+			file.put_string ({ET_ECF_ELEMENT_NAMES}.xml_name)
+			file.put_character ('=')
+			print_quoted_string (a_namespace.name)
+			if attached a_namespace.classname_prefix as l_prefix then
+				file.put_character (' ')
+				file.put_string ({ET_ECF_ELEMENT_NAMES}.xml_prefix)
+				file.put_character ('=')
+				print_quoted_string (l_prefix)
+			end
+			if
+				a_namespace.description /= Void or
+				(attached a_namespace.notes as l_notes and then not l_notes.is_empty) or
+				a_namespace.class_renamings /= Void
+			then
+				file.put_character ('>')
+				file.put_new_line
+				indent
+				if attached a_namespace.description as l_description then
+					print_description (l_description)
+				end
+				if attached a_namespace.notes as l_notes and then not l_notes.is_empty then
+					l_notes.do_all (agent print_note_element)
+				end
+				if attached a_namespace.class_renamings as l_renamings then
+					print_renamings (l_renamings)
+				end
+				dedent
+				print_indentation
+				file.put_character ('<')
+				file.put_character ('/')
+				file.put_string ({ET_ECF_ELEMENT_NAMES}.xml_namespace)
+				file.put_character ('>')
+			else
+				file.put_character ('/')
+				file.put_character ('>')
+			end
+			file.put_new_line
+		end
+
 	print_note_element (a_note_element: ET_ECF_NOTE_ELEMENT)
 			-- Print `a_note_element' to `file'.
 		require
 			a_note_element_not_void: a_note_element /= Void
+		local
+			l_stripped_content: detachable STRING
 		do
 			if ecf_version >= ecf_1_4_0 then
 					-- The <note> element was introducted in ECF 1.4.0.
@@ -1004,17 +1065,22 @@ feature -- Output
 					file.put_character ('=')
 					print_quoted_string (i_attribute)
 				end
+				if attached a_note_element.content as l_content and then not l_content.is_empty then
+					l_stripped_content := l_content.twin
+					l_stripped_content.left_adjust
+					l_stripped_content.right_adjust
+				end
 				if
 					not a_note_element.elements.is_empty or
-					(attached a_note_element.content as l_content and then not l_content.is_empty)
+					(l_stripped_content /= Void and then not l_stripped_content.is_empty)
 				then
 					file.put_character ('>')
 					file.put_new_line
 					indent
 					a_note_element.elements.do_all (agent print_note_element)
-					if attached a_note_element.content as l_content and then not l_content.is_empty then
+					if l_stripped_content /= Void and then not l_stripped_content.is_empty then
 						print_indentation
-						print_escaped_string (l_content)
+						print_escaped_string (l_stripped_content)
 						file.put_new_line
 					end
 					dedent
@@ -1287,7 +1353,7 @@ feature -- Output
 			if
 				a_precompiled_library.description /= Void or
 				(attached a_precompiled_library.notes as l_notes and then not l_notes.is_empty) or
-				a_precompiled_library.options /= Void or
+				not a_precompiled_library.options.is_empty or
 				a_precompiled_library.class_renamings /= Void or
 				(attached a_precompiled_library.class_options as l_class_options and then not l_class_options.is_empty) or
 				a_precompiled_library.visible_classes /= Void or
@@ -1648,6 +1714,7 @@ feature -- Output
 				not l_capabilities.primary_use_capabilities.is_empty or
 				not l_capabilities.primary_support_capabilities.is_empty or
 				a_target.class_mappings /= Void or
+				(attached a_target.namespaces as l_namespaces and then not l_namespaces.is_empty) or
 				not a_target.variables.primary_variables.is_empty or
 				(attached a_target.pre_compile_actions as l_pre_compile_actions and then not l_pre_compile_actions.is_empty) or
 				(attached a_target.post_compile_actions as l_post_compile_actions and then not l_post_compile_actions.is_empty) or
@@ -1686,6 +1753,9 @@ feature -- Output
 				print_capabilities (l_capabilities)
 				if attached a_target.class_mappings as l_mappings then
 					print_mappings (l_mappings)
+				end
+				if attached a_target.namespaces as l_namespaces and then not l_namespaces.is_empty then
+					print_namespaces (l_namespaces)
 				end
 				print_variables (a_target.variables)
 				if attached a_target.pre_compile_actions as l_pre_compile_actions and then not l_pre_compile_actions.is_empty then
@@ -1930,7 +2000,7 @@ feature {NONE} -- Implementation
 			last_escaped: INTEGER
 			i: INTEGER
 			cnt: INTEGER
-			a_char: INTEGER
+			a_char: NATURAL_32
 		do
 			from
 				last_escaped := 0
@@ -1941,7 +2011,7 @@ feature {NONE} -- Implementation
 			until
 				i > cnt
 			loop
-				a_char := a_string.item_code (i)
+				a_char := a_string.code (i)
 				if is_escaped (a_char) then
 					if last_escaped < i - 1 then
 						file.put_string (a_string.substring (last_escaped + 1, i - 1))
@@ -1989,7 +2059,7 @@ feature {NONE} -- Implementation
 			until
 				i > cnt
 			loop
-				if a_string.item_code (i) = Quot_char.code then
+				if a_string.code (i) = {UT_CHARACTER_32_CODES}.double_quote_code then
 					if last_escaped < i - 1 then
 						print_escaped_string (a_string.substring (last_escaped + 1, i - 1))
 					end
@@ -2006,22 +2076,22 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	print_escaped_character (a_char: INTEGER)
+	print_escaped_character (a_char: NATURAL_32)
 			-- Print escaped version of `a_char' to `file'.
 		require
 			is_escaped: is_escaped (a_char)
 		do
-			if a_char = Lt_char.code then
+			if a_char = {UT_CHARACTER_32_CODES}.less_than_code then
 				file.put_string (Lt_entity)
-			elseif a_char = Gt_char.code then
+			elseif a_char = {UT_CHARACTER_32_CODES}.greater_than_code then
 				file.put_string (Gt_entity)
-			elseif a_char = Amp_char.code then
+			elseif a_char = {UT_CHARACTER_32_CODES}.ampersand_code then
 				file.put_string (Amp_entity)
-			elseif a_char = Quot_char.code then
+			elseif a_char = {UT_CHARACTER_32_CODES}.double_quote_code then
 				file.put_string (Quot_entity)
 			else
 				file.put_string ("&#")
-				file.put_integer (a_char)
+				file.put_natural_32 (a_char)
 				file.put_character (';')
 			end
 		end
@@ -2520,12 +2590,12 @@ feature {NONE} -- Adaptation
 
 feature {NONE} -- Escaped
 
-	is_escaped (a_char: INTEGER): BOOLEAN
+	is_escaped (a_char: NATURAL_32): BOOLEAN
 			-- Is this an escapable character?
 		do
-			Result := a_char = Lt_char.code
-				or a_char = Gt_char.code
-				or a_char = Amp_char.code
+			Result := a_char = {UT_CHARACTER_32_CODES}.less_than_code
+				or a_char = {UT_CHARACTER_32_CODES}.greater_than_code
+				or a_char = {UT_CHARACTER_32_CODES}.ampersand_code
 		end
 
 invariant

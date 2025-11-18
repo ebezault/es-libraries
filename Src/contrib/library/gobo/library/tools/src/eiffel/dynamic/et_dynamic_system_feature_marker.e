@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -121,8 +121,6 @@ note
 	library: "Gobo Eiffel Tools Library"
 	copyright: "Copyright (c) 2008-2018, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_DYNAMIC_SYSTEM_FEATURE_MARKER
 
@@ -183,7 +181,7 @@ feature -- Processing
 				create l_dynamic_system.make (l_system, system_processor)
 				create l_builder.make (l_dynamic_system, system_processor)
 				l_dynamic_system.set_dynamic_type_set_builder (l_builder)
-				l_dynamic_system.compile_feature (a_feature.name, l_class, system_processor)
+				l_dynamic_system.compile_feature (a_feature.name, a_target_type, system_processor)
 				l_dynamic_types := l_dynamic_system.dynamic_types
 				nb := l_dynamic_types.count
 				from i := 1 until i > nb loop

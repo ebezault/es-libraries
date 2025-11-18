@@ -1,13 +1,11 @@
-note
+﻿note
 
 	description:
 
 		"Gobo Eiffel Documentation Format"
 
-	copyright: "Copyright (c) 2017-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2017-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class GEDOC_FORMAT
 
@@ -123,7 +121,7 @@ feature -- Execution
 				if not has_error then
 					process_system (l_last_system)
 				end
-				if system_processor.error_handler.has_error then
+				if system_processor.error_handler.has_fatal_error then
 					has_error := True
 				end
 			end
@@ -361,8 +359,6 @@ feature {NONE} -- Eiffel config file parsing
 			else
 				report_cannot_read_error (a_input_filename)
 			end
-		ensure
-			has_error_if_void: last_system = Void implies has_error
 		end
 
 	parse_ecf_file (a_file: KI_CHARACTER_INPUT_STREAM)
@@ -394,8 +390,6 @@ feature {NONE} -- Eiffel config file parsing
 			else
 				last_system := l_last_system
 			end
-		ensure
-			has_error_if_void: last_system = Void implies has_error
 		end
 
 	parse_eiffel_file (a_file: KI_CHARACTER_INPUT_STREAM)
@@ -421,7 +415,7 @@ feature {NONE} -- Eiffel config file parsing
 				create l_eiffel_preparser.make (system_processor)
 			end
 			l_eiffel_preparser.preparse_file (a_file.name, l_cluster)
-			if l_eiffel_preparser.error_handler.has_error then
+			if l_eiffel_preparser.error_handler.has_fatal_error then
 				has_error := True
 				l_system := Void
 			elseif not attached class_filters as l_class_filters or else l_class_filters.is_empty then
@@ -436,8 +430,6 @@ feature {NONE} -- Eiffel config file parsing
 				end
 			end
 			last_system := l_system
-		ensure
-			has_error_if_void: last_system = Void implies has_error
 		end
 
 feature {NONE} -- Processing
@@ -760,7 +752,7 @@ feature -- Error handling
 		end
 
 	report_file_already_exists_error (a_filename: STRING)
-			-- Report that `a_filename' already exists an dwill not be overwritten.
+			-- Report that `a_filename' already exists and will not be overwritten.
 		require
 			a_filename_not_void: a_filename /= Void
 		local
@@ -825,6 +817,17 @@ feature -- Error handling
 			l_error: UT_MESSAGE
 		do
 			create l_error.make ("Target '" + a_target_name + "' not found.")
+			report_error (l_error)
+		ensure
+			has_error: has_error
+		end
+
+	report_no_target_found_error
+			-- Report that no target could be found in ECF file.
+		local
+			l_error: UT_MESSAGE
+		do
+			create l_error.make ("No target was found in ECF file.")
 			report_error (l_error)
 		ensure
 			has_error: has_error

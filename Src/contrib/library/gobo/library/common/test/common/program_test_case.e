@@ -1,13 +1,11 @@
-note
+﻿note
 
 	description:
 
 		"Program test cases"
 
-	copyright: "Copyright (c) 2002-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class PROGRAM_TEST_CASE
 
@@ -44,6 +42,8 @@ feature -- Test
 		local
 			a_debug: STRING
 			a_geant_filename: STRING
+			l_thread_option: STRING
+			l_geant_pathname: STRING
 		do
 				-- Compile program.
 			if variables.has ("debug") then
@@ -51,10 +51,14 @@ feature -- Test
 			else
 				a_debug := ""
 			end
+			if use_thread_count then
+				l_thread_option := " --thread=" + thread_count.out
+			else
+				l_thread_option := ""
+			end
 			a_geant_filename := geant_filename
-			assert_execute_with_command_output ("geant -b " + a_geant_filename + " compile_" + a_debug + eiffel_compiler.vendor + output_log, output_log)
-				-- Clean.
-			assert_execute_with_command_output ("geant -b " + a_geant_filename + " clean" + output_log, output_log)
+			l_geant_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("geant")
+			assert_execute_with_command_output (l_geant_pathname + " -b " + a_geant_filename + l_thread_option + " compile_" + a_debug + eiffel_compiler.vendor + output1_log, output1_log_filename, error1_log_filename)
 				-- Check compilation.
 			assert ("program_exists", file_system.file_exists (program_exe))
 		end
@@ -86,6 +90,26 @@ feature -- Execution
 
 	old_cwd: detachable STRING
 			-- Initial current working directory
+
+feature -- Multi-threading
+
+	use_thread_count: BOOLEAN
+			-- Should the number of threads to be used when running thread-capable
+			-- compilers be overridden with `thread_count'?
+
+	thread_count: INTEGER
+			-- Number of threads to be used when running thread-capable compilers.
+			-- Negative numbers -N mean "number of CPUs - N".
+
+	set_thread_count (a_thread_count: INTEGER)
+			-- Set `thread_count' to `a_thread_count'.
+		do
+			thread_count := a_thread_count
+			use_thread_count := True
+		ensure
+			use_thread_count_set: use_thread_count
+			thread_count_set: thread_count = a_thread_count
+		end
 
 feature {NONE} -- Implementation
 
@@ -124,19 +148,49 @@ feature {NONE} -- Implementation
 			testdir_not_empty: Result.count > 0
 		end
 
-	output_log_filename: STRING = "output.log"
+	output1_log_filename: STRING = "output1.log"
 			-- Output log filename
 
-	error_log_filename: STRING = "error.log"
+	error1_log_filename: STRING = "error1.log"
 			-- Error log filename
 
-	output_log: STRING
+	output1_log: STRING
 			-- Where and how to redirect output logs
 		once
-			Result := " > " + output_log_filename + " 2> " + error_log_filename
+			Result := " > " + output1_log_filename + " 2> " + error1_log_filename
 		ensure
-			output_log_not_void: Result /= Void
-			output_log_not_empty: Result.count > 0
+			output1_log_not_void: Result /= Void
+			output1_log_not_empty: Result.count > 0
+		end
+
+	output2_log_filename: STRING = "output2.log"
+			-- Output log filename
+
+	error2_log_filename: STRING = "error2.log"
+			-- Error log filename
+
+	output2_log: STRING
+			-- Where and how to redirect output logs
+		once
+			Result := " > " + output2_log_filename + " 2> " + error2_log_filename
+		ensure
+			output2_log_not_void: Result /= Void
+			output2_log_not_empty: Result.count > 0
+		end
+
+	output3_log_filename: STRING = "output3.log"
+			-- Output log filename
+
+	error3_log_filename: STRING = "error23.log"
+			-- Error log filename
+
+	output3_log: STRING
+			-- Where and how to redirect output logs
+		once
+			Result := " > " + output3_log_filename + " 2> " + error3_log_filename
+		ensure
+			output3_log_not_void: Result /= Void
+			output3_log_not_empty: Result.count > 0
 		end
 
 	freeise_log_filename: STRING

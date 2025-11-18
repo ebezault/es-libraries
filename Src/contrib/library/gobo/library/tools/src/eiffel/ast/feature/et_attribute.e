@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel variable attributes"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ATTRIBUTE
 
@@ -57,14 +55,14 @@ feature -- Status report
 			-- Is feature a transient attribute
 			-- (i.e. not taken into account by Storable)?
 		do
-			Result := attached first_indexing as l_indexing and then l_indexing.has_tagged_indexing_term_value (tokens.option_indexing_tag, tokens.transient_indexing_value)
+			Result := attached first_note as l_note and then l_note.has_tagged_note_term_value (tokens.option_note_tag, tokens.transient_note_value)
 		end
 
 	is_stable_attribute: BOOLEAN
 			-- Is feature a stable attribute
 			-- (i.e. cannot be set to Void in void-safe mode)?
 		do
-			Result := attached first_indexing as l_indexing and then l_indexing.has_tagged_indexing_term_value (tokens.option_indexing_tag, tokens.stable_indexing_value)
+			Result := attached first_note as l_note and then l_note.has_tagged_note_term_value (tokens.option_note_tag, tokens.stable_note_value)
 		end
 
 	is_prefixable: BOOLEAN = True
@@ -116,9 +114,10 @@ feature -- Duplication
 			Result.set_clients (clients)
 			Result.set_semicolon (semicolon)
 			Result.set_feature_clause (feature_clause)
-			Result.set_first_indexing (first_indexing)
+			Result.set_first_note (first_note)
 			Result.set_object_tests (object_tests)
 			Result.set_iteration_components (iteration_components)
+			Result.set_inline_separate_arguments (inline_separate_arguments)
 			Result.set_synonym (Current)
 		end
 
@@ -137,9 +136,10 @@ feature -- Conversion
 			Result.set_frozen_keyword (frozen_keyword)
 			Result.set_semicolon (semicolon)
 			Result.set_feature_clause (feature_clause)
-			Result.set_first_indexing (first_indexing)
+			Result.set_first_note (first_note)
 			Result.set_object_tests (object_tests)
 			Result.set_iteration_components (iteration_components)
+			Result.set_inline_separate_arguments (inline_separate_arguments)
 			Result.set_first_seed (first_seed)
 			Result.set_other_seeds (other_seeds)
 		end

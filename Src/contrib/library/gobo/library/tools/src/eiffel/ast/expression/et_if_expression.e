@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel 'if' expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2017-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2017-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_IF_EXPRESSION
 
@@ -17,7 +15,13 @@ inherit
 	ET_EXPRESSION
 		redefine
 			reset,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions,
+			add_separate_arguments
 		end
 
 create
@@ -50,6 +54,7 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor
 			conditional_expression.reset
 			then_expression.reset
 			if attached elseif_parts as l_elseif_parts then
@@ -123,6 +128,46 @@ feature -- Status report
 				else_expression.is_instance_free
 		end
 
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_result or
+				then_expression.has_result or
+				attached elseif_parts as l_elseif_parts and then l_elseif_parts.has_result or
+				else_expression.has_result
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_address_expression or
+				then_expression.has_address_expression or
+				attached elseif_parts as l_elseif_parts and then l_elseif_parts.has_address_expression or
+				else_expression.has_address_expression
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_agent or
+				then_expression.has_agent or
+				attached elseif_parts as l_elseif_parts and then l_elseif_parts.has_agent or
+				else_expression.has_agent
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := conditional_expression.has_typed_object_test or
+				then_expression.has_typed_object_test or
+				attached elseif_parts as l_elseif_parts and then l_elseif_parts.has_typed_object_test or
+				else_expression.has_typed_object_test
+		end
+
 feature -- Setting
 
 	set_elseif_parts (an_elseif_parts: like elseif_parts)
@@ -157,6 +202,45 @@ feature -- Setting
 			end_keyword := an_end
 		ensure
 			end_keyword_set: end_keyword = an_end
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current expression
+			-- and (recursively) in its subexpressions.
+		do
+			conditional_expression.add_old_expressions (a_list)
+			then_expression.add_old_expressions (a_list)
+			if attached elseif_parts as l_elseif_parts then
+				l_elseif_parts.add_old_expressions (a_list)
+			end
+			else_expression.add_old_expressions (a_list)
+		end
+
+feature -- SCOOP
+
+	add_separate_arguments (a_list: DS_ARRAYED_LIST [ET_IDENTIFIER]; a_closure: ET_CLOSURE)
+			-- Add to `a_list' inline separate arguments or formal arguments which
+			-- when controlled (i.e. when their type is separate) implies that when
+			-- the current expression is involved in the target of a separate call
+			-- this target is also controlled.
+			-- `a_closure' is the closure (i.e. inline agent or enclosing feature)
+			-- in which the current expression appears.
+			-- (Used when determining the SCOOP sessions to be used when recording
+			-- a separate call to another SCOOP processor.)
+		local
+			i, nb: INTEGER
+		do
+			then_expression.add_separate_arguments (a_list, a_closure)
+			if attached elseif_parts as l_elseif_parts then
+				nb := l_elseif_parts.count
+				from i := 1 until i > nb loop
+					l_elseif_parts.item (i).then_expression.add_separate_arguments (a_list, a_closure)
+					i := i + 1
+				end
+			end
+			else_expression.add_separate_arguments (a_list, a_closure)
 		end
 
 feature -- Processing

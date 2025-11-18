@@ -5,10 +5,8 @@
 		"Eiffel token and symbol constants"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_TOKEN_CONSTANTS
 
@@ -25,6 +23,15 @@ feature -- Class names
 		ensure
 			instance_free: class
 			any_class_name_not_void: Result /= Void
+		end
+
+	arguments_class_name: ET_CLASS_NAME
+			-- "ARGUMENTS" class name
+		once
+			create {ET_IDENTIFIER} Result.make (capitalized_arguments_name)
+		ensure
+			instance_free: class
+			arguments_class_name_not_void: Result /= Void
 		end
 
 	arguments_32_class_name: ET_CLASS_NAME
@@ -133,6 +140,15 @@ feature -- Class names
 		ensure
 			instance_free: class
 			exception_manager_factory_class_name_not_void: Result /= Void
+		end
+
+	file_class_name: ET_CLASS_NAME
+			-- "FILE" class name
+		once
+			create {ET_IDENTIFIER} Result.make (capitalized_file_name)
+		ensure
+			instance_free: class
+			file_class_name_not_void: Result /= Void
 		end
 
 	function_class_name: ET_CLASS_NAME
@@ -504,6 +520,15 @@ feature -- Class names
 			unknown_class_name_not_void: Result /= Void
 		end
 
+	root_class_name: ET_CLASS_NAME
+			-- "*ROOT*" class name
+		once
+			create {ET_IDENTIFIER} Result.make (capitalized_root_name)
+		ensure
+			instance_free: class
+			root_class_name_not_void: Result /= Void
+		end
+
 feature -- Class names (used for compatibility with 5.6.0610, to be removed later)
 
 	boolean_ref_class_name: ET_CLASS_NAME
@@ -715,6 +740,15 @@ feature -- Feature names
 			area_feature_name_not_void: Result /= Void
 		end
 
+	argument_array_feature_name: ET_FEATURE_NAME
+			-- 'arargument_array' feature name
+		once
+			create {ET_IDENTIFIER} Result.make (argument_array_name)
+		ensure
+			instance_free: class
+			argument_array_feature_name_not_void: Result /= Void
+		end
+
 	argument_count_feature_name: ET_FEATURE_NAME
 			-- 'argument_count' feature name
 		once
@@ -911,6 +945,42 @@ feature -- Feature names
 		ensure
 			instance_free: class
 			boolean_field_at_feature_name_not_void: Result /= Void
+		end
+
+	c_basic_store_feature_name: ET_FEATURE_NAME
+			-- 'c_basic_store' feature name
+		once
+			create {ET_IDENTIFIER} Result.make (c_basic_store_name)
+		ensure
+			instance_free: class
+			c_basic_store_feature_name_not_void: Result /= Void
+		end
+
+	c_general_store_feature_name: ET_FEATURE_NAME
+			-- 'c_general_store' feature name
+		once
+			create {ET_IDENTIFIER} Result.make (c_general_store_name)
+		ensure
+			instance_free: class
+			c_general_store_feature_name_not_void: Result /= Void
+		end
+
+	c_independent_store_feature_name: ET_FEATURE_NAME
+			-- 'c_independent_store' feature name
+		once
+			create {ET_IDENTIFIER} Result.make (c_independent_store_name)
+		ensure
+			instance_free: class
+			c_independent_store_feature_name_not_void: Result /= Void
+		end
+
+	c_retrieved_feature_name: ET_FEATURE_NAME
+			-- 'c_retrieved' feature name
+		once
+			create {ET_IDENTIFIER} Result.make (c_retrieved_name)
+		ensure
+			instance_free: class
+			c_retrieved_feature_name_not_void: Result /= Void
 		end
 
 	c_strlen_feature_name: ET_FEATURE_NAME
@@ -3598,6 +3668,68 @@ feature -- Types
 			identity_type_not_void: Result /= Void
 		end
 
+	attached_type_modifier: ET_LIKE_CURRENT
+			-- Type 'attached like Current'
+		once
+			create Result.make (implicit_attached_type_mark)
+		ensure
+			instance_free: class
+			attached_type_modifier_not_void: Result /= Void
+			is_attached: attached Result.type_mark as l_type_mark and then l_type_mark.is_attached_mark
+		end
+
+	detachable_type_modifier: ET_LIKE_CURRENT
+			-- Type 'detachable like Current'
+		once
+			create Result.make (implicit_detachable_type_mark)
+		ensure
+			instance_free: class
+			detachable_type_modifier_not_void: Result /= Void
+			is_detachable: attached Result.type_mark as l_type_mark and then l_type_mark.is_detachable_mark
+		end
+
+	separate_type_modifier: ET_LIKE_CURRENT
+			-- Type 'separate like Current'
+		once
+			create Result.make (implicit_separate_type_mark)
+		ensure
+			instance_free: class
+			separate_type_modifier_not_void: Result /= Void
+			is_separate: attached Result.type_mark as l_type_mark and then l_type_mark.is_separate_mark
+		end
+
+	attached_separate_type_modifier: ET_LIKE_CURRENT
+			-- Type 'attached separate like Current'
+		once
+			create Result.make (implicit_attached_separate_type_mark)
+		ensure
+			instance_free: class
+			attached_separate_type_modifier_not_void: Result /= Void
+			is_attached_separate: attached Result.type_mark as l_type_mark and then l_type_mark.is_attached_mark and then l_type_mark.is_separate_mark
+		end
+
+	detachable_separate_type_modifier: ET_LIKE_CURRENT
+			-- Type 'detachable separate like Current'
+		once
+			create Result.make (implicit_detachable_separate_type_mark)
+		ensure
+			instance_free: class
+			detachable_separate_type_modifier_not_void: Result /= Void
+			is_detachable_separate: attached Result.type_mark as l_type_mark and then l_type_mark.is_detachable_mark and then l_type_mark.is_separate_mark
+		end
+
+	controlled_type_modifier: ET_LIKE_CURRENT
+			-- Type 'separate like Current' which is controlled
+		once
+			create Result.make (implicit_separate_type_mark)
+			Result.set_controlled (True)
+		ensure
+			instance_free: class
+			controlled_type_modifier_not_void: Result /= Void
+			is_separate: attached Result.type_mark as l_type_mark and then l_type_mark.is_separate_mark
+			is_controlled: Result.is_controlled
+		end
+
 	like_0: ET_LIKE_N
 			-- Type 'like 0' with no type mark modifier
 		once
@@ -3692,6 +3824,41 @@ feature -- Types
 			implicit_attached_separate_reference_type_mark_not_void: Result /= Void
 		end
 
+	implicit_attached_non_separate_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'attached non-separate' type mark
+		once
+			create Result.make
+			Result.set_attached_mark (True)
+			Result.set_non_separate_mark (True)
+		ensure
+			instance_free: class
+			implicit_attached_non_separate_type_mark_not_void: Result /= Void
+		end
+
+	implicit_attached_non_separate_expanded_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'attached non-separate expanded' type mark
+		once
+			create Result.make
+			Result.set_attached_mark (True)
+			Result.set_non_separate_mark (True)
+			Result.set_expanded_mark (True)
+		ensure
+			instance_free: class
+			implicit_attached_non_separate_expanded_type_mark_not_void: Result /= Void
+		end
+
+	implicit_attached_non_separate_reference_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'attached non-separate reference' type mark
+		once
+			create Result.make
+			Result.set_attached_mark (True)
+			Result.set_non_separate_mark (True)
+			Result.set_reference_mark (True)
+		ensure
+			instance_free: class
+			implicit_attached_non_separate_reference_type_mark_not_void: Result /= Void
+		end
+
 	implicit_detachable_type_mark: ET_IMPLICIT_TYPE_MARK
 			-- Implicit 'detachable' type mark
 		once
@@ -3759,6 +3926,41 @@ feature -- Types
 			implicit_detachable_separate_reference_type_mark_not_void: Result /= Void
 		end
 
+	implicit_detachable_non_separate_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'detachable non-separate' type mark
+		once
+			create Result.make
+			Result.set_detachable_mark (True)
+			Result.set_non_separate_mark (True)
+		ensure
+			instance_free: class
+			implicit_detachable_non_separate_type_mark_not_void: Result /= Void
+		end
+
+	implicit_detachable_non_separate_expanded_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'detachable non-separate expanded' type mark
+		once
+			create Result.make
+			Result.set_detachable_mark (True)
+			Result.set_non_separate_mark (True)
+			Result.set_expanded_mark (True)
+		ensure
+			instance_free: class
+			implicit_detachable_non_separate_expanded_type_mark_not_void: Result /= Void
+		end
+
+	implicit_detachable_non_separate_reference_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'detachable non-separate reference' type mark
+		once
+			create Result.make
+			Result.set_detachable_mark (True)
+			Result.set_non_separate_mark (True)
+			Result.set_reference_mark (True)
+		ensure
+			instance_free: class
+			implicit_detachable_non_separate_reference_type_mark_not_void: Result /= Void
+		end
+
 	implicit_expanded_type_mark: ET_IMPLICIT_TYPE_MARK
 			-- Implicit 'expanded' type mark
 		once
@@ -3811,6 +4013,38 @@ feature -- Types
 			implicit_separate_reference_type_mark_not_void: Result /= Void
 		end
 
+	implicit_non_separate_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'non-separate' type mark
+		once
+			create Result.make
+			Result.set_non_separate_mark (True)
+		ensure
+			instance_free: class
+			implicit_non_separate_type_mark_not_void: Result /= Void
+		end
+
+	implicit_non_separate_expanded_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'non-separate expanded' type mark
+		once
+			create Result.make
+			Result.set_non_separate_mark (True)
+			Result.set_expanded_mark (True)
+		ensure
+			instance_free: class
+			implicit_non_separate_expanded_type_mark_not_void: Result /= Void
+		end
+
+	implicit_non_separate_reference_type_mark: ET_IMPLICIT_TYPE_MARK
+			-- Implicit 'non-separate reference' type mark
+		once
+			create Result.make
+			Result.set_non_separate_mark (True)
+			Result.set_reference_mark (True)
+		ensure
+			instance_free: class
+			implicit_non_separate_reference_type_mark_not_void: Result /= Void
+		end
+
 	implicit_no_type_mark: ET_IMPLICIT_TYPE_MARK
 			-- Implicit no type mark
 		once
@@ -3820,11 +4054,12 @@ feature -- Types
 			implicit_no_type_mark_not_void: Result /= Void
 		end
 
-	implicit_type_mark (a_expanded_mark, a_reference_mark, a_separate_mark, a_attached_mark, a_detachable_mark: BOOLEAN): ET_IMPLICIT_TYPE_MARK
+	implicit_type_mark (a_expanded_mark, a_reference_mark, a_separate_mark, a_non_separate_mark, a_attached_mark, a_detachable_mark: BOOLEAN): ET_IMPLICIT_TYPE_MARK
 			-- Implicity type mark
 		require
 			expandedness_consistency: not (a_expanded_mark and a_reference_mark)
 			attachment_consistency: not (a_attached_mark and a_detachable_mark)
+			separateness_consistency: not (a_separate_mark and a_non_separate_mark)
 		do
 			if a_attached_mark then
 				if a_separate_mark then
@@ -3834,6 +4069,14 @@ feature -- Types
 						Result := implicit_attached_separate_reference_type_mark
 					else
 						Result := implicit_attached_separate_type_mark
+					end
+				elseif a_non_separate_mark then
+					if a_expanded_mark then
+						Result := implicit_attached_non_separate_expanded_type_mark
+					elseif a_reference_mark then
+						Result := implicit_attached_non_separate_reference_type_mark
+					else
+						Result := implicit_attached_non_separate_type_mark
 					end
 				elseif a_expanded_mark then
 					Result := implicit_attached_expanded_type_mark
@@ -3851,6 +4094,14 @@ feature -- Types
 					else
 						Result := implicit_detachable_separate_type_mark
 					end
+				elseif a_non_separate_mark then
+					if a_expanded_mark then
+						Result := implicit_detachable_non_separate_expanded_type_mark
+					elseif a_reference_mark then
+						Result := implicit_detachable_non_separate_reference_type_mark
+					else
+						Result := implicit_detachable_non_separate_type_mark
+					end
 				elseif a_expanded_mark then
 					Result := implicit_detachable_expanded_type_mark
 				elseif a_reference_mark then
@@ -3865,6 +4116,14 @@ feature -- Types
 					Result := implicit_separate_reference_type_mark
 				else
 					Result := implicit_separate_type_mark
+				end
+			elseif a_non_separate_mark then
+				if a_expanded_mark then
+					Result := implicit_non_separate_expanded_type_mark
+				elseif a_reference_mark then
+					Result := implicit_non_separate_reference_type_mark
+				else
+					Result := implicit_non_separate_type_mark
 				end
 			elseif a_expanded_mark then
 				Result := implicit_expanded_type_mark
@@ -4452,6 +4711,15 @@ feature -- Keywords
 			keyword_not_void: Result /= Void
 		end
 
+	implies_keyword: ET_KEYWORD_OPERATOR
+			-- 'implies' keyword
+		once
+			create Result.make_implies
+		ensure
+			instance_free: class
+			keyword_not_void: Result /= Void
+		end
+
 	indexing_keyword: ET_KEYWORD
 			-- 'indexing' keyword
 		once
@@ -4479,10 +4747,10 @@ feature -- Keywords
 			keyword_not_void: Result /= Void
 		end
 
-	invariant_keyword: ET_KEYWORD
+	invariant_keyword: ET_INVARIANT_KEYWORD
 			-- 'invariant' keyword
 		once
-			create Result.make_invariant
+			create Result.make
 		ensure
 			instance_free: class
 			keyword_not_void: Result /= Void
@@ -4519,6 +4787,15 @@ feature -- Keywords
 			-- 'loop' keyword
 		once
 			create Result.make_loop
+		ensure
+			instance_free: class
+			keyword_not_void: Result /= Void
+		end
+
+	not_keyword: ET_KEYWORD_OPERATOR
+			-- 'not' keyword
+		once
+			create Result.make_not
 		ensure
 			instance_free: class
 			keyword_not_void: Result /= Void
@@ -4758,9 +5035,19 @@ feature -- Keywords
 			keyword_not_void: Result /= Void
 		end
 
+	xor_keyword: ET_KEYWORD_OPERATOR
+			-- 'xor' keyword
+		once
+			create Result.make_xor
+		ensure
+			instance_free: class
+			keyword_not_void: Result /= Void
+		end
+
 feature -- Keyword and symbol names
 
 	capitalized_any_name: STRING = "ANY"
+	capitalized_arguments_name: STRING = "ARGUMENTS"
 	capitalized_arguments_32_name: STRING = "ARGUMENTS_32"
 	capitalized_array_name: STRING = "ARRAY"
 	capitalized_boolean_name: STRING = "BOOLEAN"
@@ -4773,6 +5060,7 @@ feature -- Keyword and symbol names
 	capitalized_exception_name: STRING = "EXCEPTION"
 	capitalized_exception_manager_name: STRING = "EXCEPTION_MANAGER"
 	capitalized_exception_manager_factory_name: STRING = "EXCEPTION_MANAGER_FACTORY"
+	capitalized_file_name: STRING = "FILE"
 	capitalized_function_name: STRING = "FUNCTION"
 	capitalized_identified_routines_name: STRING = "IDENTIFIED_ROUTINES"
 	capitalized_immutable_string_8_name: STRING = "IMMUTABLE_STRING_8"
@@ -4814,6 +5102,7 @@ feature -- Keyword and symbol names
 	capitalized_typed_pointer_name: STRING = "TYPED_POINTER"
 	capitalized_wide_character_name: STRING = "WIDE_CHARACTER"
 	capitalized_unknown_name: STRING = "*UNKNOWN*"
+	capitalized_root_name: STRING = "*ROOT*"
 			-- Eiffel class names
 
 	after_name: STRING = "after"
@@ -4824,6 +5113,9 @@ feature -- Keyword and symbol names
 
 	area_name: STRING = "area"
 			-- Name of Eiffel feature 'area'
+
+	argument_array_name: STRING = "argument_array"
+			-- Name of Eiffel feature 'argument_array'
 
 	argument_count_name: STRING = "argument_count"
 			-- Name of Eiffel feature 'argument_count'
@@ -4890,6 +5182,18 @@ feature -- Keyword and symbol names
 
 	boolean_item_name: STRING = "boolean_item"
 			-- Name of Eiffel feature 'boolean_item'
+
+	c_basic_store_name: STRING = "c_basic_store"
+			-- Name of Eiffel feature 'c_basic_store'
+
+	c_general_store_name: STRING = "c_general_store"
+			-- Name of Eiffel feature 'c_general_store'
+
+	c_independent_store_name: STRING = "c_independent_store"
+			-- Name of Eiffel feature 'c_independent_store'
+
+	c_retrieved_name: STRING = "c_retrieved"
+			-- Name of Eiffel feature 'c_retrieved'
 
 	c_strlen_name: STRING = "c_strlen"
 			-- Name of Eiffel feature 'c_strlen'
@@ -5985,25 +6289,25 @@ feature -- Built-in
 			unknown_convert_feature_not_void: Result /= Void
 		end
 
-feature -- Indexing clauses
+feature -- Note clauses
 
-	once_indexing_tag: STRING = "once_status"
-			-- Tag in indexing clauses for once status
+	once_note_tag: STRING = "once_status"
+			-- Tag in note clauses for once status
 
-	option_indexing_tag: STRING = "option"
-			-- Tag in indexing clauses for feature options
+	option_note_tag: STRING = "option"
+			-- Tag in note clauses for feature options
 
-	global_once_indexing_value: STRING = "global"
-			-- "global" indexing value for once status
+	global_once_note_value: STRING = "global"
+			-- "global" note value for once status
 
-	thread_once_indexing_value: STRING = "thread"
-			-- "thread" indexing value for once status
+	thread_once_note_value: STRING = "thread"
+			-- "thread" note value for once status
 
-	stable_indexing_value: STRING = "stable"
-			-- "stable" indexing value for stable attributes
+	stable_note_value: STRING = "stable"
+			-- "stable" note value for stable attributes
 
-	transient_indexing_value: STRING = "transient"
-			-- "transient" indexing value for transient attributes
+	transient_note_value: STRING = "transient"
+			-- "transient" note value for transient attributes
 
 feature -- Position
 

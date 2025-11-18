@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,10 +7,8 @@ note
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2016, Eric Bezault and others"
+	copyright: "Copyright (c) 2016-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_PARENTHESIS_CALL
 
@@ -19,6 +17,14 @@ inherit
 	ET_QUALIFIED_FEATURE_CALL
 
 	ET_CALL_WITH_ACTUAL_ARGUMENT_LIST
+		undefine
+			is_call_agent,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
+		end
 
 feature {NONE} -- Initialization
 
@@ -46,12 +52,12 @@ feature -- Initialization
 			name.reset
 			reset_arguments
 		end
-		
+
 feature -- Access
 
 	target: ET_EXPRESSION
 			-- Target
-			
+
 	name: ET_PARENTHESIS_SYMBOL
 			-- Feature name
 
@@ -77,5 +83,5 @@ feature -- Access
 				Result := name.last_leaf
 			end
 		end
-		
+
 end

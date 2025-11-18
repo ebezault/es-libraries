@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"XSLT commands"
 
 	library: "Gobo Eiffel Ant"
-	copyright: "Copyright (c) 2001-2018, Sven Ehrke and others"
+	copyright: "Copyright (c) 2001-2024, Sven Ehrke and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEANT_XSLT_COMMAND
 
@@ -388,13 +386,16 @@ feature -- Execution
 			i, nb: INTEGER
 			si: GEANT_STRING_INTERPRETER
 			vr: GEANT_VARIABLES_VARIABLE_RESOLVER
+			l_gexslt_pathname: STRING
 		do
 			create si.make
 			create vr.make (a_variables)
 			si.set_variable_resolver (vr)
 
 			create template.make (128)
-			template.append_string ("gexslt --output=${output_filename}")
+			l_gexslt_pathname := {UT_GOBO_VARIABLES}.executable_pathname ("gexslt")
+			template.append_string (l_gexslt_pathname)
+			template.append_string (" --output=${output_filename}")
 
 				-- Add parameters:
 			nb := parameters.count

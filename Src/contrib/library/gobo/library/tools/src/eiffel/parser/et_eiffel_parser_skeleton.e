@@ -5,10 +5,8 @@
 		"Eiffel parser skeletons"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_EIFFEL_PARSER_SKELETON
 
@@ -76,6 +74,8 @@ feature {NONE} -- Initialization
 			create last_object_tests_pool.make (Initial_last_object_tests_capacity)
 			create last_iteration_components_stack.make (Initial_last_iteration_components_capacity)
 			create last_iteration_components_pool.make (Initial_last_iteration_components_capacity)
+			create last_inline_separate_arguments_stack.make (Initial_last_inline_separate_arguments_capacity)
+			create last_inline_separate_arguments_pool.make (Initial_last_inline_separate_arguments_capacity)
 			create assertions.make (Initial_assertions_capacity)
 			create assertion_counters.make (Initial_assertion_counters_capacity)
 			create assertion_kinds.make (Initial_assertion_counters_capacity)
@@ -100,6 +100,7 @@ feature -- Initialization
 			wipe_out_last_local_variables_stack
 			wipe_out_last_object_tests_stack
 			wipe_out_last_iteration_components_stack
+			wipe_out_last_inline_separate_arguments_stack
 			last_keywords.wipe_out
 			last_symbols.wipe_out
 			providers.wipe_out
@@ -354,6 +355,8 @@ feature -- AST processing
 		do
 			if a_class.is_none then
 				process_none_class (a_class)
+			elseif a_class.is_formal then
+				process_formal_class (a_class)
 			elseif not current_class.is_unknown then
 					-- Internal error (recursive call)
 					-- This internal error is fatal.
@@ -512,6 +515,24 @@ feature {NONE} -- AST processing
 			is_parsed: not {PLATFORM}.is_thread_capable implies a_class.is_parsed
 		end
 
+	process_formal_class (a_class: ET_CLASS)
+			-- Process virtual class representing formal generic parameters
+			-- (used for Storable files).
+		require
+			a_class_not_void: a_class /= Void
+			a_class_is_formal: a_class.is_formal
+		do
+			if not {PLATFORM}.is_thread_capable or else a_class.processing_mutex.try_lock then
+				if not a_class.is_parsed then
+					a_class.set_parsed
+					system_processor.report_class_processed (a_class)
+				end
+				a_class.processing_mutex.unlock
+			end
+		ensure
+			is_parsed: not {PLATFORM}.is_thread_capable implies a_class.is_parsed
+		end
+
 feature {NONE} -- Basic operations
 
 	register_query (a_query: detachable ET_QUERY)
@@ -526,13 +547,18 @@ feature {NONE} -- Basic operations
 				if attached last_iteration_components as l_last_iteration_components then
 					a_query.set_iteration_components (l_last_iteration_components.cloned_iteration_component_list)
 				end
+				if attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					a_query.set_inline_separate_arguments (l_last_inline_separate_arguments.cloned_inline_separate_argument_list)
+				end
 			end
-				-- Reset local variables, formal arguments, object-tests
-				-- and iteration components before reading the next feature.
+				-- Reset local variables, formal arguments, object-tests,
+				-- iteration components and inline separate arguments before
+				-- reading the next closure.
 			wipe_out_last_formal_arguments_stack
 			wipe_out_last_local_variables_stack
 			wipe_out_last_object_tests_stack
 			wipe_out_last_iteration_components_stack
+			wipe_out_last_inline_separate_arguments_stack
 		end
 
 	register_query_synonym (a_query: detachable ET_QUERY)
@@ -559,13 +585,18 @@ feature {NONE} -- Basic operations
 				if attached last_iteration_components as l_last_iteration_components then
 					a_procedure.set_iteration_components (l_last_iteration_components.cloned_iteration_component_list)
 				end
+				if attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					a_procedure.set_inline_separate_arguments (l_last_inline_separate_arguments.cloned_inline_separate_argument_list)
+				end
 			end
-				-- Reset local variables, formal arguments, object-tests
-				-- and iteration components before reading the next feature.
+				-- Reset local variables, formal arguments, object-tests,
+				-- iteration components and inline separate arguments before
+				-- reading the next closure.
 			wipe_out_last_formal_arguments_stack
 			wipe_out_last_local_variables_stack
 			wipe_out_last_object_tests_stack
 			wipe_out_last_iteration_components_stack
+			wipe_out_last_inline_separate_arguments_stack
 		end
 
 	register_procedure_synonym (a_procedure: detachable ET_PROCEDURE)
@@ -589,6 +620,9 @@ feature {NONE} -- Basic operations
 				end
 				if attached last_iteration_components as l_last_iteration_components then
 					a_inline_agent.set_iteration_components (l_last_iteration_components.cloned_iteration_component_list)
+				end
+				if attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					a_inline_agent.set_inline_separate_arguments (l_last_inline_separate_arguments.cloned_inline_separate_argument_list)
 				end
 					-- Clean up after the inline agent has been parsed.
 				set_end_closure
@@ -720,6 +754,7 @@ feature {NONE} -- Basic operations
 			l_procedures: ET_PROCEDURE_LIST
 			l_procedure: ET_PROCEDURE
 			i, nb: INTEGER
+			l_attribute_count: INTEGER
 		do
 			a_class := last_class
 			if a_class /= Void then
@@ -738,9 +773,14 @@ feature {NONE} -- Basic operations
 					if attached {ET_UNIQUE_ATTRIBUTE} l_query as l_unique_attribute then
 						l_unique_attribute.constant.set_value (l_unique_attribute.id.to_natural_64)
 					end
+					if l_query.is_attribute then
+						l_attribute_count := l_attribute_count + 1
+					end
 					i := i + 1
 				end
 				l_queries.set_declared_count (nb)
+				l_queries.set_attribute_count (l_attribute_count)
+				l_queries.set_declared_attribute_count (l_attribute_count)
 				a_class.set_queries (l_queries)
 				nb := procedures.count
 				create l_procedures.make_with_capacity (nb)
@@ -780,7 +820,7 @@ feature {NONE} -- Basic operations
 	set_class_to_end (a_class: detachable ET_CLASS; an_obsolete: detachable ET_OBSOLETE; a_parents: detachable ET_PARENT_CLAUSE_LIST;
 		a_creators: detachable ET_CREATOR_LIST; a_convert_features: detachable ET_CONVERT_FEATURE_LIST;
 		a_feature_clauses: detachable ET_FEATURE_CLAUSE_LIST; an_invariants: detachable ET_INVARIANTS;
-		a_second_indexing: detachable ET_INDEXING_LIST; an_end: detachable ET_KEYWORD)
+		a_second_note: detachable ET_NOTE_LIST; an_end: detachable ET_KEYWORD)
 			-- Set various elements to `a_class'.
 		do
 			if a_class /= Void then
@@ -790,7 +830,7 @@ feature {NONE} -- Basic operations
 				a_class.set_convert_features (a_convert_features)
 				a_class.set_feature_clauses (a_feature_clauses)
 				a_class.set_invariants (an_invariants)
-				a_class.set_second_indexing (a_second_indexing)
+				a_class.set_second_note_clause (a_second_note)
 				if an_end /= Void then
 					a_class.set_end_keyword (an_end)
 				end
@@ -806,21 +846,21 @@ feature {NONE} -- Basic operations
 			end
 		end
 
-	add_expression_assertion (an_expression: detachable ET_EXPRESSION; a_semicolon: detachable ET_SYMBOL)
+	add_expression_assertion (an_expression: detachable ET_EXPRESSION; a_semicolon: detachable ET_SEMICOLON_SYMBOL)
 			-- Add `an_expression' assertion, optionally followed
 			-- by `a_semicolon', to `assertions'.
 		do
 			add_untagged_assertion (an_expression, a_semicolon)
 		end
 
-	add_class_assertion (a_class_assertion: detachable ET_CLASS_ASSERTION; a_semicolon: detachable ET_SYMBOL)
+	add_class_assertion (a_class_assertion: detachable ET_CLASS_ASSERTION; a_semicolon: detachable ET_SEMICOLON_SYMBOL)
 			-- Add `a_class_assertion' assertion, optionally followed
 			-- by `a_semicolon', to `assertions'.
 		do
 			add_untagged_assertion (a_class_assertion, a_semicolon)
 		end
 
-	add_untagged_assertion (a_untagged_assertion: detachable ET_UNTAGGED_ASSERTION; a_semicolon: detachable ET_SYMBOL)
+	add_untagged_assertion (a_untagged_assertion: detachable ET_UNTAGGED_ASSERTION; a_semicolon: detachable ET_SEMICOLON_SYMBOL)
 			-- Add `a_untagged_assertion' assertion, optionally followed
 			-- by `a_semicolon', to `assertions'.
 		local
@@ -861,7 +901,7 @@ feature {NONE} -- Basic operations
 			end
 		end
 
-	add_tagged_assertion (a_tag: detachable ET_IDENTIFIER; a_colon: detachable ET_SYMBOL; a_semicolon: detachable ET_SYMBOL)
+	add_tagged_assertion (a_tag: detachable ET_IDENTIFIER; a_colon: detachable ET_SYMBOL; a_semicolon: detachable ET_SEMICOLON_SYMBOL)
 			-- Add tagged assertion, optionally followed
 			-- by `a_semicolon', to `assertions'.
 		local
@@ -926,8 +966,9 @@ feature {NONE} -- Basic operations
 			-- Indicate the we just parsed the formal arguments of a
 			-- new closure (i.e. feature, invariant or inline agent).
 			-- Keep track of the values of `last_formal_arguments',
-			-- `last_local_variables', `last_object_tests' and
-			-- `last_iteration_components' for the enclosing closure.
+			-- `last_local_variables', `last_object_tests',
+			-- `last_iteration_components' and `last_inline_separate_instructions'
+			-- for the enclosing closure.
 			-- They will be restored when we reach the end of the
 			-- closure by `set_end_closure'.
 		do
@@ -939,14 +980,16 @@ feature {NONE} -- Basic operations
 			last_object_tests := Void
 			last_iteration_components_stack.force (last_iteration_components)
 			last_iteration_components := Void
+			last_inline_separate_arguments_stack.force (last_inline_separate_arguments)
+			last_inline_separate_arguments := Void
 		end
 
 	set_end_closure
 			-- Indicate that the end of the closure (i.e. feature, invariant
 			-- or inline agent) being parsed has been reached. Restore
 			-- `last_formal_arguments', `last_local_variables',
-			-- `last_object_tests' and `last_iteration_components'
-			-- for the enclosing closure if any.
+			-- `last_object_tests', `last_iteration_components' and
+			-- `last_inline_separate_instructions' for the enclosing closure if any.
 		do
 			if not last_formal_arguments_stack.is_empty then
 				last_formal_arguments := last_formal_arguments_stack.item
@@ -979,6 +1022,16 @@ feature {NONE} -- Basic operations
 				last_iteration_components_stack.remove
 			else
 				last_iteration_components := Void
+			end
+			if attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+				l_last_inline_separate_arguments.wipe_out
+				last_inline_separate_arguments_pool.force (l_last_inline_separate_arguments)
+			end
+			if not last_inline_separate_arguments_stack.is_empty then
+				last_inline_separate_arguments := last_inline_separate_arguments_stack.item
+				last_inline_separate_arguments_stack.remove
+			else
+				last_inline_separate_arguments := Void
 			end
 		end
 
@@ -1176,6 +1229,7 @@ feature {ET_CONSTRAINT_ACTUAL_PARAMETER_ITEM, ET_CONSTRAINT_ACTUAL_PARAMETER_LIS
 			nb := a_constraint.count
 			Result := ast_factory.new_actual_parameters (a_constraint.left_bracket, a_constraint.right_bracket, nb)
 			if Result /= Void then
+				Result.set_first_symbol (a_constraint.first_symbol)
 				from i := nb until i < 1 loop
 					l_actual := a_constraint.item (i)
 					l_type := l_actual.type
@@ -1361,38 +1415,47 @@ feature {NONE} -- AST factory
 	new_agent_identifier_target (an_identifier: detachable ET_IDENTIFIER): detachable ET_EXPRESSION
 			-- New agent identifier target
 		local
-			a_seed: INTEGER
+			l_seed: INTEGER
 		do
 			if an_identifier /= Void then
 				if attached last_formal_arguments as l_last_formal_arguments then
-					a_seed := l_last_formal_arguments.index_of (an_identifier)
-					if a_seed /= 0 then
-						an_identifier.set_seed (a_seed)
+					l_seed := l_last_formal_arguments.index_of (an_identifier)
+					if l_seed /= 0 then
+						an_identifier.set_seed (l_seed)
 						an_identifier.set_argument (True)
-						l_last_formal_arguments.formal_argument (a_seed).set_used (True)
+						l_last_formal_arguments.formal_argument (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_local_variables as l_last_local_variables then
-					a_seed := l_last_local_variables.index_of (an_identifier)
-					if a_seed /= 0 then
-						an_identifier.set_seed (a_seed)
+				if l_seed = 0 and then attached last_local_variables as l_last_local_variables then
+					l_seed := l_last_local_variables.index_of (an_identifier)
+					if l_seed /= 0 then
+						an_identifier.set_seed (l_seed)
 						an_identifier.set_local (True)
-						l_last_local_variables.local_variable (a_seed).set_used (True)
+						l_last_local_variables.local_variable (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
-					a_seed := l_last_iteration_components.index_of_name (an_identifier)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
+					l_seed := l_last_iteration_components.index_of_name (an_identifier)
+					if l_seed /= 0 then
 						an_identifier.set_iteration_item (True)
 					end
 				end
-				if a_seed = 0 and then attached last_object_tests as l_last_object_tests then
-					a_seed := l_last_object_tests.index_of_name (an_identifier)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					l_seed := l_last_inline_separate_arguments.index_of_name (an_identifier)
+					if l_seed /= 0 then
+						an_identifier.set_inline_separate_argument (True)
+					end
+				end
+					-- Process object-tests last because contrary to the others above,
+					-- we don't have a way at this stage in the compilation to know the
+					-- scope of the local names of object-tests.
+				if l_seed = 0 and then attached last_object_tests as l_last_object_tests then
+					l_seed := l_last_object_tests.index_of_name (an_identifier)
+					if l_seed /= 0 then
 						an_identifier.set_object_test_local (True)
 					end
 				end
-				if a_seed = 0 then
+				if l_seed = 0 then
 					an_identifier.set_feature_name (True)
 					Result := ast_factory.new_unqualified_call_expression (an_identifier, Void)
 				else
@@ -1438,8 +1501,8 @@ feature {NONE} -- AST factory
 			end
 		end
 
-	new_check_instruction (a_check: detachable ET_KEYWORD; a_then_compound: detachable ET_COMPOUND;
-		an_end: detachable ET_KEYWORD): detachable ET_CHECK_INSTRUCTION
+	new_check_instruction (a_check: detachable ET_KEYWORD; a_semicolon: detachable ET_SEMICOLON_SYMBOL;
+		a_then_compound: detachable ET_COMPOUND; an_end: detachable ET_KEYWORD): detachable ET_CHECK_INSTRUCTION
 			-- New check instruction
 		local
 			i, nb: INTEGER
@@ -1471,6 +1534,9 @@ feature {NONE} -- AST factory
 					end
 				end
 			end
+			if Result /= Void and attached ast_factory.new_first_semicolon (a_semicolon) as l_first_semicolon then
+				Result.set_first_semicolon (l_first_semicolon)
+			end
 			if not assertion_kinds.is_empty then
 				assertion_kind := assertion_kinds.last
 				assertion_kinds.remove_last
@@ -1483,38 +1549,47 @@ feature {NONE} -- AST factory
 			-- New choice constant which is supposed to be the name of
 			-- a constant attribute or unique attribute
 		local
-			a_seed: INTEGER
+			l_seed: INTEGER
 		do
 			if a_name /= Void then
 				if attached last_formal_arguments as l_last_formal_arguments then
-					a_seed := l_last_formal_arguments.index_of (a_name)
-					if a_seed /= 0 then
-						a_name.set_seed (a_seed)
+					l_seed := l_last_formal_arguments.index_of (a_name)
+					if l_seed /= 0 then
+						a_name.set_seed (l_seed)
 						a_name.set_argument (True)
-						l_last_formal_arguments.formal_argument (a_seed).set_used (True)
+						l_last_formal_arguments.formal_argument (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_local_variables as l_last_local_variables then
-					a_seed := l_last_local_variables.index_of (a_name)
-					if a_seed /= 0 then
-						a_name.set_seed (a_seed)
+				if l_seed = 0 and then attached last_local_variables as l_last_local_variables then
+					l_seed := l_last_local_variables.index_of (a_name)
+					if l_seed /= 0 then
+						a_name.set_seed (l_seed)
 						a_name.set_local (True)
-						l_last_local_variables.local_variable (a_seed).set_used (True)
+						l_last_local_variables.local_variable (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
-					a_seed := l_last_iteration_components.index_of_name (a_name)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
+					l_seed := l_last_iteration_components.index_of_name (a_name)
+					if l_seed /= 0 then
 						a_name.set_iteration_item (True)
 					end
 				end
-				if a_seed = 0 and then attached last_object_tests as l_last_object_tests then
-					a_seed := l_last_object_tests.index_of_name (a_name)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					l_seed := l_last_inline_separate_arguments.index_of_name (a_name)
+					if l_seed /= 0 then
+						a_name.set_inline_separate_argument (True)
+					end
+				end
+					-- Process object-tests last because contrary to the others above,
+					-- we don't have a way at this stage in the compilation to know the
+					-- scope of the local names of object-tests.
+				if l_seed = 0 and then attached last_object_tests as l_last_object_tests then
+					l_seed := l_last_object_tests.index_of_name (a_name)
+					if l_seed /= 0 then
 						a_name.set_object_test_local (True)
 					end
 				end
-				if a_seed = 0 then
+				if l_seed = 0 then
 					a_name.set_feature_name (True)
 					Result := ast_factory.new_unqualified_call_expression (a_name, Void)
 				else
@@ -1568,7 +1643,7 @@ feature {NONE} -- AST factory
 
 	new_external_function (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
 		a_type: detachable ET_DECLARED_TYPE; an_assigner: detachable ET_ASSIGNER;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST;
 		an_obsolete: detachable ET_OBSOLETE; a_preconditions: detachable ET_PRECONDITIONS;
 		a_language: detachable ET_EXTERNAL_LANGUAGE;
 		an_alias: detachable ET_EXTERNAL_ALIAS; a_postconditions: detachable ET_POSTCONDITIONS;
@@ -1578,20 +1653,20 @@ feature {NONE} -- AST factory
 		a_class: detachable ET_CLASS): detachable ET_EXTERNAL_FUNCTION
 			-- New external function
 		do
-			Result := ast_factory.new_external_function (a_name, args, a_type, an_assigner, an_is, a_first_indexing,
+			Result := ast_factory.new_external_function (a_name, args, a_type, an_assigner, an_is, a_first_note,
 				an_obsolete, a_preconditions, a_language, an_alias, a_postconditions,
 				an_end, a_semicolon, a_clients, a_feature_clause, a_class)
 		end
 
 	new_external_procedure (a_name: detachable ET_EXTENDED_FEATURE_NAME; args: detachable ET_FORMAL_ARGUMENT_LIST;
-		an_is: detachable ET_KEYWORD; a_first_indexing: detachable ET_INDEXING_LIST; an_obsolete: detachable ET_OBSOLETE;
+		an_is: detachable ET_KEYWORD; a_first_note: detachable ET_NOTE_LIST; an_obsolete: detachable ET_OBSOLETE;
 		a_preconditions: detachable ET_PRECONDITIONS; a_language: detachable ET_EXTERNAL_LANGUAGE; an_alias: detachable ET_EXTERNAL_ALIAS;
 		a_postconditions: detachable ET_POSTCONDITIONS; an_end: detachable ET_KEYWORD;
 		a_semicolon: detachable ET_SEMICOLON_SYMBOL; a_clients: detachable ET_CLIENT_LIST;
 		a_feature_clause: detachable ET_FEATURE_CLAUSE; a_class: detachable ET_CLASS): detachable ET_EXTERNAL_PROCEDURE
 			-- New external procedure
 		do
-			Result := ast_factory.new_external_procedure (a_name, args, an_is, a_first_indexing,
+			Result := ast_factory.new_external_procedure (a_name, args, an_is, a_first_note,
 				an_obsolete, a_preconditions, a_language, an_alias, a_postconditions,
 				an_end, a_semicolon, a_clients, a_feature_clause, a_class)
 		end
@@ -1624,6 +1699,15 @@ feature {NONE} -- AST factory
 						l_identifier.set_iteration_item (True)
 					end
 				end
+				if l_seed = 0 and then attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					l_seed := l_last_inline_separate_arguments.index_of_name (l_identifier)
+					if l_seed /= 0 then
+						l_identifier.set_inline_separate_argument (True)
+					end
+				end
+					-- Process object-tests last because contrary to the others above,
+					-- we don't have a way at this stage in the compilation to know the
+					-- scope of the local names of object-tests.
 				if l_seed = 0 and then attached last_object_tests as l_last_object_tests then
 					l_seed := l_last_object_tests.index_of_name (l_identifier)
 					if l_seed /= 0 then
@@ -1688,7 +1772,7 @@ feature {NONE} -- AST factory
 			Result := new_alias_free_name (an_alias, a_string, a_convert)
 		end
 
-	new_invariants (an_invariant: detachable ET_KEYWORD): detachable ET_INVARIANTS
+	new_invariants (an_invariant: detachable ET_INVARIANT_KEYWORD; a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_INVARIANTS
 			-- New class invariants
 		local
 			i, nb: INTEGER
@@ -1720,6 +1804,9 @@ feature {NONE} -- AST factory
 					end
 				end
 			end
+			if Result /= Void and attached ast_factory.new_first_semicolon (a_semicolon) as l_first_semicolon then
+				Result.set_first_semicolon (l_first_semicolon)
+			end
 			if not assertion_kinds.is_empty then
 				assertion_kind := assertion_kinds.last
 				assertion_kinds.remove_last
@@ -1733,13 +1820,18 @@ feature {NONE} -- AST factory
 				if attached last_iteration_components as l_last_iteration_components then
 					Result.set_iteration_components (l_last_iteration_components.cloned_iteration_component_list)
 				end
+				if attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					Result.set_inline_separate_arguments (l_last_inline_separate_arguments.cloned_inline_separate_argument_list)
+				end
 			end
-				-- Reset local variables, formal arguments, object-tests
-				-- and across components before reading the next closure.
+				-- Reset local variables, formal arguments, object-tests,
+				-- iteration components and inline separate arguments before
+				-- reading the next closure.
 			wipe_out_last_formal_arguments_stack
 			wipe_out_last_local_variables_stack
 			wipe_out_last_object_tests_stack
 			wipe_out_last_iteration_components_stack
+			wipe_out_last_inline_separate_arguments_stack
 		end
 
 	new_iteration_cursor (a_at_symbol: detachable ET_SYMBOL; a_identifier: detachable ET_IDENTIFIER): detachable ET_ITERATION_CURSOR
@@ -1777,7 +1869,7 @@ feature {NONE} -- AST factory
 			last_local_variables := Result
 		end
 
-	new_loop_invariants (an_invariant: detachable ET_KEYWORD): detachable ET_LOOP_INVARIANTS
+	new_loop_invariants (an_invariant: detachable ET_INVARIANT_KEYWORD; a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_LOOP_INVARIANTS
 			-- New loop invariants
 		local
 			i, nb: INTEGER
@@ -1808,6 +1900,9 @@ feature {NONE} -- AST factory
 						i := i - 1
 					end
 				end
+			end
+			if Result /= Void and attached ast_factory.new_first_semicolon (a_semicolon) as l_first_semicolon then
+				Result.set_first_semicolon (l_first_semicolon)
 			end
 			if not assertion_kinds.is_empty then
 				assertion_kind := assertion_kinds.last
@@ -1938,7 +2033,7 @@ feature {NONE} -- AST factory
 			end
 		end
 
-	new_postconditions (an_ensure: detachable ET_KEYWORD; a_then: detachable ET_KEYWORD): detachable ET_POSTCONDITIONS
+	new_postconditions (an_ensure: detachable ET_KEYWORD; a_then: detachable ET_KEYWORD; a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_POSTCONDITIONS
 			-- New postconditions
 		local
 			i, nb: INTEGER
@@ -1970,6 +2065,9 @@ feature {NONE} -- AST factory
 					end
 				end
 			end
+			if Result /= Void and attached ast_factory.new_first_semicolon (a_semicolon) as l_first_semicolon then
+				Result.set_first_semicolon (l_first_semicolon)
+			end
 			if not assertion_kinds.is_empty then
 				assertion_kind := assertion_kinds.last
 				assertion_kinds.remove_last
@@ -1978,7 +2076,7 @@ feature {NONE} -- AST factory
 			end
 		end
 
-	new_preconditions (a_require: detachable ET_KEYWORD; an_else: detachable ET_KEYWORD): detachable ET_PRECONDITIONS
+	new_preconditions (a_require: detachable ET_KEYWORD; an_else: detachable ET_KEYWORD; a_semicolon: detachable ET_SEMICOLON_SYMBOL): detachable ET_PRECONDITIONS
 			-- New preconditions
 		local
 			i, nb: INTEGER
@@ -2009,6 +2107,9 @@ feature {NONE} -- AST factory
 						i := i - 1
 					end
 				end
+			end
+			if Result /= Void and attached ast_factory.new_first_semicolon (a_semicolon) as l_first_semicolon then
+				Result.set_first_semicolon (l_first_semicolon)
 			end
 			if not assertion_kinds.is_empty then
 				assertion_kind := assertion_kinds.last
@@ -2117,6 +2218,45 @@ feature {NONE} -- AST factory
 			end
 		end
 
+	new_inline_separate_argument (a_expression: detachable ET_EXPRESSION; a_as: detachable ET_KEYWORD; a_name: detachable ET_IDENTIFIER): detachable ET_INLINE_SEPARATE_ARGUMENT
+			-- New inline separate argument
+		local
+			l_last_inline_separate_arguments: like last_inline_separate_arguments
+			l_name: ET_IDENTIFIER
+		do
+			Result := ast_factory.new_inline_separate_argument (a_expression, a_as, a_name)
+			if Result /= Void then
+				l_last_inline_separate_arguments := last_inline_separate_arguments
+				if l_last_inline_separate_arguments = Void then
+					l_last_inline_separate_arguments := new_inline_separate_argument_list
+					last_inline_separate_arguments := l_last_inline_separate_arguments
+				end
+				l_last_inline_separate_arguments.force_last (Result)
+					-- We set 'name.is_inline_separate_argument' to False when
+					-- parsing within its scope.
+				l_name := Result.name
+				l_name.set_inline_separate_argument (False)
+				l_name.set_seed (l_last_inline_separate_arguments.count)
+			end
+		end
+
+	new_inline_separate_instruction (a_arguments: detachable ET_INLINE_SEPARATE_ARGUMENTS; a_compound: detachable ET_COMPOUND; a_end: detachable ET_KEYWORD): detachable ET_INLINE_SEPARATE_INSTRUCTION
+			-- New inline separate instruction
+		local
+			l_arguments: ET_INLINE_SEPARATE_ARGUMENTS
+			i, nb: INTEGER
+		do
+			Result := ast_factory.new_inline_separate_instruction (a_arguments, a_compound, a_end)
+			if Result /= Void then
+				l_arguments := Result.arguments
+				nb := l_arguments.count
+				from i := 1 until i > nb loop
+					l_arguments.argument (i).name.set_inline_separate_argument (True)
+					i := i + 1
+				end
+			end
+		end
+
 	new_there_exists_quantifier_expression_header (a_quantifier_symbol: detachable ET_SYMBOL;
 		a_item_name: detachable ET_IDENTIFIER; a_colon_symbol: detachable ET_SYMBOL;
 		a_iterable_expression: detachable ET_EXPRESSION; a_bar_symbol: detachable ET_SYMBOL): detachable ET_QUANTIFIER_EXPRESSION
@@ -2170,38 +2310,47 @@ feature {NONE} -- AST factory
 	new_unqualified_call_expression (a_name: detachable ET_IDENTIFIER; args: detachable ET_ACTUAL_ARGUMENT_LIST): detachable ET_EXPRESSION
 			-- New unqualified call expression
 		local
-			a_seed: INTEGER
+			l_seed: INTEGER
 		do
 			if a_name /= Void then
 				if attached last_formal_arguments as l_last_formal_arguments then
-					a_seed := l_last_formal_arguments.index_of (a_name)
-					if a_seed /= 0 then
-						a_name.set_seed (a_seed)
+					l_seed := l_last_formal_arguments.index_of (a_name)
+					if l_seed /= 0 then
+						a_name.set_seed (l_seed)
 						a_name.set_argument (True)
-						l_last_formal_arguments.formal_argument (a_seed).set_used (True)
+						l_last_formal_arguments.formal_argument (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_local_variables as l_last_local_variables then
-					a_seed := l_last_local_variables.index_of (a_name)
-					if a_seed /= 0 then
-						a_name.set_seed (a_seed)
+				if l_seed = 0 and then attached last_local_variables as l_last_local_variables then
+					l_seed := l_last_local_variables.index_of (a_name)
+					if l_seed /= 0 then
+						a_name.set_seed (l_seed)
 						a_name.set_local (True)
-						l_last_local_variables.local_variable (a_seed).set_used (True)
+						l_last_local_variables.local_variable (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
-					a_seed := l_last_iteration_components.index_of_name (a_name)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
+					l_seed := l_last_iteration_components.index_of_name (a_name)
+					if l_seed /= 0 then
 						a_name.set_iteration_item (True)
 					end
 				end
-				if a_seed = 0 and then attached last_object_tests as l_last_object_tests then
-					a_seed := l_last_object_tests.index_of_name (a_name)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					l_seed := l_last_inline_separate_arguments.index_of_name (a_name)
+					if l_seed /= 0 then
+						a_name.set_inline_separate_argument (True)
+					end
+				end
+					-- Process object-tests last because contrary to the others above,
+					-- we don't have a way at this stage in the compilation to know the
+					-- scope of the local names of object-tests.
+				if l_seed = 0 and then attached last_object_tests as l_last_object_tests then
+					l_seed := l_last_object_tests.index_of_name (a_name)
+					if l_seed /= 0 then
 						a_name.set_object_test_local (True)
 					end
 				end
-				if a_seed = 0 then
+				if l_seed = 0 then
 					a_name.set_feature_name (True)
 					Result := ast_factory.new_unqualified_call_expression (a_name, args)
 				elseif args /= Void then
@@ -2215,45 +2364,50 @@ feature {NONE} -- AST factory
 	new_unqualified_call_instruction (a_name: detachable ET_IDENTIFIER; args: detachable ET_ACTUAL_ARGUMENT_LIST): detachable ET_INSTRUCTION
 			-- New unqualified call instruction
 		local
-			a_seed: INTEGER
+			l_seed: INTEGER
 		do
 			if a_name /= Void then
 				if attached last_formal_arguments as l_last_formal_arguments then
-					a_seed := l_last_formal_arguments.index_of (a_name)
-					if a_seed /= 0 then
-						a_name.set_seed (a_seed)
+					l_seed := l_last_formal_arguments.index_of (a_name)
+					if l_seed /= 0 then
+						a_name.set_seed (l_seed)
 						a_name.set_argument (True)
-						l_last_formal_arguments.formal_argument (a_seed).set_used (True)
+						l_last_formal_arguments.formal_argument (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_local_variables as l_last_local_variables then
-					a_seed := l_last_local_variables.index_of (a_name)
-					if a_seed /= 0 then
-						a_name.set_seed (a_seed)
+				if l_seed = 0 and then attached last_local_variables as l_last_local_variables then
+					l_seed := l_last_local_variables.index_of (a_name)
+					if l_seed /= 0 then
+						a_name.set_seed (l_seed)
 						a_name.set_local (True)
-						l_last_local_variables.local_variable (a_seed).set_used (True)
+						l_last_local_variables.local_variable (l_seed).set_used (True)
 					end
 				end
-				if a_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
-					a_seed := l_last_iteration_components.index_of_name (a_name)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_iteration_components as l_last_iteration_components then
+					l_seed := l_last_iteration_components.index_of_name (a_name)
+					if l_seed /= 0 then
 						a_name.set_iteration_item (True)
 					end
 				end
-				if a_seed = 0 and then attached last_object_tests as l_last_object_tests then
-					a_seed := l_last_object_tests.index_of_name (a_name)
-					if a_seed /= 0 then
+				if l_seed = 0 and then attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					l_seed := l_last_inline_separate_arguments.index_of_name (a_name)
+					if l_seed /= 0 then
+						a_name.set_inline_separate_argument (True)
+					end
+				end
+					-- Process object-tests last because contrary to the others above,
+					-- we don't have a way at this stage in the compilation to know the
+					-- scope of the local names of object-tests.
+				if l_seed = 0 and then attached last_object_tests as l_last_object_tests then
+					l_seed := l_last_object_tests.index_of_name (a_name)
+					if l_seed /= 0 then
 						a_name.set_object_test_local (True)
 					end
 				end
-				if a_seed = 0 then
+				if l_seed = 0 then
 					a_name.set_feature_name (True)
-					Result := ast_factory.new_unqualified_call_instruction (a_name, args)
-				elseif args /= Void then
-					Result := ast_factory.new_unqualified_call_instruction (a_name, args)
-				else
-					Result := a_name
 				end
+				Result := ast_factory.new_unqualified_call_instruction (a_name, args)
 			end
 		end
 
@@ -2286,6 +2440,15 @@ feature {NONE} -- AST factory
 						a_name.set_iteration_item (True)
 					end
 				end
+				if l_seed = 0 and then attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+					l_seed := l_last_inline_separate_arguments.index_of_name (a_name)
+					if l_seed /= 0 then
+						a_name.set_inline_separate_argument (True)
+					end
+				end
+					-- Process object-tests last because contrary to the others above,
+					-- we don't have a way at this stage in the compilation to know the
+					-- scope of the local names of object-tests.
 				if l_seed = 0 and then attached last_object_tests as l_last_object_tests then
 					l_seed := l_last_object_tests.index_of_name (a_name)
 					if l_seed /= 0 then
@@ -2608,6 +2771,62 @@ feature {NONE} -- Iteration components
 			last_iteration_components_void: last_iteration_components = Void
 		end
 
+feature {NONE} -- Inline separate arguments
+
+	last_inline_separate_arguments: detachable ET_INLINE_SEPARATE_ARGUMENT_LIST
+			-- Inline separate arguments already found in the closure (i.e. feature,
+			-- invariant or inline agent) being parsed
+
+	last_inline_separate_arguments_stack: DS_ARRAYED_STACK [detachable ET_INLINE_SEPARATE_ARGUMENT_LIST]
+			-- Stack of inline separate arguments already found in the enclosing
+			-- closures (i.e. feature, invariant or inline agents)
+			-- of the closure being parsed
+
+	last_inline_separate_arguments_pool: DS_ARRAYED_STACK [ET_INLINE_SEPARATE_ARGUMENT_LIST]
+			-- Pool of inline separate argument lists available for usage
+			-- whenever needed
+
+	new_inline_separate_argument_list: ET_INLINE_SEPARATE_ARGUMENT_LIST
+			-- New inline separate argument list;
+			-- Reuse items from `last_inline_separate_argument_pool' if available.
+		do
+			if not last_inline_separate_arguments_pool.is_empty then
+				Result := last_inline_separate_arguments_pool.item
+				last_inline_separate_arguments_pool.remove
+			else
+				create Result.make_with_capacity (Initial_last_inline_separate_arguments_capacity)
+			end
+		ensure
+			new_inline_separate_argument_list_not_void: Result /= Void
+		end
+
+	wipe_out_last_inline_separate_arguments_stack
+			-- Wipe out `last_inline_separate_arguments_stack' and
+			-- set `last_inline_separate_arguments' to Void.
+		local
+			l_inline_separate_argument_list: detachable ET_INLINE_SEPARATE_ARGUMENT_LIST
+			i, nb: INTEGER
+		do
+			if attached last_inline_separate_arguments as l_last_inline_separate_arguments then
+				l_last_inline_separate_arguments.wipe_out
+				last_inline_separate_arguments_pool.force (l_last_inline_separate_arguments)
+				last_inline_separate_arguments := Void
+			end
+			nb := last_inline_separate_arguments_stack.count
+			from i := 1 until i > nb loop
+				l_inline_separate_argument_list := last_inline_separate_arguments_stack.i_th (i)
+				if l_inline_separate_argument_list /= Void then
+					l_inline_separate_argument_list.wipe_out
+					last_inline_separate_arguments_pool.force (l_inline_separate_argument_list)
+				end
+				i := i + 1
+			end
+			last_inline_separate_arguments_stack.wipe_out
+		ensure
+			last_inline_separate_arguments_stack_wiped_out: last_inline_separate_arguments_stack.is_empty
+			last_inline_separate_arguments_void: last_inline_separate_arguments = Void
+		end
+
 feature {NONE} -- Formal arguments
 
 	last_formal_arguments: detachable ET_FORMAL_ARGUMENT_LIST
@@ -2774,6 +2993,9 @@ feature {NONE} -- Constants
 	Initial_last_iteration_components_capacity: INTEGER = 50
 			-- Initial capacity for `last_iteration_components'
 
+	Initial_last_inline_separate_arguments_capacity: INTEGER = 50
+			-- Initial capacity for `last_inline_separate_instructions'
+
 	Initial_assertions_capacity: INTEGER = 20
 			-- Initial capacity for `assertions'
 
@@ -2868,6 +3090,10 @@ invariant
 	last_iteration_components_stack_not_void: last_iteration_components_stack /= Void
 	last_iteration_components_pool_not_void: last_iteration_components_pool /= Void
 	no_void_last_iteration_components_in_pool: not last_iteration_components_pool.has_void
+		-- Inline separate arguments.
+	last_inline_separate_arguments_stack_not_void: last_inline_separate_arguments_stack /= Void
+	last_inline_separate_arguments_pool_not_void: last_inline_separate_arguments_pool /= Void
+	no_void_last_inline_separate_arguments_in_pool: not last_inline_separate_arguments_pool.has_void
 		-- Input buffer.
 	eiffel_buffer_not_void: eiffel_buffer /= Void
 

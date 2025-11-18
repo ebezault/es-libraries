@@ -83,8 +83,8 @@
 
 	library: "Free implementation of ELKS library"
 	status: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-05-31 11:01:25 +0000 (Mon, 31 May 2021) $"
+	revision: "$Revision: 105458 $"
 
 class
 	PATH

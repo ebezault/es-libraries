@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel AST null processors"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_AST_NULL_PROCESSOR
 
@@ -587,6 +585,16 @@ feature {ET_AST_NODE} -- Processing
 		do
 		end
 
+	process_general_qualified_feature_call_expression (a_expression: ET_GENERAL_QUALIFIED_FEATURE_CALL_EXPRESSION)
+			-- Process `a_expression'.
+		do
+		end
+
+	process_general_qualified_feature_call_instruction (a_instruction: ET_GENERAL_QUALIFIED_FEATURE_CALL_INSTRUCTION)
+			-- Process `a_instruction'.
+		do
+		end
+
 	process_hexadecimal_integer_constant (a_constant: ET_HEXADECIMAL_INTEGER_CONSTANT)
 			-- Process `a_constant'.
 		do
@@ -622,31 +630,6 @@ feature {ET_AST_NODE} -- Processing
 		do
 		end
 
-	process_indexing (an_indexing: ET_INDEXING)
-			-- Process `an_indexing'.
-		do
-		end
-
-	process_indexing_semicolon (an_indexing: ET_INDEXING_SEMICOLON)
-			-- Process `an_indexing'.
-		do
-		end
-
-	process_indexing_term_comma (an_indexing_term: ET_INDEXING_TERM_COMMA)
-			-- Process `an_indexing_term'.
-		do
-		end
-
-	process_indexing_term_list (a_list: ET_INDEXING_TERM_LIST)
-			-- Process `a_list'.
-		do
-		end
-
-	process_indexing_list (a_list: ET_INDEXING_LIST)
-			-- Process `a_list'.
-		do
-		end
-
 	process_infix_cast_expression (an_expression: ET_INFIX_CAST_EXPRESSION)
 			-- Process `an_expression'.
 		do
@@ -667,6 +650,31 @@ feature {ET_AST_NODE} -- Processing
 		do
 		end
 
+	process_inline_separate_argument (a_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Process `a_argument'.
+		do
+		end
+
+	process_inline_separate_argument_comma (a_argument_comma: ET_INLINE_SEPARATE_ARGUMENT_COMMA)
+			-- Process `a_argument_comma'.
+		do
+		end
+
+	process_inline_separate_arguments (a_arguments: ET_INLINE_SEPARATE_ARGUMENTS)
+			-- Process `a_arguments'.
+		do
+		end
+
+	process_inline_separate_instruction (a_instruction: ET_INLINE_SEPARATE_INSTRUCTION)
+			-- Process `a_instruction'.
+		do
+		end
+
+	process_inlined_expression (a_expression: ET_INLINED_EXPRESSION)
+			-- Process `a_expression'.
+		do
+		end
+
 	process_inspect_expression (a_expression: ET_INSPECT_EXPRESSION)
 			-- Process `a_expression'.
 		do
@@ -674,6 +682,11 @@ feature {ET_AST_NODE} -- Processing
 
 	process_inspect_instruction (an_instruction: ET_INSPECT_INSTRUCTION)
 			-- Process `an_instruction'.
+		do
+		end
+
+	process_invariant_keyword (a_keyword: ET_INVARIANT_KEYWORD)
+			-- Process `a_keyword'.
 		do
 		end
 
@@ -799,6 +812,31 @@ feature {ET_AST_NODE} -- Processing
 
 	process_named_object_test (an_expression: ET_NAMED_OBJECT_TEST)
 			-- Process `an_expression'.
+		do
+		end
+
+	process_note (a_note: ET_NOTE)
+			-- Process `a_note'.
+		do
+		end
+
+	process_note_semicolon (a_note: ET_NOTE_SEMICOLON)
+			-- Process `a_note'.
+		do
+		end
+
+	process_note_term_comma (a_note_term: ET_NOTE_TERM_COMMA)
+			-- Process `a_note_term'.
+		do
+		end
+
+	process_note_term_list (a_list: ET_NOTE_TERM_LIST)
+			-- Process `a_list'.
+		do
+		end
+
+	process_note_list (a_list: ET_NOTE_LIST)
+			-- Process `a_list'.
 		do
 		end
 
@@ -1047,8 +1085,8 @@ feature {ET_AST_NODE} -- Processing
 		do
 		end
 
-	process_tagged_indexing (an_indexing: ET_TAGGED_INDEXING)
-			-- Process `an_indexing'.
+	process_tagged_note (a_note: ET_TAGGED_NOTE)
+			-- Process `a_note'.
 		do
 		end
 

@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,8 +7,6 @@ note
 	library: "Gobo Eiffel XPath Library"
 	copyright: "Copyright (c) 2005-2018, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 		-- TODO: awaiting ability to properly calculate Base URI of PIs
 
@@ -64,7 +62,7 @@ feature -- Access
 	nested_xml_base_uri: STRING
 			-- Base-uri of nested element with xml:base
 		once
-			Result := "http://www.gobosoft.com/xml-tests/AAMilne-book"
+			Result := "https://www.gobosoft.com/xml-tests/AAMilne-book"
 		end
 
 	xml_base_uri: STRING

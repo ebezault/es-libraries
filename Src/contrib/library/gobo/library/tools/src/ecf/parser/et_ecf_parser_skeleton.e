@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"ECF parser skeletons"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2008-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2008-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_ECF_PARSER_SKELETON
 
@@ -194,7 +192,6 @@ feature {NONE} -- AST factory
 			l_cursor: DS_BILINEAR_CURSOR [XM_NODE]
 			l_conditions: detachable ET_ECF_CONDITIONS
 			l_renamings: detachable DS_HASH_TABLE [STRING, STRING]
-			l_options: detachable ET_ECF_OPTIONS
 			l_class_options: detachable DS_HASH_TABLE [ET_ECF_OPTIONS, STRING]
 			l_notes: detachable DS_ARRAYED_LIST [ET_ECF_NOTE_ELEMENT]
 			l_value: STRING
@@ -223,7 +220,7 @@ feature {NONE} -- AST factory
 						elseif STRING_.same_case_insensitive (l_child.name, xml_note) then
 							l_notes := new_notes (l_notes, l_child, a_position_table, a_target.system_config)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_option) then
-							l_options := new_options (l_options, l_child, a_position_table, a_default_options, a_target)
+							add_options (Result.options, l_child, a_position_table, a_default_options, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_renaming) then
 							l_renamings := new_renamings (l_renamings, l_child, a_position_table, a_target)
 						end
@@ -251,10 +248,7 @@ feature {NONE} -- AST factory
 					end
 					l_cursor.forth
 				end
-				if l_options /= Void then
-					adapt_options (l_options)
-					Result.set_options (l_options)
-				end
+				adapt_options (Result.options)
 				if l_class_options /= Void then
 					l_class_options.do_all (agent adapt_options)
 					Result.set_class_options (l_class_options)
@@ -296,7 +290,6 @@ feature {NONE} -- AST factory
 			l_cursor: DS_BILINEAR_CURSOR [XM_NODE]
 			l_conditions: detachable ET_ECF_CONDITIONS
 			l_renamings: detachable DS_HASH_TABLE [STRING, STRING]
-			l_options: detachable ET_ECF_OPTIONS
 			l_class_options: detachable DS_HASH_TABLE [ET_ECF_OPTIONS, STRING]
 			l_visible_classes: detachable DS_ARRAYED_LIST [ET_ECF_VISIBLE_CLASS]
 			l_notes: detachable DS_ARRAYED_LIST [ET_ECF_NOTE_ELEMENT]
@@ -326,7 +319,7 @@ feature {NONE} -- AST factory
 						elseif STRING_.same_case_insensitive (l_child.name, xml_note) then
 							l_notes := new_notes (l_notes, l_child, a_position_table, a_target.system_config)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_option) then
-							l_options := new_options (l_options, l_child, a_position_table, a_default_options, a_target)
+							add_options (Result.options, l_child, a_position_table, a_default_options, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_renaming) then
 							l_renamings := new_renamings (l_renamings, l_child, a_position_table, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_visible) then
@@ -357,10 +350,7 @@ feature {NONE} -- AST factory
 					end
 					l_cursor.forth
 				end
-				if l_options /= Void then
-					adapt_options (l_options)
-					Result.set_options (l_options)
-				end
+				adapt_options (Result.options)
 				if l_class_options /= Void then
 					l_class_options.do_all (agent adapt_options)
 					Result.set_class_options (l_class_options)
@@ -403,7 +393,6 @@ feature {NONE} -- AST factory
 			l_cursor: DS_BILINEAR_CURSOR [XM_NODE]
 			l_conditions: detachable ET_ECF_CONDITIONS
 			l_renamings: detachable DS_HASH_TABLE [STRING, STRING]
-			l_options: detachable ET_ECF_OPTIONS
 			l_class_options: detachable DS_HASH_TABLE [ET_ECF_OPTIONS, STRING]
 			l_visible_classes: detachable DS_ARRAYED_LIST [ET_ECF_VISIBLE_CLASS]
 			l_notes: detachable DS_ARRAYED_LIST [ET_ECF_NOTE_ELEMENT]
@@ -433,7 +422,7 @@ feature {NONE} -- AST factory
 						elseif STRING_.same_case_insensitive (l_child.name, xml_note) then
 							l_notes := new_notes (l_notes, l_child, a_position_table, a_target.system_config)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_option) then
-							l_options := new_options (l_options, l_child, a_position_table, a_default_options, a_target)
+							add_options (Result.options, l_child, a_position_table, a_default_options, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_renaming) then
 							l_renamings := new_renamings (l_renamings, l_child, a_position_table, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_visible) then
@@ -466,10 +455,7 @@ feature {NONE} -- AST factory
 					end
 					l_cursor.forth
 				end
-				if l_options /= Void then
-					adapt_options (l_options)
-					Result.set_options (l_options)
-				end
+				adapt_options (Result.options)
 				if l_class_options /= Void then
 					l_class_options.do_all (agent adapt_options)
 					Result.set_class_options (l_class_options)
@@ -550,7 +536,6 @@ feature {NONE} -- AST factory
 			l_conditions: detachable ET_ECF_CONDITIONS
 			l_renamings: detachable DS_HASH_TABLE [STRING, STRING]
 			l_mappings: detachable DS_HASH_TABLE [STRING, STRING]
-			l_options: detachable ET_ECF_OPTIONS
 			l_class_options: detachable DS_HASH_TABLE [ET_ECF_OPTIONS, STRING]
 			l_visible_classes: detachable DS_ARRAYED_LIST [ET_ECF_VISIBLE_CLASS]
 			l_provider_groups: detachable DS_ARRAYED_LIST [STRING]
@@ -587,7 +572,7 @@ feature {NONE} -- AST factory
 						elseif STRING_.same_case_insensitive (l_child.name, xml_note) then
 							l_notes := new_notes (l_notes, l_child, a_position_table, a_target.system_config)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_option) then
-							l_options := new_options (l_options, l_child, a_position_table, a_default_options, a_target)
+							add_options (Result.options, l_child, a_position_table, a_default_options, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_renaming) then
 							l_renamings := new_renamings (l_renamings, l_child, a_position_table, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_uses) then
@@ -631,10 +616,7 @@ feature {NONE} -- AST factory
 				end
 				Result.set_conditioned_subclusters (l_subclusters)
 				Result.set_conditioned_file_rules (l_file_rules)
-				if l_options /= Void then
-					adapt_options (l_options)
-					Result.set_options (l_options)
-				end
+				adapt_options (Result.options)
 				if l_class_options /= Void then
 					l_class_options.do_all (agent adapt_options)
 					Result.set_class_options (l_class_options)
@@ -1283,6 +1265,7 @@ feature {NONE} -- AST factory
 			l_unknown_library: ET_ECF_LIBRARY
 			l_parsed_libraries: like parsed_libraries
 			l_system: ET_SYSTEM
+			l_uuid_value: STRING
 		do
 			l_system := a_adapted_library.universe.current_system
 			if not attached a_element.attribute_by_name (xml_uuid) as l_uuid then
@@ -1294,8 +1277,15 @@ feature {NONE} -- AST factory
 				a_adapted_library.set_library (l_unknown_library)
 				error_handler.report_eatm_error (xml_uuid, element_name (a_element, a_position_table), l_unknown_library)
 			else
+				l_uuid_value := l_uuid.value
+				if attached ise_eiffel_to_gobo_uuid_mappings as l_ise_eiffel_to_gobo_uuid_mappings then
+					l_ise_eiffel_to_gobo_uuid_mappings.search (l_uuid_value)
+					if l_ise_eiffel_to_gobo_uuid_mappings.found then
+						l_uuid_value := l_ise_eiffel_to_gobo_uuid_mappings.found_item
+					end
+				end
 				l_parsed_libraries := parsed_libraries
-				l_parsed_libraries.search (l_uuid.value)
+				l_parsed_libraries.search (l_uuid_value)
 				if l_parsed_libraries.found then
 						-- Already parsed.
 					Result := l_parsed_libraries.found_item
@@ -1313,7 +1303,7 @@ feature {NONE} -- AST factory
 						Result := ast_factory.new_library (l_name.value, a_filename, l_system)
 						a_adapted_library.set_library (Result)
 						fill_system_config (Result, a_element, a_position_table)
-						l_parsed_libraries.force_last_new (Result, l_uuid.value)
+						l_parsed_libraries.force_last_new (Result, l_uuid_value)
 					end
 				end
 			end
@@ -1364,6 +1354,64 @@ feature {NONE} -- AST factory
 			end
 		end
 
+	new_namespace (a_element: XM_ELEMENT; a_position_table: detachable XM_POSITION_TABLE; a_target: ET_ECF_TARGET): detachable ET_ECF_NAMESPACE
+			-- New namespace built from `a_element'
+		require
+			a_element_not_void: a_element /= Void
+			is_namespace: STRING_.same_case_insensitive (a_element.name, xml_namespace)
+			a_target_not_void: a_target /= Void
+		local
+			l_cursor: DS_BILINEAR_CURSOR [XM_NODE]
+			l_renamings: detachable DS_HASH_TABLE [STRING, STRING]
+			l_notes: detachable DS_ARRAYED_LIST [ET_ECF_NOTE_ELEMENT]
+		do
+			if not attached a_element.attribute_by_name (xml_name) as l_name then
+				error_handler.report_eatm_error (xml_name, element_name (a_element, a_position_table), a_target.system_config)
+			elseif l_name.value.is_empty then
+				error_handler.report_eate_error (attribute_name (l_name, a_position_table), element_name (a_element, a_position_table), a_target.system_config)
+			else
+				Result := ast_factory.new_namespace (l_name.value)
+				l_cursor := a_element.new_cursor
+				from l_cursor.start until l_cursor.after loop
+					if attached {XM_ELEMENT} l_cursor.item as l_child then
+						if STRING_.same_case_insensitive (l_child.name, xml_renaming) then
+							l_renamings := new_renamings (l_renamings, l_child, a_position_table, a_target)
+						elseif STRING_.same_case_insensitive (l_child.name, xml_note) then
+							l_notes := new_notes (l_notes, l_child, a_position_table, a_target.system_config)
+						elseif STRING_.same_case_insensitive (l_child.name, xml_description) then
+							if attached l_child.text as l_text and then not l_text.is_empty then
+								Result.set_description (l_text)
+							end
+						end
+					elseif attached {XM_ATTRIBUTE} l_cursor.item as l_child then
+						if STRING_.same_case_insensitive (l_child.name, xml_prefix) then
+							Result.set_classname_prefix (l_child.value)
+						end
+					end
+					l_cursor.forth
+				end
+				Result.set_class_renamings (l_renamings)
+				Result.set_notes (l_notes)
+			end
+		end
+
+	new_namespaces (a_namespaces: detachable ET_ECF_NAMESPACES; a_element: XM_ELEMENT; a_position_table: detachable XM_POSITION_TABLE; a_target: ET_ECF_TARGET): detachable ET_ECF_NAMESPACES
+			-- New namespaces (or `a_namespaces' if not Void) built from `a_element'
+		require
+			a_element_not_void: a_element /= Void
+			is_namespace: STRING_.same_case_insensitive (a_element.name, xml_namespace)
+			a_target_not_void: a_target /= Void
+		do
+			Result := a_namespaces
+			if attached new_namespace (a_element, a_position_table, a_target) as l_namespace then
+				if Result = Void then
+					Result := ast_factory.new_namespaces (l_namespace)
+				else
+					Result.put_last (l_namespace)
+				end
+			end
+		end
+
 	new_note_element (a_element: XM_ELEMENT; a_position_table: detachable XM_POSITION_TABLE; a_system_config: ET_ECF_SYSTEM_CONFIG): detachable ET_ECF_NOTE_ELEMENT
 			-- New note element built from `a_element'
 		require
@@ -1405,23 +1453,6 @@ feature {NONE} -- AST factory
 			end
 		end
 
-	new_options (a_options: detachable ET_ECF_OPTIONS; a_element: XM_ELEMENT; a_position_table: detachable XM_POSITION_TABLE;
-		a_default_options: ET_ECF_OPTIONS; a_target: ET_ECF_TARGET): detachable ET_ECF_OPTIONS
-			-- New options (or `a_options' if not Void) built from `a_element'
-		require
-			a_element_not_void: a_element /= Void
-			is_option: STRING_.same_case_insensitive (a_element.name, xml_option)
-			a_default_options_not_void: a_default_options /= Void
-			a_target_not_void: a_target /= Void
-		do
-			if a_options /= Void then
-				Result := a_options
-			else
-				Result := ast_factory.new_options
-			end
-			add_options (Result, a_element, a_position_table, a_default_options, a_target)
-		end
-
 	new_overridden_group (a_element: XM_ELEMENT; a_position_table: detachable XM_POSITION_TABLE; a_target: ET_ECF_TARGET): detachable STRING
 			-- New overridden group built from `a_element'
 		require
@@ -1453,7 +1484,6 @@ feature {NONE} -- AST factory
 			l_conditions: detachable ET_ECF_CONDITIONS
 			l_renamings: detachable DS_HASH_TABLE [STRING, STRING]
 			l_mappings: detachable DS_HASH_TABLE [STRING, STRING]
-			l_options: detachable ET_ECF_OPTIONS
 			l_class_options: detachable DS_HASH_TABLE [ET_ECF_OPTIONS, STRING]
 			l_visible_classes: detachable DS_ARRAYED_LIST [ET_ECF_VISIBLE_CLASS]
 			l_provider_groups: detachable DS_ARRAYED_LIST [STRING]
@@ -1486,7 +1516,7 @@ feature {NONE} -- AST factory
 						elseif STRING_.same_case_insensitive (l_child.name, xml_mapping) then
 							l_mappings := new_mappings (l_mappings, l_child, a_position_table, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_option) then
-							l_options := new_options (l_options, l_child, a_position_table, a_default_options, a_target)
+							add_options (Result.options, l_child, a_position_table, a_default_options, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_override) then
 							l_subclusters := new_override_clusters (l_subclusters, l_child, a_position_table, a_default_options, a_target)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_overrides) then
@@ -1536,10 +1566,7 @@ feature {NONE} -- AST factory
 				end
 				Result.set_conditioned_subclusters (l_subclusters)
 				Result.set_conditioned_file_rules (l_file_rules)
-				if l_options /= Void then
-					adapt_options (l_options)
-					Result.set_options (l_options)
-				end
+				adapt_options (Result.options)
 				if l_class_options /= Void then
 					l_class_options.do_all (agent adapt_options)
 					Result.set_class_options (l_class_options)
@@ -1768,6 +1795,7 @@ feature {NONE} -- AST factory
 			l_libraries: detachable ET_ECF_ADAPTED_LIBRARIES
 			l_dotnet_assemblies: detachable ET_ECF_ADAPTED_DOTNET_ASSEMBLIES
 			l_file_rules: detachable ET_ECF_FILE_RULES
+			l_namespaces: detachable ET_ECF_NAMESPACES
 			l_external_cflags: detachable ET_ECF_EXTERNAL_CFLAGS
 			l_external_includes: detachable ET_ECF_EXTERNAL_INCLUDES
 			l_external_libraries: detachable ET_ECF_EXTERNAL_LIBRARIES
@@ -1824,6 +1852,8 @@ feature {NONE} -- AST factory
 							if attached l_child.text as l_text and then not l_text.is_empty then
 								Result.set_description (l_text)
 							end
+						elseif STRING_.same_case_insensitive (l_child.name, xml_namespace) then
+							l_namespaces := new_namespaces (l_namespaces, l_child, a_position_table, Result)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_external_cflag) then
 							l_external_cflags := new_external_cflags (l_external_cflags, l_child, a_position_table, Result)
 						elseif STRING_.same_case_insensitive (l_child.name, xml_external_include) then
@@ -1896,6 +1926,7 @@ feature {NONE} -- AST factory
 				Result.set_dotnet_assemblies (l_dotnet_assemblies)
 				Result.set_file_rules (l_file_rules)
 				Result.set_class_mappings (l_mappings)
+				Result.set_namespaces (l_namespaces)
 				Result.set_external_cflags (l_external_cflags)
 				Result.set_external_includes (l_external_includes)
 				Result.set_external_libraries (l_external_libraries)
@@ -2719,6 +2750,15 @@ feature {NONE} -- Implementation
 		ensure
 			parsed_dotnet_assemblies_not_void: Result /= Void
 			no_void_dotnet_assembly: not Result.has_void_item
+		end
+
+	ise_eiffel_to_gobo_uuid_mappings: detachable DS_HASH_TABLE [STRING, STRING]
+			-- Mappings between ISE Eiffel libraries ECF uuid and
+			-- the same library in Gobo Eiffel.
+			-- For example: ISE's EiffelBase and Gobo's free_elks libraries.
+		deferred
+		ensure
+			no_void_uuid: Result /= Void implies not Result.has_void and not Result.has_void_item
 		end
 
 	element_name (a_element: XM_ELEMENT; a_position_table: detachable XM_POSITION_TABLE): ET_IDENTIFIER

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel implementation checkers for features and invariants"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_IMPLEMENTATION_CHECKER
 
@@ -120,6 +118,8 @@ feature -- Processing
 		do
 			if a_class.is_none then
 				process_none_class (a_class)
+			elseif a_class.is_formal then
+				process_formal_class (a_class)
 			elseif not current_class.is_unknown then
 					-- Internal error (recursive call)
 					-- This internal error is not fatal.
@@ -321,6 +321,24 @@ feature {NONE} -- Processing
 		ensure
 			implementation_checked: not {PLATFORM}.is_thread_capable implies a_class.implementation_checked
 			suppliers_set: a_class.implementation_checked and suppliers_enabled implies a_class.suppliers /= Void
+		end
+
+	process_formal_class (a_class: ET_CLASS)
+			-- Process virtual class representing formal generic parameters
+			-- (used for Storable files).
+		require
+			a_class_not_void: a_class /= Void
+			a_class_is_formal: a_class.is_formal
+		do
+			if not {PLATFORM}.is_thread_capable or else a_class.processing_mutex.try_lock then
+				if not a_class.implementation_checked then
+					a_class.set_implementation_checked
+					system_processor.report_class_processed (a_class)
+				end
+				a_class.processing_mutex.unlock
+			end
+		ensure
+			implementation_checked: not {PLATFORM}.is_thread_capable implies a_class.implementation_checked
 		end
 
 	pre_action
@@ -640,10 +658,8 @@ feature {NONE} -- Assertion validity
 			a_feature_impl_not_void: a_feature_impl /= Void
 			a_feature_not_void: a_feature /= Void
 		local
-			a_class_impl: ET_CLASS
 			i, nb: INTEGER
 		do
-			a_class_impl := a_feature_impl.implementation_class
 			if attached a_feature_impl.preconditions as a_preconditions then
 				feature_checker.check_preconditions_validity (a_preconditions, a_feature_impl, a_feature, current_class)
 				if feature_checker.has_fatal_error then

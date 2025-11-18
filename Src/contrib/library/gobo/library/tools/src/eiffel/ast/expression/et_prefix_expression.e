@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel prefix expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_PREFIX_EXPRESSION
 
@@ -20,10 +18,17 @@ inherit
 		undefine
 			reset,
 			is_prefix_expression,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 	ET_UNARY_EXPRESSION
+		undefine
+			add_separate_arguments
 		redefine
 			reset,
 			is_prefix_expression
@@ -53,6 +58,7 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor {ET_UNARY_EXPRESSION}
 			name.reset
 			expression.reset
 			is_boolean_operator := False

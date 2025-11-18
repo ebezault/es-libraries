@@ -5,8 +5,8 @@
 	status: "See notice at end of class."
 	names: priority_queue, queue
 	contents: generic
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-06-18 16:58:32 +0000 (Fri, 18 Jun 2021) $"
+	revision: "$Revision: 105547 $"
 
 class LINKED_PRIORITY_QUEUE [G -> COMPARABLE] inherit
 

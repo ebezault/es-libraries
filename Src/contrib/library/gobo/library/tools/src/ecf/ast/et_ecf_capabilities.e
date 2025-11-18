@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"ECF capabilities"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2017-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2017-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_ECF_CAPABILITIES
 
@@ -158,9 +156,42 @@ feature -- Setting
 			l_identifier: ET_IDENTIFIER
 		do
 			create l_identifier.make (a_value)
-			set_primary_use_value_id (a_name,l_identifier)
+			set_primary_use_value_id (a_name, l_identifier)
 		ensure
 			primary_use_value_set: primary_use_value (a_name) = a_value
+		end
+
+	set_primary_use_value_from_definition (a_definition: STRING)
+			-- Set capability use from `a_definition' of the form "name=value".
+		require
+			a_definition_not_void: a_definition /= Void
+		local
+			l_count: INTEGER
+			l_index: INTEGER
+		do
+			l_count := a_definition.count
+			if l_count > 0 then
+				l_index := a_definition.index_of ('=', 1)
+				if l_index = 0 then
+					set_primary_use_value (a_definition, "")
+				elseif l_index = l_count then
+					set_primary_use_value (a_definition.substring (1, l_index - 1), "")
+				elseif l_index /= 1 then
+					set_primary_use_value (a_definition.substring (1, l_index - 1), a_definition.substring (l_index + 1, l_count))
+				end
+			end
+		end
+
+	set_primary_use_values_from_definitions (a_definitions: DS_LIST [detachable STRING])
+			-- Set capability uses from `a_definitions' of the form "name=value".
+		require
+			a_definitions_not_void: a_definitions /= Void
+		do
+			across a_definitions as i_definition loop
+				if attached i_definition as l_definition then
+					set_primary_use_value_from_definition (l_definition)
+				end
+			end
 		end
 
 	set_primary_use_value_id (a_name: STRING; a_value: ET_IDENTIFIER)
@@ -198,7 +229,7 @@ feature -- Setting
 feature {NONE} -- Implementation
 
 	capability_order: DS_HASH_TABLE [DS_HASH_TABLE [INTEGER, STRING], STRING]
-			-- Is capability order if any, indexed by capability names
+			-- Capability order if any, indexed by capability names
 		local
 			l_hash_function: KL_AGENT_HASH_FUNCTION [STRING]
 			l_order: DS_HASH_TABLE [INTEGER, STRING]

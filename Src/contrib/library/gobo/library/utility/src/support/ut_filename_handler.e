@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,10 +7,12 @@ note
 	library: "Gobo Eiffel Utility Library"
 	copyright: "Copyright (c) 1999, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class UT_FILENAME_HANDLER
+
+obsolete
+
+	"Use KL_*_FILE_SYSTEM classes instead. [2024-02-15]"
 
 inherit
 

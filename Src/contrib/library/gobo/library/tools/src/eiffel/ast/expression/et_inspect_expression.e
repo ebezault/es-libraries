@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel inspect expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2020-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_INSPECT_EXPRESSION
 
@@ -17,7 +15,13 @@ inherit
 	ET_EXPRESSION
 		redefine
 			reset,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions,
+			add_separate_arguments
 		end
 
 create
@@ -44,6 +48,7 @@ feature -- Initialization
 	reset
 			-- Reset expression as it was just after it was last parsed.
 		do
+			precursor
 			expression.reset
 			if attached when_parts as l_when_parts then
 				l_when_parts.reset
@@ -108,6 +113,42 @@ feature -- Status report
 				(attached else_part as l_else_part implies l_else_part.expression.is_instance_free)
 		end
 
+	has_result: BOOLEAN
+			-- Does the entity 'Result' appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := expression.has_result or
+				attached when_parts as l_when_parts and then l_when_parts.has_result or
+				attached else_part as l_else_part and then l_else_part.expression.has_result
+		end
+
+	has_address_expression: BOOLEAN
+			-- Does an address expression appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := expression.has_address_expression or
+				attached when_parts as l_when_parts and then l_when_parts.has_address_expression or
+				attached else_part as l_else_part and then l_else_part.expression.has_address_expression
+		end
+
+	has_agent: BOOLEAN
+			-- Does an agent appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := expression.has_agent or
+				attached when_parts as l_when_parts and then l_when_parts.has_agent or
+				attached else_part as l_else_part and then l_else_part.expression.has_agent
+		end
+
+	has_typed_object_test: BOOLEAN
+			-- Does a typed object-test appear in current expression
+			-- or (recursively) in one of its subexpressions?
+		do
+			Result := expression.has_typed_object_test or
+				attached when_parts as l_when_parts and then l_when_parts.has_typed_object_test or
+				attached else_part as l_else_part and then l_else_part.expression.has_typed_object_test
+		end
+
 feature -- Setting
 
 	set_else_part (a_else_part: like else_part)
@@ -126,6 +167,47 @@ feature -- Setting
 			end_keyword := an_end
 		ensure
 			end_keyword_set: end_keyword = an_end
+		end
+
+feature -- Assertions
+
+	add_old_expressions (a_list: DS_ARRAYED_LIST [ET_OLD_EXPRESSION])
+			-- Add to `a_list' all old expressions appearing in current expression
+			-- and (recursively) in its subexpressions.
+		do
+			expression.add_old_expressions (a_list)
+			if attached when_parts as l_when_parts then
+				l_when_parts.add_old_expressions (a_list)
+			end
+			if attached else_part as l_else_part then
+				l_else_part.expression.add_old_expressions (a_list)
+			end
+		end
+
+feature -- SCOOP
+
+	add_separate_arguments (a_list: DS_ARRAYED_LIST [ET_IDENTIFIER]; a_closure: ET_CLOSURE)
+			-- Add to `a_list' inline separate arguments or formal arguments which
+			-- when controlled (i.e. when their type is separate) implies that when
+			-- the current expression is involved in the target of a separate call
+			-- this target is also controlled.
+			-- `a_closure' is the closure (i.e. inline agent or enclosing feature)
+			-- in which the current expression appears.
+			-- (Used when determining the SCOOP sessions to be used when recording
+			-- a separate call to another SCOOP processor.)
+		local
+			i, nb: INTEGER
+		do
+			if attached when_parts as l_when_parts then
+				nb := l_when_parts.count
+				from i := 1 until i > nb loop
+					l_when_parts.item (i).then_expression.add_separate_arguments (a_list, a_closure)
+					i := i + 1
+				end
+			end
+			if attached else_part as l_else_part then
+				l_else_part.expression.add_separate_arguments (a_list, a_closure)
+			end
 		end
 
 feature -- Processing

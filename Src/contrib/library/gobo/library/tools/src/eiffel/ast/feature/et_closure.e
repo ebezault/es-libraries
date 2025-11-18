@@ -1,20 +1,18 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel closures, e.g. features, invariants, inline agents"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2006-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2006-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_CLOSURE
 
 inherit
 
-	ANY
+	ET_AST_NODE
 
 feature -- Status report
 
@@ -48,6 +46,12 @@ feature -- Status report
 			is_once: Result implies is_once
 		end
 
+	is_static: BOOLEAN
+			-- Can `Current' be used as a static feature (i.e. in a call of the form {A}.f)?
+		do
+			-- Result := False
+		end
+
 feature -- Access
 
 	type: detachable ET_TYPE
@@ -62,7 +66,7 @@ feature -- Access
 		do
 		end
 
-	first_indexing: detachable ET_INDEXING_LIST
+	first_note: detachable ET_NOTE_LIST
 			-- Note clause at the beginning of the closure
 		do
 		end
@@ -93,6 +97,10 @@ feature -- Access
 			-- Iteration components declared in current closure;
 			-- Void if none
 
+	inline_separate_arguments: detachable ET_INLINE_SEPARATE_ARGUMENT_LIST
+			-- Inline separate arguments (in inline separate instructions)
+			-- declared in current closure; Void if none
+
 	implementation_closure: ET_CLOSURE
 			-- Current closure viewed from the class where it has been implemented
 			--
@@ -102,6 +110,20 @@ feature -- Access
 			Result := Current
 		ensure
 			implementation_closure_not_void: Result /= Void
+		end
+
+feature -- Measurement
+
+	arguments_count: INTEGER
+			-- Number of formal arguments
+		do
+			if attached arguments as l_arguments then
+				Result := l_arguments.count
+			end
+		ensure
+			arguments_count_not_negative: Result >= 0
+			no_argument: arguments = Void implies Result = 0
+			with_arguments: attached arguments as l_arguments implies Result = l_arguments.count
 		end
 
 feature -- Setting
@@ -120,6 +142,14 @@ feature -- Setting
 			iteration_components := a_iteration_components
 		ensure
 			iteration_components_set: iteration_components = a_iteration_components
+		end
+
+	set_inline_separate_arguments (a_inline_separate_arguments: like inline_separate_arguments)
+			-- Set `inline_separate_arguments' to `a_inline_separate_arguments'.
+		do
+			inline_separate_arguments := a_inline_separate_arguments
+		ensure
+			inline_separate_arguments_set: inline_separate_arguments = a_inline_separate_arguments
 		end
 
 end

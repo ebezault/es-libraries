@@ -3,8 +3,8 @@
 	library: "Free implementation of ELKS library"
 	status: "See notice at end of class."
 	legal: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2020-11-20 10:35:28 +0000 (Fri, 20 Nov 2020) $"
+	revision: "$Revision: 104893 $"
 
 deferred class FILE inherit
 

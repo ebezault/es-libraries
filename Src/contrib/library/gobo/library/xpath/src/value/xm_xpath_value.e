@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"XPath values"
 
 	library: "Gobo Eiffel XPath Library"
-	copyright: "Copyright (c) 2004-2015, Colin Adams and others"
+	copyright: "Copyright (c) 2004-2022, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class XM_XPATH_VALUE
 
@@ -270,7 +268,7 @@ feature {NONE} -- Implementation
 			until
 				counter > a_string.count
 			loop
-				if a_string.item_code (counter) < 33 then
+				if a_string.code (counter) < 33 then
 					if started then
 						finished := True
 						finish_position := counter - 1

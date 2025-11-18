@@ -1,12 +1,10 @@
-note
+﻿note
 
 	description: "Objects that format a list of integers as a character string under the control of a format string"
 
 	library: "Gobo Eiffel XSLT Library"
-	copyright: "Copyright (c) 2004-2015, Colin Adams and others"
+	copyright: "Copyright (c) 2004-2022, Colin Adams and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class XM_XSLT_NUMBER_FORMATTER
 
@@ -55,7 +53,7 @@ feature {NONE} -- Initialization
 				from
 					l_start_index := l_index
 				until
-					l_index > l_length or else not is_alphanumeric (l_format_string.item_code (l_index))
+					l_index > l_length or else not is_alphanumeric (l_format_string.code (l_index).to_integer_32)
 				loop
 					l_index := l_index + 1
 				end
@@ -71,7 +69,7 @@ feature {NONE} -- Initialization
 				from
 					l_start_index := l_index
 				until
-					l_index > l_length or else is_alphanumeric (l_format_string.item_code (l_index))
+					l_index > l_length or else is_alphanumeric (l_format_string.code (l_index).to_integer_32)
 				loop
 					l_first := False
 					l_index := l_index + 1

@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -7,10 +7,8 @@ note
 			Generate Eiffel class embedding an image.
 		]"
 
-	copyright: "Copyright (c) 2020-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2020-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class GEIMAGE
 
@@ -21,6 +19,12 @@ inherit
 	KL_SHARED_FILE_SYSTEM
 	KL_SHARED_EXCEPTIONS
 	KL_SHARED_ARGUMENTS
+
+	UT_SHARED_ISE_VARIABLES
+		export {NONE} all end
+
+	UT_SHARED_GOBO_VARIABLES
+		export {NONE} all end
 
 create
 
@@ -70,6 +74,13 @@ feature -- Execution
 			i, nb: INTEGER
 		do
 			Arguments.set_program_name ("geimage")
+				-- Set environment variables "$GOBO", "$GOBO_LIBRARY",
+				-- "$BOEHM_GC" and "$ZIG" if not set yet.
+			gobo_variables.set_gobo_variables
+				-- For compatibility with ISE's tools, define the environment
+				-- variables "$ISE_LIBRARY", "$EIFFEL_LIBRARY", "$ISE_PLATFORM"
+				-- and "$ISE_C_COMPILER" if not set yet.
+			ise_variables.set_ise_variables
 			error_handler := a_error_handler
 			parse_arguments (a_args)
 			if exit_code = 0 and then not version_flag.was_found then
@@ -274,9 +285,9 @@ feature {NONE} -- Processing
 			a_file.put_line ("%T%Talias")
 			a_file.put_line ("%T%T%T%"[")
 			a_file.put_line ("%T%T%T%T{")
-			a_file.put_line ("%T%T%T%T#define A(x) \")
-			a_file.put_line ("%T%T%T%T%T#x")
-			a_file.put_line ("%T%T%T%T#define B(x) A(\x##x)")
+			a_file.put_line ("%T%T%T%T#define A(z) \")
+			a_file.put_line ("%T%T%T%T%T#z")
+			a_file.put_line ("%T%T%T%T#define B(z) A(\x##z)")
 			a_file.put_string ("%T%T%T%Tchar l_data[] =")
 			from i := 1 until i > a_byte_size loop
 				if (i - 1) \\ 20 = 0 then

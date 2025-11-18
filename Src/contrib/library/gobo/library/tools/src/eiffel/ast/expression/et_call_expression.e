@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel call expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_CALL_EXPRESSION
 
@@ -26,10 +24,26 @@ inherit
 			parenthesis_call
 		end
 
+	ET_CALL_EXPRESSION_WITH_ACTUAL_ARGUMENT_LIST
+		undefine
+			is_call_agent,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			is_instance_free,
+			add_old_expressions
+		end
+
 	ET_CHOICE_CONSTANT
 		undefine
 			reset,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		end
 
 feature -- Access

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel precursor expressions"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_PRECURSOR_EXPRESSION
 
@@ -16,12 +14,20 @@ inherit
 
 	ET_PRECURSOR_CALL
 		redefine
+			reset,
 			parenthesis_call
 		end
 
-	ET_EXPRESSION
+	ET_CALL_EXPRESSION_WITH_ACTUAL_ARGUMENT_LIST
+		rename
+			name as precursor_keyword
 		undefine
-			reset
+			reset,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		redefine
 			is_instance_free
 		end
@@ -29,6 +35,15 @@ inherit
 create
 
 	make
+
+feature -- Initialization
+
+	reset
+			-- Reset precursor as it was when it was last parsed.
+		do
+			precursor {ET_CALL_EXPRESSION_WITH_ACTUAL_ARGUMENT_LIST}
+			precursor {ET_PRECURSOR_CALL}
+		end
 
 feature -- Access
 

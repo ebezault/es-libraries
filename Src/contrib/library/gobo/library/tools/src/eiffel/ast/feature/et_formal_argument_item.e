@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel formal arguments in semicolon-separated list of formal arguments"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_FORMAL_ARGUMENT_ITEM
 
@@ -32,7 +30,7 @@ feature -- Duplication
 			-- Do not recursively clone the type
 		deferred
 		ensure
-			argument_not_void: Result /= Void
+			cloned_argument_not_void: Result /= Void
 		end
 
 end

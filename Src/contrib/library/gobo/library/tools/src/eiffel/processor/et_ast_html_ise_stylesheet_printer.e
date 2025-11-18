@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -17,10 +17,8 @@ note
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2017-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2017-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_AST_HTML_ISE_STYLESHEET_PRINTER
 
@@ -38,7 +36,7 @@ inherit
 			process_feature_name,
 			process_formal_parameter_type,
 			process_identifier,
-			process_indexing_tag,
+			process_note_tag,
 			process_integer_constant_without_cast_type,
 			process_keyword,
 			process_name_of_formal_parameter,
@@ -732,8 +730,8 @@ feature {ET_AST_PROCESSOR} -- Processing
 			end
 		end
 
-	process_indexing_tag (a_tag: ET_TAG)
-			-- Process `a_tag' when appearing in an indexing clause.
+	process_note_tag (a_tag: ET_TAG)
+			-- Process `a_tag' when appearing in a note clause.
 		local
 			l_identifier: ET_IDENTIFIER
 		do

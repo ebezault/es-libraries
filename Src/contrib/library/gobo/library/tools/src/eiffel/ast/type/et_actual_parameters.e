@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel lists of actual generic parameters"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2016-2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2016-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_ACTUAL_PARAMETERS
 
@@ -266,6 +264,28 @@ feature -- Status report
 			nb := count
 			from i := 1 until i > nb loop
 				if actual_parameter (i).named_parameter_has_class (a_class, a_context) then
+					Result := True
+					i := nb + 1 -- Jump out of the loop.
+				else
+					i := i + 1
+				end
+			end
+		end
+
+	named_types_has_class_with_ancestors_not_built_successfully (a_context: ET_TYPE_CONTEXT): BOOLEAN
+			-- Does one of the named type of current parameters contain
+			-- a class whose ancestors have not been built successfully
+			-- when it appears in `a_context'?
+		require
+			a_context_not_void: a_context /= Void
+			a_context_valid: a_context.is_valid_context
+			-- no_cycle: no cycle in anchored types involved.
+		local
+			i, nb: INTEGER
+		do
+			nb := count
+			from i := 1 until i > nb loop
+				if actual_parameter (i).named_parameter_has_class_with_ancestors_not_built_successfully (a_context) then
 					Result := True
 					i := nb + 1 -- Jump out of the loop.
 				else
@@ -540,8 +560,9 @@ feature -- Output
 	append_unaliased_to_string (a_string: STRING)
 			-- Append textual representation of unaliased
 			-- version of current actual parameters to `a_string'.
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- An unaliased version is when aliased types such as INTEGER
+			-- are replaced with the associated types such as INTEGER_32.
+			-- Also, tuple types have no labels.
 		require
 			a_string_not_void: a_string /= Void
 		local
@@ -563,11 +584,48 @@ feature -- Output
 			a_string.append_character (']')
 		end
 
+	append_canonical_to_string (a_string: STRING)
+			-- Append textual representation of canonical version of current
+			-- actual generic parameters to `a_string'.
+			-- A canonical version is an unaliased version, that is when
+			-- aliased types such as INTEGER are replaced with the associated
+			-- types such as INTEGER_32. Also, implicit type marks are
+			-- replaced with explicit type marks, except when the actual
+			-- generic parameters are base types where the type mark is not
+			-- shown at all if 'attached', or if 'expanded' and the base class
+			-- is expanded, or if 'separate' and the base class is separate
+			-- (e.g. "FOO [BAR, INTEGER_8, detachable BAZ]" instead of
+			-- "FOO [attached BAR, expanded INTEGER_8, detachable BAZ]").
+			-- Do not show the 'detachable' type mark for base types in
+			-- non-void-safe mode.
+			-- Also, tuple types have no labels.
+		require
+			a_string_not_void: a_string /= Void
+		local
+			i, nb: INTEGER
+			a_parameter: ET_ACTUAL_PARAMETER
+		do
+			a_string.append_character ('[')
+			nb := count
+			if nb >= 1 then
+				a_parameter := actual_parameter (1)
+				a_parameter.append_canonical_to_string (a_string)
+				from i := 2 until i > nb loop
+					a_string.append_string (", ")
+					a_parameter := actual_parameter (i)
+					a_parameter.append_canonical_to_string (a_string)
+					i := i + 1
+				end
+			end
+			a_string.append_character (']')
+		end
+
 	append_runtime_name_to_string (a_string: STRING)
 			-- Append to `a_string' textual representation of unaliased
 			-- version of current actual parameters as returned by 'TYPE.runtime_name'.
-			-- An unaliased version if when aliased types such as INTEGER
-			-- are replaced by the associated types such as INTEGER_32.
+			-- An unaliased version is when aliased types such as INTEGER
+			-- are replaced with the associated types such as INTEGER_32.
+			-- Also, tuple types have no labels.
 		require
 			a_string_not_void: a_string /= Void
 		local

@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel constrained formal generic parameters"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2002-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2002-2023, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_CONSTRAINED_FORMAL_PARAMETER
 
@@ -43,7 +41,7 @@ feature {NONE} -- Initialization
 			constraint := a_constraint
 			creation_procedures := a_creation
 			make_unconstrained (a_name, a_class)
-			constraint_base_types := implementation_class.universe.detachable_any_type
+			constraint_base_types := implementation_class.universe.detachable_separate_any_type
 		ensure
 			name_set: name = a_name
 			constraint_set: constraint = a_constraint
@@ -72,7 +70,7 @@ feature -- Initialization
 			-- Reset `constraint_base_types' and `recursive_formal_constraints'
 			-- as they were just after the current formal parameter was last parsed.
 		do
-			constraint_base_types := implementation_class.universe.detachable_any_type
+			constraint_base_types := implementation_class.universe.detachable_separate_any_type
 			recursive_formal_constraints := Void
 		end
 

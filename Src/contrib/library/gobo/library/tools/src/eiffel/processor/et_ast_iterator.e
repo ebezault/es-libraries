@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel AST iterators"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_AST_ITERATOR
 
@@ -94,6 +92,9 @@ feature {ET_AST_NODE} -- Processing
 			i, nb: INTEGER
 		do
 			a_list.left_bracket.process (Current)
+			if attached a_list.first_symbol as l_first_symbol then
+				l_first_symbol.process (Current)
+			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
 				a_list.item (i).process (Current)
@@ -422,6 +423,9 @@ feature {ET_AST_NODE} -- Processing
 			i, nb: INTEGER
 		do
 			an_instruction.check_keyword.process (Current)
+			if attached an_instruction.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
 			nb := an_instruction.count
 			from i := 1 until i > nb loop
 				an_instruction.item (i).process (Current)
@@ -465,8 +469,8 @@ feature {ET_AST_NODE} -- Processing
 			-- Process `a_class'.
 		do
 			process_break (a_class.leading_break)
-			if attached a_class.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_class.first_note_clause as l_first_note_clause then
+				l_first_note_clause.process (Current)
 			end
 			if attached a_class.frozen_keyword as l_frozen_keyword then
 				l_frozen_keyword.process (Current)
@@ -498,8 +502,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_class.invariants as l_invariants then
 				l_invariants.process (Current)
 			end
-			if attached a_class.second_indexing as l_second_indexing then
-				l_second_indexing.process (Current)
+			if attached a_class.second_note_clause as l_second_note_clause then
+				l_second_note_clause.process (Current)
 			end
 			a_class.end_keyword.process (Current)
 		end
@@ -828,8 +832,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -869,8 +873,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -914,8 +918,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -992,8 +996,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -1234,8 +1238,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.assigner as l_assigner then
 				l_assigner.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -1294,8 +1298,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -1362,8 +1366,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -1574,6 +1578,9 @@ feature {ET_AST_NODE} -- Processing
 			i, nb: INTEGER
 		do
 			a_list.left_parenthesis.process (Current)
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
 				a_list.item (i).process (Current)
@@ -1631,6 +1638,26 @@ feature {ET_AST_NODE} -- Processing
 			-- Process `an_operator'.
 		do
 			process_token (an_operator)
+		end
+
+	process_general_qualified_feature_call_expression (a_expression: ET_GENERAL_QUALIFIED_FEATURE_CALL_EXPRESSION)
+			-- Process `a_expression'.
+		do
+			a_expression.target.process (Current)
+			a_expression.name.process (Current)
+			if attached a_expression.arguments as l_arguments then
+				l_arguments.process (Current)
+			end
+		end
+
+	process_general_qualified_feature_call_instruction (a_instruction: ET_GENERAL_QUALIFIED_FEATURE_CALL_INSTRUCTION)
+			-- Process `a_instruction'.
+		do
+			a_instruction.target.process (Current)
+			a_instruction.name.process (Current)
+			if attached a_instruction.arguments as l_arguments then
+				l_arguments.process (Current)
+			end
 		end
 
 	process_hexadecimal_integer_constant (a_constant: ET_HEXADECIMAL_INTEGER_CONSTANT)
@@ -1700,49 +1727,10 @@ feature {ET_AST_NODE} -- Processing
 			-- Implicit type marks are ignored.
 		end
 
-	process_indexing (an_indexing: ET_INDEXING)
-			-- Process `an_indexing'.
+	process_invariant_keyword (a_keyword: ET_INVARIANT_KEYWORD)
+			-- Process `a_keyword'.
 		do
-			an_indexing.terms.process (Current)
-		end
-
-	process_indexing_list (a_list: ET_INDEXING_LIST)
-			-- Process `a_list'.
-		local
-			i, nb: INTEGER
-		do
-			a_list.indexing_keyword.process (Current)
-			nb := a_list.count
-			from i := 1 until i > nb loop
-				a_list.item (i).process (Current)
-				i := i + 1
-			end
-		end
-
-	process_indexing_semicolon (an_indexing: ET_INDEXING_SEMICOLON)
-			-- Process `an_indexing'.
-		do
-			an_indexing.indexing_item.process (Current)
-			an_indexing.semicolon.process (Current)
-		end
-
-	process_indexing_term_comma (an_indexing_term: ET_INDEXING_TERM_COMMA)
-			-- Process `an_indexing_term'.
-		do
-			an_indexing_term.indexing_term.process (Current)
-			an_indexing_term.comma.process (Current)
-		end
-
-	process_indexing_term_list (a_list: ET_INDEXING_TERM_LIST)
-			-- Process `a_list'.
-		local
-			i, nb: INTEGER
-		do
-			nb := a_list.count
-			from i := 1 until i > nb loop
-				a_list.item (i).process (Current)
-				i := i + 1
-			end
+			process_keyword (a_keyword)
 		end
 
 	process_infix_cast_expression (an_expression: ET_INFIX_CAST_EXPRESSION)
@@ -1771,6 +1759,50 @@ feature {ET_AST_NODE} -- Processing
 		do
 			an_operator.or_keyword.process (Current)
 			an_operator.else_keyword.process (Current)
+		end
+
+	process_inline_separate_argument (a_argument: ET_INLINE_SEPARATE_ARGUMENT)
+			-- Process `a_argument'.
+		do
+			a_argument.expression.process (Current)
+			a_argument.as_keyword.process (Current)
+			a_argument.name.process (Current)
+		end
+
+	process_inline_separate_argument_comma (a_argument_comma: ET_INLINE_SEPARATE_ARGUMENT_COMMA)
+			-- Process `a_argument_comma'.
+		do
+			a_argument_comma.argument.process (Current)
+			a_argument_comma.comma.process (Current)
+		end
+
+	process_inline_separate_arguments (a_arguments: ET_INLINE_SEPARATE_ARGUMENTS)
+			-- Process `a_arguments'.
+		local
+			i, nb: INTEGER
+		do
+			a_arguments.separate_keyword.process (Current)
+			nb := a_arguments.count
+			from i := 1 until i > nb loop
+				a_arguments.item (i).process (Current)
+				i := i + 1
+			end
+		end
+
+	process_inline_separate_instruction (a_instruction: ET_INLINE_SEPARATE_INSTRUCTION)
+			-- Process `a_instruction'.
+		do
+			a_instruction.arguments.process (Current)
+			if attached a_instruction.compound as l_compound then
+				l_compound.process (Current)
+			end
+			a_instruction.end_keyword.process (Current)
+		end
+
+	process_inlined_expression (a_expression: ET_INLINED_EXPRESSION)
+			-- Process `a_expression'.
+		do
+			a_expression.expression.process (Current)
 		end
 
 	process_inspect_expression (a_expression: ET_INSPECT_EXPRESSION)
@@ -1805,6 +1837,9 @@ feature {ET_AST_NODE} -- Processing
 			i, nb: INTEGER
 		do
 			a_list.invariant_keyword.process (Current)
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
 				a_list.item (i).process (Current)
@@ -1933,6 +1968,9 @@ feature {ET_AST_NODE} -- Processing
 			i, nb: INTEGER
 		do
 			a_list.local_keyword.process (Current)
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
 				a_list.item (i).process (Current)
@@ -1968,6 +2006,9 @@ feature {ET_AST_NODE} -- Processing
 			i, nb: INTEGER
 		do
 			a_list.invariant_keyword.process (Current)
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
 				a_list.item (i).process (Current)
@@ -2047,6 +2088,54 @@ feature {ET_AST_NODE} -- Processing
 			an_expression.name.process (Current)
 		end
 
+	process_note (a_note: ET_NOTE)
+			-- Process `a_note'.
+		do
+			a_note.terms.process (Current)
+		end
+
+	process_note_list (a_list: ET_NOTE_LIST)
+			-- Process `a_list'.
+		local
+			i, nb: INTEGER
+		do
+			a_list.note_keyword.process (Current)
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
+			nb := a_list.count
+			from i := 1 until i > nb loop
+				a_list.item (i).process (Current)
+				i := i + 1
+			end
+		end
+
+	process_note_semicolon (a_note: ET_NOTE_SEMICOLON)
+			-- Process `a_note'.
+		do
+			a_note.note_item.process (Current)
+			a_note.semicolon.process (Current)
+		end
+
+	process_note_term_comma (a_note_term: ET_NOTE_TERM_COMMA)
+			-- Process `a_note_term'.
+		do
+			a_note_term.note_term.process (Current)
+			a_note_term.comma.process (Current)
+		end
+
+	process_note_term_list (a_list: ET_NOTE_TERM_LIST)
+			-- Process `a_list'.
+		local
+			i, nb: INTEGER
+		do
+			nb := a_list.count
+			from i := 1 until i > nb loop
+				a_list.item (i).process (Current)
+				i := i + 1
+			end
+		end
+
 	process_object_equality_expression (an_expression: ET_OBJECT_EQUALITY_EXPRESSION)
 			-- Process `an_expression'.
 		do
@@ -2121,8 +2210,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -2229,8 +2318,8 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_feature.is_keyword as l_is_keyword then
 				l_is_keyword.process (Current)
 			end
-			if attached a_feature.first_indexing as l_first_indexing then
-				l_first_indexing.process (Current)
+			if attached a_feature.first_note as l_first_note then
+				l_first_note.process (Current)
 			end
 			if attached a_feature.obsolete_message as l_obsolete_message then
 				l_obsolete_message.process (Current)
@@ -2351,6 +2440,9 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_list.clients_clause as l_clients_clause then
 				l_clients_clause.process (Current)
 			end
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
 				a_list.item (i).process (Current)
@@ -2406,6 +2498,9 @@ feature {ET_AST_NODE} -- Processing
 			if attached a_list.then_keyword as l_then_keyword then
 				l_then_keyword.process (Current)
 			end
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
+			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
 				a_list.item (i).process (Current)
@@ -2421,6 +2516,9 @@ feature {ET_AST_NODE} -- Processing
 			a_list.require_keyword.process (Current)
 			if attached a_list.else_keyword as l_else_keyword then
 				l_else_keyword.process (Current)
+			end
+			if attached a_list.first_semicolon as l_first_semicolon then
+				l_first_semicolon.process (Current)
 			end
 			nb := a_list.count
 			from i := 1 until i > nb loop
@@ -2650,6 +2748,9 @@ feature {ET_AST_NODE} -- Processing
 			-- Process `a_symbol'.
 		do
 			process_symbol (a_symbol)
+			if attached a_symbol.other as l_other then
+				process_semicolon_symbol (l_other)
+			end
 		end
 
 	process_special_manifest_string (a_string: ET_SPECIAL_MANIFEST_STRING)
@@ -2721,11 +2822,11 @@ feature {ET_AST_NODE} -- Processing
 			end
 		end
 
-	process_tagged_indexing (an_indexing: ET_TAGGED_INDEXING)
-			-- Process `an_indexing'.
+	process_tagged_note (a_note: ET_TAGGED_NOTE)
+			-- Process `a_note'.
 		do
-			an_indexing.tag.process (Current)
-			process_indexing (an_indexing)
+			a_note.tag.process (Current)
+			process_note (a_note)
 		end
 
 	process_token (a_token: ET_TOKEN)

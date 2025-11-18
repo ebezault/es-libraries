@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Contexts to evaluate Eiffel types"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2003-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2003-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_TYPE_CONTEXT
 
@@ -209,7 +207,7 @@ feature -- Status report
 			-- A context is valid if its `root_context' is only made up
 			-- of class names and formal generic parameter names, and if
 			-- the actual parameters of these formal parameters are
-			-- themselves
+			-- themselves in `root_context'?
 		deferred
 		end
 
@@ -229,6 +227,38 @@ feature -- Status report
 			Result := other.root_context = root_context
 		ensure
 			definition: Result = (other.root_context = root_context)
+		end
+
+	is_type_separate: BOOLEAN
+			-- Is `base_type' separate?
+		require
+			-- no_cycle: no cycle in anchored types involved.
+		do
+			Result := is_type_separate_with_type_mark (Void)
+		end
+
+	is_type_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
+			-- Same as `is_type_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		require
+			-- no_cycle: no cycle in anchored types involved.
+		deferred
+		end
+
+	is_type_non_separate: BOOLEAN
+			-- Is `base_type' not separate?
+		require
+			-- no_cycle: no cycle in anchored types involved.
+		do
+			Result := is_type_non_separate_with_type_mark (Void)
+		end
+
+	is_type_non_separate_with_type_mark (a_type_mark: detachable ET_TYPE_MARK): BOOLEAN
+			-- Same as `is_type_non_separate' except that the type mark status is
+			-- overridden by `a_type_mark', if not Void
+		require
+			-- no_cycle: no cycle in anchored types involved.
+		deferred
 		end
 
 	is_type_expanded: BOOLEAN
@@ -297,6 +327,11 @@ feature -- Status report
 		deferred
 		end
 
+	is_controlled: BOOLEAN
+			-- Is current type a controlled separate type?
+		deferred
+		end
+
 	base_type_has_class (a_class: ET_CLASS): BOOLEAN
 			-- Does the base type of current context contain `a_class'?
 		require
@@ -312,6 +347,15 @@ feature -- Status report
 			valid_context: is_valid_context
 			-- no_cycle: no cycle in anchored types involved.
 			a_class_not_void: a_class /= Void
+		deferred
+		end
+
+	named_type_has_class_with_ancestors_not_built_successfully: BOOLEAN
+			-- Does the named type of current context contain a class
+			-- whose ancestors have not been built successfully?
+		require
+			valid_context: is_valid_context
+			-- no_cycle: no cycle in anchored types involved.
 		deferred
 		end
 

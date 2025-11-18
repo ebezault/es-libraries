@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel formal generic parameters"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2001-2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2001-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_FORMAL_PARAMETER
 
@@ -94,7 +92,7 @@ feature -- Access
 			-- Base types of `constraint'.
 			-- "detachable ANY" if no constraint.
 		do
-			Result := implementation_class.universe.detachable_any_type
+			Result := implementation_class.universe.detachable_separate_any_type
 		ensure
 			constraint_base_types_not_void: Result /= Void
 			constraint_base_types_are_named_types: Result.are_named_types
@@ -149,6 +147,19 @@ feature -- Access
 
 feature -- Status report
 
+	is_separate: BOOLEAN
+			-- Has formal parameter been declared as separate?
+		do
+				-- Note: With the current ECMA standard it is not possible to
+				-- declare 'class FOO [separate G]'. So the test below should fail.
+				-- It has been added here for completeness.
+			if attached type_mark as l_type_mark and then l_type_mark.is_separate then
+				Result := not is_expanded
+			else
+				Result := False
+			end
+		end
+
 	is_expanded: BOOLEAN
 			-- Has formal parameter been declared as expanded?
 		do
@@ -178,14 +189,6 @@ feature -- Setting
 			index := an_index
 		ensure
 			index_set: index = an_index
-		end
-
-	set_type_mark (a_keyword: like type_mark)
-			-- Set `type_mark' to `a_keyword'.
-		do
-			type_mark := a_keyword
-		ensure
-			type_mark_set: type_mark = a_keyword
 		end
 
 feature -- Flags

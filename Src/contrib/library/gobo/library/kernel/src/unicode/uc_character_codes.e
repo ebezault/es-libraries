@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -14,10 +14,8 @@ note
 		%integer constants in order to appear in multi-branch instructions."
 
 	library: "Gobo Eiffel Kernel Library"
-	copyright: "Copyright (c) 2020, Eric Bezault and others"
+	copyright: "Copyright (c) 2020-2022, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class UC_CHARACTER_CODES
 
@@ -292,6 +290,9 @@ feature -- Access
 
 	Pound_code: NATURAL_32 = 35
 			-- '#'
+
+	Ampersand_code: NATURAL_32 = 38
+			-- '&'
 
 	At_code: NATURAL_32 = 64
 			-- '@'

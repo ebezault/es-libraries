@@ -4,8 +4,8 @@ note
 	status: "See notice at end of class."
 	legal: "See notice at end of class."
 	names: format_double
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2021-02-22 14:30:58 +0000 (Mon, 22 Feb 2021) $"
+	revision: "$Revision: 105200 $"
 
 class FORMAT_DOUBLE
 

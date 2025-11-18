@@ -1,4 +1,4 @@
-note
+﻿note
 
 	description:
 
@@ -8,10 +8,8 @@ note
 	]"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2019, Eric Bezault and others"
+	copyright: "Copyright (c) 2019-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 deferred class ET_TYPE_CONSTRAINT
 
@@ -20,6 +18,9 @@ inherit
 	ET_CONSTRAINT
 		rename
 			has_formal_parameter as is_formal_parameter,
+			has_expanded_type as is_type_expanded,
+			has_attached_type as is_type_attached,
+			has_non_separate_type as is_type_non_separate,
 			are_named_types as is_named_type
 		end
 

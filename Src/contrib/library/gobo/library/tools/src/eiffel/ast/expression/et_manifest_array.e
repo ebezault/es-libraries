@@ -1,14 +1,12 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel manifest arrays"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 1999-2018, Eric Bezault and others"
+	copyright: "Copyright (c) 1999-2024, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_MANIFEST_ARRAY
 
@@ -16,9 +14,14 @@ inherit
 
 	ET_EXPRESSION
 		undefine
-			reset,
-			is_instance_free
+			is_instance_free,
+			has_result,
+			has_address_expression,
+			has_agent,
+			has_typed_object_test,
+			add_old_expressions
 		redefine
+			reset,
 			is_never_void
 		end
 
@@ -62,6 +65,7 @@ feature -- Initialization
 			l_expression: ET_EXPRESSION
 			i, nb: INTEGER
 		do
+			precursor {ET_EXPRESSION}
 			if attached cast_type as l_cast_type then
 				l_cast_type.type.reset
 			end

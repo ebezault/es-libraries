@@ -7,8 +7,8 @@
 	access: cursor, membership
 	representation: recursive, linked
 	contents: generic
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2019-12-19 09:34:30 +0000 (Thu, 19 Dec 2019) $"
+	revision: "$Revision: 103773 $"
 
 class TWO_WAY_CURSOR_TREE [G] inherit
 

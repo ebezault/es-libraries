@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 
 <!--
 	description:
@@ -7,12 +7,9 @@
 
 	copyright: "Copyright (c) 2004-2016, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
-
 -->
 
-<chapter xmlns="http://www.gobosoft.com/eiffel/gobo/documentation" id="guidelines/documentation">
+<chapter xmlns="https://www.gobosoft.com/eiffel/gobo/documentation" id="guidelines/documentation">
 <chapterinfo>
 	<copyright>
 		<year>2001-2016</year>

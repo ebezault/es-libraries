@@ -1,20 +1,20 @@
-note
+﻿note
 
 	description:
 
 		"Eiffel features equipped with dynamic type sets"
 
 	library: "Gobo Eiffel Tools Library"
-	copyright: "Copyright (c) 2004-2021, Eric Bezault and others"
+	copyright: "Copyright (c) 2004-2025, Eric Bezault and others"
 	license: "MIT License"
-	date: "$Date$"
-	revision: "$Revision$"
 
 class ET_DYNAMIC_FEATURE
 
 inherit
 
 	DEBUG_OUTPUT
+
+	HASHABLE
 
 	ET_SHARED_TOKEN_CONSTANTS
 		export {NONE} all end
@@ -45,7 +45,14 @@ feature {NONE} -- Initialization
 			l_dynamic_type_set_builder := a_system.dynamic_type_set_builder
 			static_feature := a_feature
 			target_type := a_target_type
+			is_static := a_feature.is_static
 			dynamic_type_sets := empty_dynamic_type_sets
+			current_index := 2 * a_feature.arguments_count + 1 + if a_feature.type /= Void then 2 else 0 end
+			create preconditions.make (50)
+			create postconditions.make (50)
+			if a_feature.is_invariants then
+				create invariants.make (50)
+			end
 			create query_calls.make_map (10)
 			create procedure_calls.make_map (10)
 			if attached {ET_EXTERNAL_ROUTINE} a_feature as l_external_routine then
@@ -163,6 +170,22 @@ feature {NONE} -- Initialization
 			elseif a_feature.has_seed (a_system.current_system.is_equal_seed) then
 				is_is_equal_routine := True
 			end
+			if
+				a_feature.implementation_class.name.same_class_name (tokens.file_class_name) and then
+				a_feature.implementation_feature.name.same_feature_name (tokens.c_retrieved_feature_name)
+			then
+					-- Keep all attributes when using Storable.
+				a_system.use_all_attributes
+			elseif
+				a_feature.implementation_class.name.same_class_name (tokens.file_class_name) and then
+				(a_feature.implementation_feature.name.same_feature_name (tokens.c_basic_store_feature_name) or
+				a_feature.implementation_feature.name.same_feature_name (tokens.c_general_store_feature_name) or
+				a_feature.implementation_feature.name.same_feature_name (tokens.c_independent_store_feature_name))
+			then
+					-- Keep all attributes when using Storable.
+				a_system.use_all_attributes
+				a_system.set_independent_store_used (True)
+			end
 		ensure
 			static_feature_set: static_feature = a_feature
 			target_type_set: target_type = a_target_type
@@ -185,23 +208,42 @@ feature -- Access
 			end
 		end
 
-	dynamic_type_sets: ET_DYNAMIC_TYPE_SET_LIST
-			-- Dynamic type sets of expressions within current feature;
-			-- Dynamic type sets for arguments are stored first
-
-	dynamic_type_set (an_operand: ET_OPERAND): detachable ET_DYNAMIC_TYPE_SET
-			-- Dynamic type set associated with `an_operand';
+	local_type_set (a_local: ET_LOCAL_VARIABLE): detachable ET_DYNAMIC_TYPE_SET
+			-- Dynamic type set associated with `a_local';
 			-- Void if unknown yet
 		require
-			an_operand_not_void: an_operand /= Void
+			a_local_not_void: a_local /= Void
 		local
 			i: INTEGER
 		do
-			i := an_operand.index
+			i := a_local.name.index
 			if i >= 1 and i <= dynamic_type_sets.count then
 				Result := dynamic_type_sets.item (i)
 			end
 		end
+
+	dynamic_type_sets: ET_DYNAMIC_TYPE_SET_LIST
+			-- Dynamic type sets of expressions within current feature;
+			-- Dynamic type sets for arguments are stored first
+
+	current_index: INTEGER
+			-- Index of dynamic type set of 'Current' in `dynamic_type_sets'
+
+	preconditions: DS_ARRAYED_LIST_2 [ET_PRECONDITIONS, INTEGER]
+			-- Preconditions of current feature (even inherited from precursors),
+			-- and their index offset when accessing dynamic type sets
+
+	postconditions: DS_ARRAYED_LIST_2 [ET_POSTCONDITIONS, INTEGER]
+			-- Postconditions of current feature (even inherited from precursors),
+			-- and their index offset when accessing dynamic type sets
+
+	invariants: detachable DS_ARRAYED_LIST_2 [ET_INVARIANTS, INTEGER]
+			-- Invariants corresponding to `static_feature' when it is an invariant
+			-- (even those from ancestors), and their index offset when accessing dynamic
+			-- type sets
+
+	storable_type: detachable ET_DYNAMIC_TYPE
+			-- Type used for attribute types (with formal generic parameters) in Storable file
 
 	first_precursor: detachable ET_DYNAMIC_PRECURSOR
 			-- First precursor called from current feature;
@@ -226,7 +268,7 @@ feature -- Access
 		do
 			if not attached first_precursor as l_first_precursor then
 				create Result.make (a_feature, a_parent_type, Current, a_system)
-				Result.set_regular (is_regular or is_creation)
+				Result.set_regular (is_regular or is_creation or is_separate_creation)
 				first_precursor := Result
 			elseif l_first_precursor.parent_type = a_parent_type and l_first_precursor.static_feature = a_feature then
 				Result := l_first_precursor
@@ -262,11 +304,20 @@ feature -- Access
 			dynamic_precursor_not_void: Result /= Void
 		end
 
-	static_feature: ET_FEATURE
+	static_feature: ET_STANDALONE_CLOSURE
 			-- Feature at compilation time
 
 	id: INTEGER
 			-- ID
+
+	hash_code: INTEGER
+			-- Hash value
+		do
+			Result := target_type.id * 100 + id
+			if Result < 0 then
+				Result := -(Result + 1)
+			end
+		end
 
 feature -- Setting
 
@@ -288,6 +339,24 @@ feature -- Setting
 			result_type_set_set: result_type_set = a_result_type_set
 		end
 
+	set_target_type (a_target_type: like target_type)
+			-- Set `target_type' to `a_target_type'.
+		require
+			a_target_type_not_void: a_target_type /= Void
+		do
+			target_type := a_target_type
+		ensure
+			target_type_set: target_type = a_target_type
+		end
+
+	set_storable_type (a_storable_type: like storable_type)
+			-- Set `storable_type' to `a_storable_type'.
+		do
+			storable_type := a_storable_type
+		ensure
+			storable_type_set: storable_type = a_storable_type
+		end
+
 	set_id (i: INTEGER)
 			-- Set `id' to `i'.
 		do
@@ -304,14 +373,20 @@ feature -- Status report
 	is_generated: BOOLEAN
 			-- Has code for current feature been registered to be generated?
 
-	is_static_generated: BOOLEAN
-			-- Has code for the statically called version of current feature been registered to be generated?
+	is_inlined: BOOLEAN
+			-- Has code for current feature been inlined?
 
 	is_creation: BOOLEAN
 			-- Is current feature used as a creation procedure?
 
+	is_separate_creation: BOOLEAN
+			-- Is current feature used as a creation procedure on a separate target?
+
 	is_regular: BOOLEAN
 			-- Is current feature used as a regular feature?
+
+	is_static: BOOLEAN
+			-- Can feature be used as a static feature (i.e. in a call of the form {A}.f)?
 
 	is_address: BOOLEAN
 			-- Is address of current feature used?
@@ -341,6 +416,46 @@ feature -- Status report
 			end
 		ensure
 			query: Result implies is_query
+		end
+
+	is_attribute_with_no_self_initializing_code: BOOLEAN
+			-- Is feature an attribute with no self-initializing code?
+			--
+			-- Note: The semantics rule MEVS, in ECMA-367 3-36, section 8.19.20,
+			-- says that the attribute initialization code is not executed
+			-- if the type of the attribute is self-initializing.
+		do
+			Result := is_attribute and then
+				(not attached {ET_EXTENDED_ATTRIBUTE} static_feature as l_extended_attribute or else
+				not l_extended_attribute.has_self_initializing_code or else
+				not attached result_type_set as l_result_type_set or else
+				l_result_type_set.static_type.is_self_initializing)
+		ensure
+			definition: Result = (is_attribute and then
+				(not attached {ET_EXTENDED_ATTRIBUTE} static_feature as l_extended_attribute or else
+				not l_extended_attribute.has_self_initializing_code or else
+				not attached result_type_set as l_result_type_set or else
+				l_result_type_set.static_type.is_self_initializing))
+		end
+
+	is_attribute_with_self_initializing_code: BOOLEAN
+			-- Is feature an attribute with self-initializing code?
+			--
+			-- Note: The semantics rule MEVS, in ECMA-367 3-36, section 8.19.20,
+			-- says that the attribute initialization code is not executed
+			-- if the type of the attribute is self-initializing.
+		do
+			Result := is_attribute and then
+				attached {ET_EXTENDED_ATTRIBUTE} static_feature as l_extended_attribute and then
+				l_extended_attribute.has_self_initializing_code and then
+				attached result_type_set as l_result_type_set and then
+				not l_result_type_set.static_type.is_self_initializing
+		ensure
+			definition: Result = (is_attribute and then
+				attached {ET_EXTENDED_ATTRIBUTE} static_feature as l_extended_attribute and then
+				l_extended_attribute.has_self_initializing_code and then
+				attached result_type_set as l_result_type_set and then
+				not l_result_type_set.static_type.is_self_initializing)
 		end
 
 	is_constant_attribute: BOOLEAN
@@ -440,6 +555,21 @@ feature -- Status report
 				else
 					Result := False
 				end
+			end
+		end
+
+	has_separate_argument: BOOLEAN
+			-- Has current feature at least one separate argument?
+		local
+			i, nb: INTEGER
+		do
+			nb := static_feature.arguments_count.min (dynamic_type_sets.count)
+			from i := 1 until i > nb loop
+				if dynamic_type_sets.item (i).static_type.is_separate then
+					Result := True
+					i := nb -- Jump out of the loop.
+				end
+				i := i + 1
 			end
 		end
 
@@ -798,12 +928,12 @@ feature -- Status setting
 			generated_set: is_generated = b
 		end
 
-	set_static_generated (b: BOOLEAN)
-			-- Set `is_static_generated' to `b'.
+	set_inlined (b: BOOLEAN)
+			-- Set `is_inlined' to `b'.
 		do
-			is_static_generated := b
+			is_inlined := b
 		ensure
-			static_generated_set: is_static_generated = b
+			inlined_set: is_inlined = b
 		end
 
 	set_creation (b: BOOLEAN)
@@ -826,6 +956,16 @@ feature -- Status setting
 			end
 		ensure
 			creation_set: is_creation = b
+		end
+
+	set_separate_creation (b: BOOLEAN)
+			-- Set `is_separate_creation' to `b'.
+		do
+			is_separate_creation := b
+			set_creation (b and has_separate_argument or is_creation)
+			set_regular (b or is_regular)
+		ensure
+			separate_creation_set: is_separate_creation = b
 		end
 
 	set_regular (b: BOOLEAN)
@@ -880,9 +1020,9 @@ feature -- Calls
 			-- Use the name of the call as key because for call agents (e.g. 'agent a.f')
 			-- we use a temporary qualified call expression or instruction instead of the
 			-- actual call agent as static call to generate the C code in ET_C_GENERATOR.
-			-- (See ET_C_GENERATOR.print_call_agent_body_declaration.) This is so that
-			-- `query_call' can get the right dynamic call despite the static call object
-			-- being different.
+			-- (See ET_C_GENERATOR.print_call_agent_body_declaration and
+			-- ET_C_GENERATOR.print_separate_call_declaration.) This is so that `query_call'
+			-- can get the right dynamic call despite the static call object being different.
 
 	procedure_call (a_static_call: ET_CALL_COMPONENT): detachable ET_DYNAMIC_QUALIFIED_PROCEDURE_CALL
 			-- Qualified procedure call in current feature whose static call is `a_static_call', if any
@@ -900,9 +1040,8 @@ feature -- Calls
 			-- Use the name of the call as key because for call agents (e.g. 'agent a.f')
 			-- we use a temporary qualified call expression or instruction instead of the
 			-- actual call agent as static call to generate the C code in ET_C_GENERATOR.
-			-- (See ET_C_GENERATOR.print_call_agent_body_declaration.) This is so that
-			-- `procedure_call' can get the right dynamic call despite the static call object
-			-- being different.
+			-- (See ET_C_GENERATOR.print_call_agent_body_declaration and `procedure_call'
+			-- can get the right dynamic call despite the static call object being different.
 
 feature {ET_DYNAMIC_PRIMARY_TYPE} -- Calls
 
@@ -952,6 +1091,11 @@ invariant
 	static_feature_not_void: static_feature /= Void
 	target_type_not_void: target_type /= Void
 	dynamic_type_sets_not_void: dynamic_type_sets /= Void
+	preconditions_not_void: preconditions /= Void
+	no_void_precondition_not_void: not preconditions.has_void_1
+	postconditions_not_void: postconditions /= Void
+	no_void_postcondition_not_void: not postconditions.has_void_1
+	no_void_invariant_not_void: attached invariants as l_invariants implies not l_invariants.has_void_1
 	query_calls_not_void: query_calls /= Void
 	no_void_query_call: not query_calls.has_void
 	procedure_calls_not_void: procedure_calls /= Void
