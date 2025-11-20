@@ -129,8 +129,8 @@ feature -- Hooks
 		do
 			if
 				attached custom_block_api as l_custom_block_api and then
-				attached l_custom_block_api.block_template (a_block_id) as tplbk and then
-				attached l_custom_block_api.block (a_block_id) as bk
+				attached l_custom_block_api.block (a_block_id) as bk and then
+				attached l_custom_block_api.block_template (bk) as tplbk
 			then
 				tplbk.set_is_raw (bk.is_raw)
 				tplbk.set_title (bk.title)
