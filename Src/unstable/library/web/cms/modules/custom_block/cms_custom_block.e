@@ -3,13 +3,13 @@ note
 	date: "$Date$"
 	revision: "$Revision$"
 
-class 
+class
 	CMS_CUSTOM_BLOCK
 
 inherit
 	DEBUG_OUTPUT
 
-create 
+create
 	make
 
 feature {NONE} -- Initialization
@@ -18,7 +18,7 @@ feature {NONE} -- Initialization
 		do
 			id := a_id
 		end
-	
+
 feature -- Access
 
 	id: IMMUTABLE_STRING_8
@@ -31,6 +31,8 @@ feature -- Access
 
 	weight: INTEGER_32
 
+	template_engine_id: detachable READABLE_STRING_32
+
 	conditions: detachable ARRAYED_LIST [CMS_BLOCK_EXPRESSION_CONDITION]
 
 	debug_output: STRING_32
@@ -41,7 +43,26 @@ feature -- Access
 				Result.append_string_general (t)
 			end
 		end
-	
+
+feature -- Status report
+
+	is_template_engine (n: READABLE_STRING_GENERAL): BOOLEAN
+		do
+			if attached template_engine_id as e then
+				Result := n.is_case_insensitive_equal (e)
+			end
+		end
+
+	is_smarty_template_engine: BOOLEAN
+		do
+			if attached template_engine_id as e then
+				Result := e.is_case_insensitive_equal ("smarty")
+			else
+					-- Default is smarty for now ...
+				Result := True
+			end
+		end
+
 feature -- Element change
 
 	set_title (a_title: detachable READABLE_STRING_GENERAL)
@@ -56,6 +77,11 @@ feature -- Element change
 	set_is_raw (b: BOOLEAN)
 		do
 			is_raw := b
+		end
+
+	set_template_engine_id (v: detachable READABLE_STRING_32)
+		do
+			template_engine_id := v
 		end
 
 	set_region (r: like region)
@@ -84,5 +110,5 @@ feature -- Element change
 			end;
 			lst.force (a_cond)
 		end
-	
+
 end

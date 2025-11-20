@@ -84,9 +84,15 @@ feature -- Query
 			end
 		end
 
-	block_template (a_block_id: READABLE_STRING_8): detachable CMS_SMARTY_TEMPLATE_BLOCK
+	block_template (bk: CMS_CUSTOM_BLOCK): detachable CMS_TEMPLATE_BLOCK
 		do
-			Result := smarty_template_block (module, a_block_id, cms_api)
+			if bk.is_smarty_template_engine then
+				Result := smarty_template_block (module, bk.id, cms_api)
+			elseif bk.is_template_engine ("mustache") then
+				Result := mustache_template_block (module, bk.id, cms_api)
+			else
+				Result := none_template_block (module, bk.id, cms_api)
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -113,6 +119,10 @@ feature {NONE} -- Implementation
 			end;
 			Result.set_weight (cfg.integer_item (l_block_pref + ".weight"));
 			Result.set_title (cfg.text_item (l_block_pref + ".title"))
+			if attached cfg.text_item (l_block_pref + ".engine") as l_tpl_engine then
+				Result.set_template_engine_id (l_tpl_engine)
+			end
+
 			if attached cfg.text_item (l_block_pref + ".is_raw") as l_is_raw then
 				Result.set_is_raw (l_is_raw.is_case_insensitive_equal_general ("yes"))
 			end

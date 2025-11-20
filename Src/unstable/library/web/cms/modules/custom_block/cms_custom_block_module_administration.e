@@ -88,7 +88,7 @@ feature -- Request
 						s.append ("</ul></div>")
 					end
 				end
-				if attached api.block_template (bk.id) as tpl and then attached tpl.informations as tu then
+				if attached api.block_template (bk) as tpl and then attached tpl.informations as tu then
 					if tu.is_writable then
 						s.append ("<div class=%"code editable%">")
 					else

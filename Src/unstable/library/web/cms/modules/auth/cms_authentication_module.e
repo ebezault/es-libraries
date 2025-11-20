@@ -180,7 +180,7 @@ feature -- Router
 			a_router.handle ("/" + roc_reset_password_location, create {WSF_URI_AGENT_HANDLER}.make (agent handle_reset_password(a_api, ?, ?)), a_router.methods_get_post)
 			a_router.handle ("/" + roc_account_location + "/change/{field}", create {WSF_URI_TEMPLATE_AGENT_HANDLER}.make (agent handle_change_field (a_api, ?, ?)), a_router.methods_get_post)
 
-			a_router.handle ("/" + roc_account_location + "/confirm-email/{token}", create {WSF_URI_TEMPLATE_AGENT_HANDLER}.make (agent handle_confirm_account_email (a_api, ?, ?)), a_router.methods_get)
+			a_router.handle ("/" + roc_account_location + "/confirm-email/{token}", create {WSF_URI_TEMPLATE_AGENT_HANDLER}.make (agent handle_confirm_account_email (a_api, ?, ?)), a_router.methods_get_post)
 		end
 
 feature -- Hooks configuration
@@ -640,6 +640,10 @@ feature -- Handler
 			r: CMS_RESPONSE
 			l_user_api: CMS_USER_API
 			l_token: detachable READABLE_STRING_8
+			blk: CMS_MODAL_CONTENT_BLOCK
+			s: STRING_8
+			f: CMS_FORM
+			sub: WSF_FORM_SUBMIT_INPUT
 		do
 			if attached {WSF_STRING} req.path_parameter ("token") as p_token then
 				l_token := p_token.url_encoded_value
@@ -648,27 +652,57 @@ feature -- Handler
 				a_auth_api.cms_api.response_api.send_bad_request ("Missing required token value", req, res)
 			elseif a_auth_api.cms_api.has_permission (perm_account_auto_activate) then
 				l_user_api := a_auth_api.cms_api.user_api
-
 				if attached {CMS_TEMP_USER} l_user_api.temp_user_by_activation_token (l_token) as l_temp_user then
-					create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
-					a_auth_api.activate_user (l_temp_user, l_token)
-					if
-						not a_auth_api.has_error and then
-						attached l_user_api.user_by_name (l_temp_user.name) as l_new_user
-					then
-						r.set_main_content ("<p> Thank you for confirming the email address, the account <i>" + a_auth_api.cms_api.user_html_link (l_new_user) + "</i> is now active.</p>")
-					else
-							-- Failure!!!
-						r.set_status_code ({HTTP_CONSTANTS}.internal_server_error)
-						r.set_main_content ("<p>ERROR: User activation failed for <i>" + html_encoded (l_temp_user.name) + "</i>!</p>")
-						if attached l_user_api.error_handler.as_single_error as err then
-							r.add_error_message (html_encoded (err.string_representation))
+					if req.is_post_request_method then
+						create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
+						a_auth_api.activate_user (l_temp_user, l_token)
+						if
+							not a_auth_api.has_error and then
+							attached l_user_api.user_by_name (l_temp_user.name) as l_new_user
+						then
+							if attached l_new_user.email as l_email_addr then
+								create blk.make_raw ("email-confirmation", Void, "<p>Thank you for confirming the email address <i>" + html_encoded (l_email_addr) + "</i></p><p>Your account is now active.</p>", Void)
+							else
+								create blk.make_raw ("email-confirmation", Void, "<p>Thank you for confirming the email address.</p><p>your account is now active.</p>", Void)
+							end
+							blk.set_close_link_html_text ("Now, you can close this page")
+							r.add_block (blk, "content")
+						else
+								-- Failure!!!
+							r.set_status_code ({HTTP_CONSTANTS}.internal_server_error)
+							create blk.make_raw ("email-confirmation", Void, "<p>ERROR: User activation failed for <i>" + html_encoded (l_temp_user.name) + "</i>!</p>", Void)
+							blk.set_close_link_html_text ("Now, you can close this page")
+							r.add_block (blk, "content")
+							if attached l_user_api.error_handler.as_single_error as err then
+								r.add_error_message (html_encoded (err.string_representation))
+							end
 						end
+						r.execute
+					elseif req.is_get_head_request_method then
+						create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
+						create f.make (req.percent_encoded_path_info, "email-verification")
+						f.extend_html_text ("<h2>Email Verification</h2>")
+						f.extend_hidden_input ("token", l_token)
+						f.extend_html_text ("<p>Please click the button below to verify your email address</p>")
+						create sub.make_with_text ("op", "Verify My Email")
+						sub.add_css_class ("primary-button")
+						f.extend (sub)
+						s := f.to_html (r.wsf_theme)
+						create blk.make_raw ("email-confirmation", "Email Verification", s, Void)
+						r.add_block (blk, "content")
+						r.execute
+					else
+						a_auth_api.cms_api.response_api.send_bad_request (Void, req, res)
 					end
-					r.execute
 				else
 						-- the token does not exist, or it was already used.
-					a_auth_api.cms_api.response_api.send_bad_request ("<p>The activation token <i>" + html_encoded (l_token) + "</i> is not valid!</p>", req, res)
+					create {GENERIC_VIEW_CMS_RESPONSE} r.make (req, res, a_auth_api.cms_api)
+					r.set_status_code ({HTTP_CONSTANTS}.bad_request)
+
+					create blk.make_raw ("email-confirmation", Void, "<p>The activation token <i>" + html_encoded (l_token) + "</i> is not valid (or already used)!</p>", Void)
+					blk.set_close_link_html_text ("Now, you can close this page")
+					r.add_block (blk, "content")
+				r.execute
 				end
 			else
 				a_auth_api.cms_api.response_api.send_access_denied (Void, req, res)
