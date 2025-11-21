@@ -278,6 +278,22 @@ feature -- Streams
 
 	error: PLAIN_TEXT_FILE
 
+feature -- Output helpers	
+
+	put_bold (m: READABLE_STRING_32)
+		do
+			ansi.set_bold
+			output.put_string_32 (m)
+			ansi.unset_bold
+		end
+
+	put_italic (m: READABLE_STRING_32)
+		do
+			ansi.set_italic
+			output.put_string_32 (m)
+			ansi.unset_italic
+		end
+
 	put_error (m: READABLE_STRING_32)
 		do
 			ansi.set_foreground_color_to_red
@@ -294,6 +310,11 @@ feature -- Streams
 			error.put_string ("[WARNING] ")
 			error.put_string_32 (m)
 			ansi.reset_foreground_color
+		end
+
+	put_new_line
+		do
+			output.put_new_line
 		end
 
 invariant
