@@ -991,26 +991,31 @@ feature -- Logging
 			end
 		end
 
+	put_log (a_log: CMS_LOG)
+		local
+			m: STRING_8
+		do
+			storage.save_log (a_log)
+			create m.make_from_string ("[" + a_log.category + "] ")
+			m.append (a_log.message)
+			if attached a_log.link as lnk then
+				m.append (" [" + url_encoded (lnk.title) + "]("+ lnk.location +")")
+			end
+			output_log (m, a_log.level)
+		end
+
 	log	(a_category: READABLE_STRING_8; a_message: READABLE_STRING_8; a_level: INTEGER; a_link: detachable CMS_LINK)
 		require
 			has_known_level: {CMS_LOG}.is_known_level (a_level)
 		local
 			l_log: CMS_LOG
-			m: STRING
 		do
 			create l_log.make (a_category, a_message, a_level, Void)
 			if a_link /= Void then
 				l_log.set_link (a_link)
 			end
-			storage.save_log (l_log)
 
-			create m.make_from_string ("[" + a_category + "] ")
-			m.append (a_message)
-			if a_link /= Void then
-				m.append (" [" + url_encoded (a_link.title) + "]("+ a_link.location +")")
-			end
-
-			output_log (m, a_level)
+			put_log (l_log)
 		end
 
 	log_error (a_category: READABLE_STRING_8; a_message: READABLE_STRING_8; a_link: detachable CMS_LINK)
