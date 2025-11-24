@@ -100,6 +100,8 @@ feature -- Constants
 	is_known_level (a_level: like level): BOOLEAN
 		do
 			inspect a_level
+			when 0 then
+				Result := True -- Default to level_notice
 			when 
 				level_emergency,
 				level_alert,
