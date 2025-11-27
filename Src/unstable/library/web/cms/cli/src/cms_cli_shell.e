@@ -19,6 +19,7 @@ feature {NONE} -- Initialization
 			create short_aliases.make (5)
 			output := io.output
 			error := io.error
+			set_default_to_output
 		end
 
 feature -- Change
@@ -34,9 +35,9 @@ feature -- Change
 			end
 
 			if aliases.has_key (cmd.name) then
-				put_warning ({STRING_32} "Command name conflict for %""+ cmd.name +"%"!%N")
+				put_warning_line ({STRING_32} "Command name conflict for %""+ cmd.name +"%"!")
 				if k /= Void then
-					put_warning ({STRING_32} " Use %""+ k +"%"!%N")
+					put_warning_line ({STRING_32} " Use %""+ k +"%"!")
 					aliases [k] := cmd
 				end
 			else
@@ -45,7 +46,7 @@ feature -- Change
 			if cmd.has_short_name then
 				c := cmd.short_name
 				if short_aliases.has_key (c) then
-					put_warning ({STRING_32} "alias name conflict for %""+ create {STRING_32}.make_filled (c, 1) +"%" -> ignore!%N")
+					put_warning_line ({STRING_32} "alias name conflict for %""+ create {STRING_32}.make_filled (c, 1) +"%" -> ignore!")
 				else
 					short_aliases [c] := cmd
 				end
@@ -163,7 +164,7 @@ feature -- Execution
 					if attached command (n) as cmd then
 						execute_command (cmd, n, args)
 					else
-						put_error ({STRING_32} "command not found %"" + n + "%".%N")
+						put_error_line ({STRING_32} "command not found %"" + n + "%"!")
 					end
 				end
 			else
@@ -233,7 +234,7 @@ feature -- Execution
 						o.put_character ('%N')
 					end
 				else
-					sh.put_error ({STRING_32} "[Error] command not found %"" + tok.token + "%".%N")
+					sh.put_error_line ({STRING_32} "command not found %"" + tok.token + "%"!")
 				end
 			else
 				across
@@ -272,49 +273,99 @@ feature -- Execution
 			post_execute_command
 		end
 
-feature -- Streams		
+feature -- Streams
+
+	default_output: PLAIN_TEXT_FILE
 
 	output: PLAIN_TEXT_FILE
 
 	error: PLAIN_TEXT_FILE
 
-feature -- Output helpers	
+feature -- Streams change
 
-	put_bold (m: READABLE_STRING_32)
+	set_default_to_output
+		do
+			default_output := output
+		end
+
+	set_default_to_error
+		do
+			default_output := error
+		end
+
+feature -- Output helpers
+
+	put_string (m: READABLE_STRING_GENERAL)
+		do
+			default_output.put_string_general (m)
+		end
+
+	put_bold (m: READABLE_STRING_GENERAL)
 		do
 			ansi.set_bold
-			output.put_string_32 (m)
+			default_output.put_string_general (m)
 			ansi.unset_bold
 		end
 
-	put_italic (m: READABLE_STRING_32)
+	put_italic (m: READABLE_STRING_GENERAL)
 		do
 			ansi.set_italic
-			output.put_string_32 (m)
+			default_output.put_string_general (m)
 			ansi.unset_italic
 		end
 
-	put_error (m: READABLE_STRING_32)
+	put_success (m: READABLE_STRING_GENERAL)
 		do
-			ansi.set_foreground_color_to_red
-			ansi.set_bold
-			error.put_string ("[ERROR] ")
-			ansi.unset_bold
-			error.put_string_32 (m)
+			ansi.set_foreground_color_to_green
+			default_output.put_string_general (m)
 			ansi.reset_foreground_color
 		end
 
-	put_warning (m: READABLE_STRING_32)
+	put_error (m: READABLE_STRING_GENERAL)
 		do
 			ansi.set_foreground_color_to_red
-			error.put_string ("[WARNING] ")
-			error.put_string_32 (m)
+			default_output.put_string_general (m)
 			ansi.reset_foreground_color
+		end
+
+	put_warning (m: READABLE_STRING_GENERAL)
+		do
+			ansi.set_foreground_color_to_red
+			default_output.put_string_general (m)
+			ansi.reset_foreground_color
+			put_new_line
+		end
+
+	put_error_line (m: READABLE_STRING_GENERAL)
+		do
+			ansi.set_bold
+			if m.starts_with ("%N") then
+				put_error ("%N[ERROR] ")
+			else
+				put_error ("[ERROR] ")
+			end
+			ansi.unset_bold
+			if m.starts_with ("%N") then
+				put_error (m.substring (2, m.count))
+			else
+				put_error (m)
+			end
+			put_new_line
+		end
+
+	put_warning_line (m: READABLE_STRING_GENERAL)
+		do
+			if m.starts_with ("%N") then
+				put_warning ({STRING_32} "%N[WARNING] " + m.substring (2, m.count))
+			else
+				put_warning ({STRING_32} "[WARNING] " + m)
+			end
+			put_new_line
 		end
 
 	put_new_line
 		do
-			output.put_new_line
+			default_output.put_new_line
 		end
 
 invariant
