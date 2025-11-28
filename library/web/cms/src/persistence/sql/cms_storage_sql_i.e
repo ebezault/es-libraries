@@ -164,16 +164,37 @@ feature -- Operation
 		end
 
 	sql_finalize_statement (a_sql_statement: READABLE_STRING_8)
+		local
+			l_has_error: BOOLEAN
+			l_err_mesg: STRING_32
+			l_prev_error: ERROR
 		do
+			l_has_error := has_error
+			if l_has_error then
+				l_err_mesg := error_handler.as_string_representation
+			end
 			sql_finalize
 			if
-				has_error and then
+				l_has_error and then
 				attached api as l_cms_api
 			then
 				if not is_logging_database_error then
+						-- WARNING: CMS_API.log_error (...)  reset the errors
+						-- so restore current errors after the log					
+					l_prev_error := error_handler.as_single_error
+
 					is_logging_database_error := True
-					l_cms_api.log_error ("database", generator + "." + l_cms_api.html_encoded (error_handler.as_string_representation) + "%N<p>SQL=%""+  l_cms_api.html_encoded (a_sql_statement) +"%"</p>", Void)
+
+					if l_err_mesg /= Void then
+						l_cms_api.log_error ("database", generator + ": " + l_cms_api.html_encoded (l_err_mesg) + "%N<p>SQL=%""+  l_cms_api.html_encoded (a_sql_statement) +"%"</p>", Void)
+					else
+						l_cms_api.log_error ("database", generator + "%N<p>SQL=%""+  l_cms_api.html_encoded (a_sql_statement) +"%"</p>", Void)
+					end
 					is_logging_database_error := False
+
+					if l_prev_error /= Void then
+						error_handler.add_error (l_prev_error)
+					end
 				end
 			end
 		end
