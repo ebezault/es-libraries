@@ -74,6 +74,7 @@ feature -- HTTP Methods
 			b: STRING
 			params: CMS_DATA_QUERY_PARAMETERS
 			l_date, l_prev_date: DATE
+			u: CMS_USER
 		do
 			if api.has_permission ("view logs") then
 				r := new_generic_response (req, res)
@@ -119,6 +120,17 @@ feature -- HTTP Methods
 					b.append ("<div class=%"log-category%">")
 					b.append ("[" + html_encoded (l_log.category) + "]")
 					b.append ("</div>")
+					u := l_log.user
+					if attached u then
+						if attached {CMS_PARTIAL_USER} u as p_u then
+							u := api.user_api.user_by_id (p_u.id)
+						end
+					end
+					if attached u then
+						b.append ("<div class=%"log-user%">")
+						b.append (api.user_html_link (u))
+						b.append ("</div>")
+					end
 					b.append ("</div>")
 					b.append ("<div class=%"log-message%">")
 					b.append (l_log.message)
@@ -155,7 +167,7 @@ feature -- HTTP Methods
 			end
 		end
 
-	logs_link (a_title: READABLE_STRING_GENERAL; a_category, a_level: detachable READABLE_STRING_GENERAL; a_lower, a_count: INTEGER): STRING_8
+	logs_link (a_title: READABLE_STRING_GENERAL; a_category, a_level: detachable READABLE_STRING_GENERAL; a_offset, a_count: INTEGER): STRING_8
 		local
 			lnk: CMS_LOCAL_LINK
 		do
@@ -166,8 +178,8 @@ feature -- HTTP Methods
 			if a_level /= Void then
 				lnk.add_query_parameter ("level", url_encoded (a_level))
 			end
-			if a_lower > 0 and a_count > 0 then
-				lnk.add_query_parameter ("lower", a_lower.out)
+			if a_offset > 0 and a_count > 0 then
+				lnk.add_query_parameter ("offset", a_offset.out)
 				lnk.add_query_parameter ("count", a_count.out)
 			end
 			Result := api.link (lnk.title, lnk.location, Void)

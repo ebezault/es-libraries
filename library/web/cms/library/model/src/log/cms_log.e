@@ -38,6 +38,9 @@ feature -- Access
 	id: INTEGER_64
 			-- Unique identifier of Current.
 
+	user: detachable CMS_USER
+			-- User responsible for the log.
+
 	category: READABLE_STRING_8
 			-- Associated title (optional).
 
@@ -72,6 +75,11 @@ feature -- Change
 			not has_id
 		do
 			id := a_id
+		end
+
+	set_user (u: like user)
+		do
+			user := u
 		end
 
 	set_level (a_level: like level)
