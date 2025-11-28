@@ -333,7 +333,6 @@ feature -- Output helpers
 			ansi.set_foreground_color_to_red
 			default_output.put_string_general (m)
 			ansi.reset_foreground_color
-			put_new_line
 		end
 
 	put_error_line (m: READABLE_STRING_GENERAL)

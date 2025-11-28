@@ -199,6 +199,11 @@ feature -- Logs
 			create l_parameters.make (8)
 			l_parameters.put (a_log.category, "category")
 			l_parameters.put (a_log.level, "level")
+			if attached a_log.user as u then
+				l_parameters.put (u.id, "uid")
+			else
+				l_parameters.put (0, "uid")
+			end
 			l_parameters.put (0, "uid") -- Unsupported for now
 			l_parameters.put (a_log.message, "message")
 			l_parameters.put (a_log.info, "info")
@@ -278,12 +283,14 @@ feature -- Logs
 			l_mesg: detachable READABLE_STRING_8
 			l_level: INTEGER
 			l_date: detachable DATE_TIME
+			uid: like {CMS_USER}.id
 			i: INTEGER
 			lnk: CMS_LOCAL_LINK
 		do
 			l_cat := sql_read_string (2)
 			l_mesg := sql_read_string (5)
 			l_level := sql_read_integer_32 (3)
+			uid := sql_read_integer_64 (4)
 			l_date := sql_read_date_time (8)
 
 			if l_cat = Void then
@@ -296,6 +303,9 @@ feature -- Logs
 			create Result.make (l_cat, l_mesg, l_level, l_date)
 			Result.set_id (sql_read_integer_64 (1))
 			Result.set_info (sql_read_string (6))
+			if uid > 0 then
+				Result.set_user (create {CMS_PARTIAL_USER}.make_with_id (uid))
+			end
 			if attached sql_read_string_8 (7) as l_link_text then
 					-- Format:   "[title](location)"
 				i := l_link_text.index_of ('(', 1)
