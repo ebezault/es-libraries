@@ -16,6 +16,8 @@ inherit
 
 	CMS_HOOK_AUTO_REGISTER
 
+	CMS_CLI_COMMAND_UTILITY
+
 	SHARED_EXECUTION_ENVIRONMENT
 
 create
@@ -48,15 +50,8 @@ feature -- Setup
 			cmd.set_description ("Display CMS information")
 			a_shell.register_command (cmd, Current)
 
-			create cmd.make ("users-list", agent list_users (a_api, ?, ?, ?))
-			cmd.set_short_name ('u')
-			cmd.set_description ("List users")
-			a_shell.register_command (cmd, Current)
-
-			create cmd.make ("modules-list", agent list_modules (a_api, ?, ?, ?))
-			cmd.set_short_name ('m')
-			cmd.set_description ("List modules")
-			a_shell.register_command (cmd, Current)
+			a_shell.register_command (create {CMS_ADMIN_MODULES_CLI_COMMAND}.make (a_api), Current)
+			a_shell.register_command (create {CMS_ADMIN_USERS_CLI_COMMAND}.make (a_api), Current)
 
 			create cmd.make ("cleanup", agent process_cleanup (a_api, ?, ?, ?))
 			cmd.set_description ("Process CMS cleanup")
@@ -64,46 +59,6 @@ feature -- Setup
 		end
 
 feature -- Execution
-
-	output_h1 (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
-		do
-			sh.ansi.set_foreground_color_to_cyan
-			sh.ansi.set_bold
-
-			sh.output.put_string_general (s)
-
-			sh.ansi.unset_bold
-			sh.ansi.reset_foreground_color
-		end
-
-	output_h2 (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
-		do
---			sh.ansi.set_foreground_color_to_cyan
-			sh.ansi.set_bold
-
-			sh.output.put_string_general (s)
-
-			sh.ansi.unset_bold
---			sh.ansi.reset_foreground_color
-		end
-
-	output_key (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
-		do
-			sh.ansi.set_foreground_color_to_yellow
-			sh.ansi.set_bold
-			sh.output.put_string_general (s)
-			sh.ansi.unset_bold
-			sh.ansi.reset_foreground_color
-		end
-
-	output_help (sh: CMS_CLI_SHELL; s: READABLE_STRING_GENERAL)
-		do
-			sh.ansi.set_foreground_color_to_default
-			sh.ansi.set_italic
-			sh.output.put_string_general (s)
-			sh.ansi.unset_italic
-			sh.ansi.reset_foreground_color
-		end
 
 	list_info (api: CMS_API; sh: CMS_CLI_SHELL; n:  READABLE_STRING_32; args: detachable READABLE_STRING_32)
 		local
@@ -198,152 +153,6 @@ feature -- Execution
 				end
 			else
 				output_help (sh, {STRING_32} "%NUse %""+ n +" all%" to display all available informations...%N")
-			end
-		end
-
-	list_users (api: CMS_API; sh: CMS_CLI_SHELL; n:  READABLE_STRING_32; args: detachable READABLE_STRING_32)
-		local
-			params: CMS_DATA_QUERY_PARAMETERS
-			nb: INTEGER
-			o: INTEGER
-			len: INTEGER
-			q: BOOLEAN
-		do
-			if attached api.user_api as l_user_api then
-				nb := l_user_api.users_count
-				output_h1 (sh, nb.out + " users:%N")
-				from
-					o := 0
-					len := 5
-					q := False
-				until
-					q or o > nb
-				loop
-					create params.make (o.to_natural_64, len.to_natural_32)
-					if attached api.user_api.recent_users (params) as lst then
-						sh.output.put_string ("# " + (1 + o).out + " to " + (o + len).min (nb).out + "%N")
-						across
-							lst as u
-						loop
-							o := o + 1
-							if u.is_active then
-								sh.ansi.set_foreground_color_to_blue
-								sh.output.put_string ("[" + u.id.out + "] ")
-								sh.ansi.reset_foreground_color
-								sh.ansi.set_bold
-								sh.output.put_string_32 (u.name)
-								if attached u.profile_name as pn then
-									sh.output.put_character (' ')
-									sh.output.put_character ('"')
-									sh.ansi.set_italic
-									sh.output.put_string_32 (pn)
-									sh.ansi.unset_italic
-									sh.output.put_character ('"')
-								end
-								sh.ansi.unset_bold
-
-								sh.output.put_string (":")
-								if attached u.email as e then
-									sh.output.put_character (' ')
-									sh.output.put_string (e)
-								end
-								sh.output.put_character (' ')
-								sh.output.put_character ('<')
-								if attached u.last_login_date as dt then
-									sh.output.put_string (api.date_time_to_iso8601_string (dt))
-
-								else
-									sh.output.put_string ("never")
-								end
-								sh.output.put_character ('>')
-								sh.output.put_new_line
-							end
-						end
-						if o < nb then
-							sh.output.put_string ("Press [ENTER] for more (q to stop)...%N")
-							io.read_line
-							if io.last_string.starts_with ("q") then
-								q := True
-							end
-						else
-							q := True
-						end
-					end
-				end
-			end
-		end
-
-	list_modules (api: CMS_API; sh: CMS_CLI_SHELL; n:  READABLE_STRING_32; args: detachable READABLE_STRING_32)
-		local
-			nb: INTEGER
-			mod: CMS_MODULE
-			n1, col1, n2, col2: INTEGER
-			tn, sp: STRING_8
-		do
-			nb := api.setup.modules.count
-			output_h1 (sh, nb.out + " modules:%N")
-
-			across
-				api.setup.modules as m
-			loop
-				col1 := col1.max (m.name.count)
-				col2 := col2.max (m.version.count)
-			end
-			across
-				api.setup.modules as m
-			loop
-				mod := m
-				n1 := mod.name.count
-				n2 := mod.version.count
-				sh.ansi.set_bold
-				if mod.is_enabled then
-					sh.ansi.set_foreground_color_to_green
-				else
-					sh.ansi.set_rgb_foreground_color (90, 90, 90)
-				end
-				sh.output.put_string (mod.name)
-				sh.ansi.reset_foreground_color
-				sh.ansi.unset_bold
-				sh.ansi.set_foreground_color_to_yellow
-				if n1 < col1 then
-					create sp.make_filled (' ', col1 - n1)
-					sh.output.put_string (sp)
-				end
-				sh.output.put_character (' ')
-				sh.output.put_character ('[')
-				if n2 < col2 then
-					create sp.make_filled (' ', col2 - n2)
-					sh.output.put_string (sp)
-				end
-
-				sh.output.put_string (mod.version)
-
-				sh.output.put_character (']')
-				sh.ansi.reset_foreground_color
-				sh.output.put_character (':')
-				sh.output.put_character (' ')
-				sh.ansi.set_italic
-				sh.ansi.set_foreground_color_to_cyan
-				sh.output.put_string (mod.description)
-				sh.ansi.reset_foreground_color
-				sh.ansi.unset_italic
-				if attached mod.dependencies as deps then
-					sh.output.put_string (" (depends-on:")
-					across
-						deps as dmod
-					loop
-						sh.output.put_character (' ')
-						if dmod.is_required then
-							sh.output.put_character ('*')
-						end
-						create tn.make_from_string (dmod.module_type.name.to_string_8)
-						tn.prune_all ('?')
-						tn.prune_all ('!')
-						sh.output.put_string (tn)
-					end
-					sh.output.put_string (")")
-				end
-				sh.output.put_new_line
 			end
 		end
 

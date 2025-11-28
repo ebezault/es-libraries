@@ -125,6 +125,9 @@ ul.logs {
 			display: inline-block;
 			padding-right: 1rem;
 		}
+		div.log-user {
+			float: right;
+		}
 		&.log-error div.log-name {
 			color: red;
 		}
