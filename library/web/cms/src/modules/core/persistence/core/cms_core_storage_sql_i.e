@@ -16,6 +16,24 @@ inherit
 
 	REFACTORING_HELPER
 
+feature -- Database
+
+	has_table (a_table_name: READABLE_STRING_8): BOOLEAN
+			-- Has table `a_table_name`?
+		do
+			Result := table_column_count (a_table_name) > 0
+		end
+
+	table_count: INTEGER
+			-- Column of tables.
+		deferred
+		end
+
+	table_column_count (a_table_name: READABLE_STRING_8): INTEGER
+			-- Column count for table `a_table_name`
+		deferred
+		end
+
 feature -- URL aliases
 
 	set_path_alias (a_source: READABLE_STRING_8; a_alias: READABLE_STRING_8)
@@ -686,7 +704,7 @@ feature -- Emails
 
 feature -- Misc
 
-	set_custom_value (a_name: READABLE_STRING_8; a_value: attached like custom_value; a_type: READABLE_STRING_8)
+	set_custom_value (a_name: READABLE_STRING_8; a_value: READABLE_STRING_GENERAL; a_type: READABLE_STRING_8)
 			-- <Precursor>
 		local
 			l_parameters: STRING_TABLE [detachable ANY]
