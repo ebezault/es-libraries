@@ -48,12 +48,12 @@ feature -- Prompts
 			loop
 				if with_dft then
 					if dft then
-						s := question (sh, a_prompt + "[Y|n]")
+						s := question (sh, a_prompt + " [Y|n] ")
 					else
-						s := question (sh, a_prompt + "[y|N]")
+						s := question (sh, a_prompt + " [y|N] ")
 					end
 				else
-					s := question (sh, a_prompt + "[y|n]")
+					s := question (sh, a_prompt + " [y|n] ")
 				end
 				s.adjust
 				if s.is_empty then
