@@ -54,25 +54,42 @@ feature {CMS_API} -- Module management
 		local
 			l_parent_loc: PATH
 		do
-				-- Schema
-			if attached a_api.storage.as_sql_storage as l_sql_storage then
-				l_parent_loc := a_api.module_resource_location (Current, create {PATH}.make_from_string ("scripts"))
-				l_sql_storage.sql_execute_file_script (l_parent_loc.extended (name + ".sql"), Void)
-				if not l_sql_storage.has_error then
-					l_sql_storage.sql_execute_file_script (l_parent_loc.extended ("user_profile.sql"), Void)
-				end
-
-				if l_sql_storage.has_error then
-					a_api.report_error ("[" + name + "]: installation failed!", l_sql_storage.error_handler.as_string_representation)
-				else
+			if not is_core_installed (a_api) then
+					-- Schema
+				if attached a_api.storage.as_sql_storage as l_sql_storage then
 					Precursor (a_api)
+					l_parent_loc := a_api.module_resource_location (Current, create {PATH}.make_from_string ("scripts"))
+					if not l_sql_storage.has_error then
+						l_sql_storage.sql_execute_file_script (l_parent_loc.extended ("user_profile.sql"), Void)
+					end
+					if l_sql_storage.has_error then
+						a_api.report_error ("[" + name + "]: installation failed!", l_sql_storage.error_handler.as_string_representation)
+					end
 				end
-			end
 
-			install_core_data (a_api)
+
+				install_core_data (a_api)
+
+				mark_core_installed (a_api)
+			end
+		end
+
+	is_core_installed (a_api: CMS_API): BOOLEAN
+			-- Is Code data installed ?
+		do
+			if attached a_api.storage.custom_value ("core.installed", name) as s then
+				Result := s.is_case_insensitive_equal_general ("yes")
+			end
+		end
+
+	mark_core_installed (a_api: CMS_API)
+		do
+			a_api.storage.set_custom_value ("core.installed", "yes", name)
 		end
 
 	install_core_data (a_api: CMS_API)
+		require
+			not is_core_installed (a_api)
 		local
 			u: CMS_USER
 			l_anonymous_role, l_authenticated_role: CMS_USER_ROLE

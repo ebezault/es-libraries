@@ -111,7 +111,7 @@ feature -- Emails
 
 feature -- Custom		
 
-	set_custom_value (a_name: READABLE_STRING_8; a_value: attached like custom_value; a_type: READABLE_STRING_8)
+	set_custom_value (a_name: READABLE_STRING_8; a_value: READABLE_STRING_GENERAL; a_type: READABLE_STRING_8)
 			-- Save data `a_name:a_value' for type `a_type'.
 		do
 		end

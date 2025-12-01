@@ -23,8 +23,42 @@ feature -- Status report
 	is_initialized: BOOLEAN
 			-- Is storage initialized?
 		do
-			Result := has_user
+			Result := table_count > 0
 		end
+
+	table_count: INTEGER
+			-- Column of tables.
+		local
+			sql: STRING_8
+			l_is_sqlite3: BOOLEAN
+		do
+			sql := "SELECT COUNT(*) AS table_count FROM INFORMATION_SCHEMA.TABLES;"
+			sql_query (sql, Void)
+			if not has_error and then not sql_after then
+				Result := sql_read_integer_32 (1).to_integer_32
+				sql_forth
+				check one_row: sql_after end
+			end
+			sql_finalize_query (sql)
+		end
+
+	table_column_count (a_table_name: READABLE_STRING_8): INTEGER
+			-- Column count for table `a_table_name`
+		local
+			sql: STRING_8
+			l_parameters: STRING_TABLE [detachable ANY]
+		do
+			create l_parameters.make (1)
+			sql := "SELECT COUNT(*) as column_count FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = :table_name ;"
+			l_parameters.put (a_table_name, "table_name")
+			sql_query (sql, l_parameters)
+			if not has_error and then not sql_after then
+				Result := sql_read_integer_32 (1).to_integer_32
+				sql_forth
+				check one_row: sql_after end
+			end
+			sql_finalize_query (sql)
+		end		
 
 feature -- Conversion
 
