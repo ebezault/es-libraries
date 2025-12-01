@@ -61,7 +61,7 @@ feature -- Execution
 			end
 			if op.same_string ("list") then
 				list_modules (sh, n + op, l_args)
-			elseif op.same_string ("update") then
+			elseif op.same_string ("update") or op.same_string ("up") then
 				update_modules (sh, n + op, l_args)
 			elseif op.same_string ("help") then
 				sh.put_warning ({STRING_32} "Usage: list, update, ...%N")
@@ -120,7 +120,7 @@ feature -- Execution
 					elseif not mod_v.same_string (mod_inst_v) then
 						mod_up := True
 						v := mod_inst_v
-						n2 := n2 + 1
+						n2 := v.count + 1
 					end
 				end
 				sh.output.put_character (' ')
