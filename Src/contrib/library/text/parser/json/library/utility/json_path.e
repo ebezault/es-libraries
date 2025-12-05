@@ -131,9 +131,9 @@ feature {NONE} -- Implementation
 									if k.same_string_general ("*") then
 										create arr.make (j_object.count)
 										across
-											j_object as ic
+											j_object as v
 										loop
-											arr.extend (ic.item)
+											arr.extend (v)
 										end
 										Result := imp_matches (arr, True, l_tail)
 									elseif attached j_object.item (k) as v then
@@ -146,10 +146,10 @@ feature {NONE} -- Implementation
 										create arr.make (j_array.count)
 										jk := k
 										across
-											j_array as ic
+											j_array as v
 										loop
 											if
-												attached {JSON_OBJECT} ic.item as jo and then
+												attached {JSON_OBJECT} v as jo and then
 												attached jo.item (k) as jv
 											then
 												arr.extend (jv)
@@ -179,9 +179,9 @@ feature {NONE} -- Implementation
 								-- [name1,name2] ...
 							create arr.make_empty
 							across
-								strings_as_keys (k) as ic
+								strings_as_keys (k) as v
 							loop
-								if attached j_object.item (ic.item) as jv then
+								if attached j_object.item (v) as jv then
 									arr.extend (jv)
 								end
 							end
@@ -208,13 +208,13 @@ feature {NONE} -- Implementation
 									keys := strings_as_keys (k)
 									create arr.make_empty
 									across
-										j_arr as ic
+										j_arr as v
 									loop
-										if attached {JSON_OBJECT} ic.item as j_object then
+										if attached {JSON_OBJECT} v as j_object then
 											across
-												keys as k_ic
+												keys as l_key
 											loop
-												if attached j_object.item (k_ic.item) as jv then
+												if attached j_object.item (l_key) as jv then
 													arr.extend (jv)
 												end
 											end
@@ -237,9 +237,9 @@ feature {NONE} -- Implementation
 								elseif attached range_indexes (j_arr, k) as l_range_indexes then
 									create arr.make (l_range_indexes.count)
 									across
-										l_range_indexes as ic
+										l_range_indexes as v
 									loop
-										j := ic.item
+										j := v
 										if j_arr.valid_index (j) then
 											arr.extend (j_arr.i_th (j))
 										end
@@ -291,15 +291,15 @@ feature {NONE} -- Implementation
 					a_results.extend (j)
 				end
 				across
-					j_object as ic
+					j_object as v
 				loop
-					add_nested_descendants_to (ic.item, a_name, a_results)
+					add_nested_descendants_to (v, a_name, a_results)
 				end
 			elseif attached {JSON_ARRAY} a_json_value as j_array then
 				across
-					j_array as ic
+					j_array as v
 				loop
-					add_nested_descendants_to (ic.item, a_name, a_results)
+					add_nested_descendants_to (v, a_name, a_results)
 				end
 			end
 		end
@@ -396,10 +396,10 @@ feature {NONE} -- Implementation
 					create Result.make (a_json_array.count)
 					jk := k
 					across
-						a_json_array as ic
+						a_json_array as v
 					loop
 						if
-							attached {JSON_OBJECT} ic.item as jo and then
+							attached {JSON_OBJECT} v as jo and then
 							attached jo.item (jk) as jv
 						then
 							if cond = Void or else cond (jv) then
@@ -556,9 +556,9 @@ feature {NONE} -- Implementation
 		do
 			create Result.make (strs.occurrences (',') + 1)
 			across
-				strs.split (',') as ic
+				strs.split (',') as str
 			loop
-				s := ic.item
+				s := str
 				s.adjust
 				Result.force (create {JSON_STRING}.make_from_string_general (s))
 			end
@@ -645,7 +645,7 @@ feature {NONE} -- Comparision
 		end
 
 note
-	copyright: "2010-2022, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	maintainer: "Jocelyn Fiat, Eiffel Software"
 	source: "[
 			Eiffel Software

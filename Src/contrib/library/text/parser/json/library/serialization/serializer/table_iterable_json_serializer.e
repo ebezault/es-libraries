@@ -28,19 +28,19 @@ feature -- Conversion
 					create j_tb.make_empty
 				end
 				across
-					tb as ic
+					tb as v
 				loop
-					ctx.on_field_start (ic.key)
-					create k.make_from_string_general (ic.key)
+					ctx.on_field_start (@v.key)
+					create k.make_from_string_general (@v.key)
 					if
-						attached ic.item as l_item and then
+						attached v as l_item and then
 						attached ctx.to_json (l_item, Current) as j_value
 					then
 						j_tb.put (j_value, k)
 					else
 						j_tb.put (create {JSON_NULL}, k)
 					end
-					ctx.on_field_end (ic.key)
+					ctx.on_field_end (@v.key)
 				end
 				Result := j_tb
 			else
@@ -49,6 +49,6 @@ feature -- Conversion
 		end
 
 note
-	copyright: "2010-2016, Javier Velilla and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

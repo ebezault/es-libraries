@@ -114,7 +114,7 @@ feature -- Visitor Pattern
 			l_output := output
 			l_json_array := a_json_array.array_representation
 			l_multiple_lines := l_json_array.count >= array_count_inlining
-									or across l_json_array as p some attached {JSON_OBJECT} p.item or attached {JSON_ARRAY} p.item end
+									or across l_json_array as p some attached {JSON_OBJECT} p or attached {JSON_ARRAY} p end
 			l_output.put_character ('[')
 
 			l_line := line_number
@@ -173,7 +173,7 @@ feature -- Visitor Pattern
 		do
 			l_output := output
 			l_pairs := a_json_object.map_representation
-			l_multiple_lines := l_pairs.count >= object_count_inlining or across l_pairs as p some attached {JSON_OBJECT} p.item or attached {JSON_ARRAY} p.item end
+			l_multiple_lines := l_pairs.count >= object_count_inlining or across l_pairs as p some attached {JSON_OBJECT} p or attached {JSON_ARRAY} p end
 			l_output.put_character ('{')
 			l_line := line_number
 			indent
@@ -218,6 +218,6 @@ feature -- Visitor Pattern
 		end
 
 note
-	copyright: "2010-2024, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

@@ -122,9 +122,9 @@ feature -- Cleaning
 			serializers_cache := Void
 
 			across
-				serializers as ic
+				serializers as ser
 			loop
-				ic.item.reset
+				ser.reset
 			end
 		end
 
@@ -215,12 +215,12 @@ feature -- Access
 				end
 
 				across
-					serializers as ic
+					serializers as ser
 				until
 					Result /= Void
 				loop
-					Result := ic.item
-					k_type := ic.key
+					Result := ser
+					k_type := @ser.key
 					if o_type ~ k_type then
 							-- Found
 					elseif attached k_type.attempted (obj) then
@@ -275,6 +275,6 @@ feature {NONE} -- Implementation
 	serializers_cache: detachable HASH_TABLE [JSON_SERIALIZER, TYPE [detachable ANY]]
 
 ;note
-	copyright: "2010-2024, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

@@ -82,16 +82,16 @@ feature {NONE} -- Helpers	: Array
 				l_item_type := a_type.generic_parameter_type (1)
 				i := 1
 				across
-					a_json as ic
+					a_json as v
 				until
 					ctx.has_error
 				loop
 					fn := i.out
 					ctx.on_deserialization_field_start (Result, fn)
-					process_array_item_value (ic.item, ctx, l_item_type, agent (spe: SPECIAL [detachable ANY]; ith: INTEGER; v: detachable ANY)
+					process_array_item_value (v, ctx, l_item_type, agent (spe: SPECIAL [detachable ANY]; ith: INTEGER; a: detachable ANY)
 							do
-								spe.force (v, ith)
-							end(Result,Result.lower + i - 1, ?)
+								spe.force (a, ith)
+							end(Result, Result.lower + i - 1, ?)
 						)
 					ctx.on_deserialization_field_end (Result, fn)
 					i := i + 1
@@ -115,13 +115,13 @@ feature {NONE} -- Helpers	: Array
 				l_item_type := a_type.generic_parameter_type (1)
 				i := 1
 				across
-					a_json as ic
+					a_json as v
 				loop
 					fn := i.out
 					ctx.on_deserialization_field_start (arr, fn)
-					process_array_item_value (ic.item, ctx, l_item_type, agent (i_arr: ARRAY [detachable ANY]; ith: INTEGER; v: detachable ANY)
+					process_array_item_value (v, ctx, l_item_type, agent (i_arr: ARRAY [detachable ANY]; ith: INTEGER; a: detachable ANY)
 							do
-								i_arr.force (v, ith)
+								i_arr.force (a, ith)
 							end(arr, arr.lower + i - 1, ?)
 						)
 					ctx.on_deserialization_field_end (arr, fn)
@@ -146,11 +146,11 @@ feature {NONE} -- Helpers	: Array
 				l_item_type := a_type.generic_parameter_type (1)
 				i := 1
 				across
-					a_json as ic
+					a_json as v
 				loop
 					fn := i.out
 					ctx.on_deserialization_field_start (lst, fn)
-					process_array_item_value (ic.item, ctx, l_item_type, agent lst.extend)
+					process_array_item_value (v, ctx, l_item_type, agent lst.extend)
 					ctx.on_deserialization_field_end (lst, fn)
 					i := i + 1
 				end
@@ -206,7 +206,6 @@ feature {NONE} -- Helpers: Object
 			ref: REFLECTED_REFERENCE_OBJECT
 			i: INTEGER
 			fn: READABLE_STRING_GENERAL
-			l_json_item: detachable JSON_VALUE
 			l_field_static_types: like fields_infos
 			l_info: JSON_DESERIALIZER_CREATION_INFORMATION
 		do
@@ -237,14 +236,13 @@ feature {NONE} -- Helpers: Object
 				l_field_static_types := fields_infos (ref)
 				across
 						-- Follow the order from JSON, in case of reference usage.
-					a_json_object as ic
+					a_json_object as l_json_item
 				until
 					ctx.has_error
 				loop
-					fn := ic.key.unescaped_string_32
+					fn := @l_json_item.key.unescaped_string_32
 					if attached l_field_static_types.item (fn) as l_field_info then
 						i := l_field_info.field_index
-						l_json_item := ic.item
 						ctx.on_deserialization_field_start (Result, fn)
 						inspect
 							l_field_info.field_type_id
@@ -463,6 +461,6 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "2010-2024, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

@@ -27,6 +27,8 @@ inherit
 
 create
 	make, make_empty,
+	make_from_string_list,
+	make_from_numeric_list,
 	make_array
 
 feature {NONE} -- Initialization
@@ -41,6 +43,34 @@ feature {NONE} -- Initialization
 			-- Initialize empty JSON array.
 		do
 			make (0)
+		end
+
+	make_from_string_list (lst: ITERABLE [READABLE_STRING_GENERAL])
+		do
+			if attached {FINITE [READABLE_STRING_GENERAL]} lst as f then
+				make (f.count)
+			else
+				make_empty
+			end
+			across
+				lst as s
+			loop
+				extend_string (s)
+			end
+		end
+
+	make_from_numeric_list (lst: ITERABLE [NUMERIC])
+		do
+			if attached {FINITE [NUMERIC]} lst as f then
+				make (f.count)
+			else
+				make_empty
+			end
+			across
+				lst as v
+			loop
+				extend_numeric (v)
+			end
 		end
 
 	make_array
@@ -80,12 +110,12 @@ feature -- Access
 		do
 			Result := "["
 			across
-				items as ic
+				items as i
 			loop
 				if Result.count > 1 then
 					Result.append_character (',')
 				end
-				Result.append (ic.item.representation)
+				Result.append (i.representation)
 			end
 			Result.append_character (']')
 		end
@@ -140,7 +170,8 @@ feature -- Change Element
 			has_new_value: old items.count + 1 = items.count and items.first = v
 		end
 
-	add, extend (v: JSON_VALUE)
+	add,
+	extend (v: JSON_VALUE)
 		require
 			v_not_void: v /= Void
 		do
@@ -165,6 +196,58 @@ feature -- Change Element
 			items.wipe_out
  		end
 
+feature -- Helpers
+
+	extend_string (s: READABLE_STRING_GENERAL)
+		do
+			extend (create {JSON_STRING}.make_from_string_general (s))
+		end
+
+	extend_numeric (v: NUMERIC)
+		do
+			extend (create {JSON_NUMBER}.make_numeric (v))
+		end
+
+	extend_integer_32 (i: INTEGER_32)
+		do
+			extend (create {JSON_NUMBER}.make_integer_32 (i))
+		end
+
+	extend_integer_64 (i: INTEGER_64)
+		do
+			extend (create {JSON_NUMBER}.make_integer (i))
+		end
+
+	extend_natural_32 (n: NATURAL_32)
+		do
+			extend (create {JSON_NUMBER}.make_natural_32 (n))
+		end
+
+	extend_natural_64 (n: NATURAL_64)
+		do
+			extend (create {JSON_NUMBER}.make_natural (n))
+		end
+
+	extend_real_32 (r: REAL_32)
+		do
+			extend (create {JSON_NUMBER}.make_real_32 (r))
+		end
+
+	extend_real_64 (r: REAL_64)
+		do
+			extend (create {JSON_NUMBER}.make_real (r))
+		end
+
+	extend_boolean (b: BOOLEAN)
+		do
+			extend (create {JSON_BOOLEAN}.make (b))
+		end
+
+	extend_null
+		do
+			extend (create {JSON_NULL})
+		end
+
 feature -- Report
 
 	hash_code: INTEGER
@@ -173,12 +256,12 @@ feature -- Report
 			l_started: BOOLEAN
 		do
 			across
-				items as ic
+				items as i
 			loop
 				if l_started then
-					Result := ((Result \\ 8388593) |<< 8) + ic.item.hash_code
+					Result := ((Result \\ 8388593) |<< 8) + i.hash_code
 				else
-					Result := ic.item.hash_code
+					Result := i.hash_code
 					l_started := True
 				end
 			end
@@ -199,7 +282,12 @@ feature -- Status report
 	debug_output: STRING
 			-- String that should be displayed in debugger to represent `Current'.
 		do
-			Result := count.out + " item(s)"
+			create Result.make (10)
+			Result.append_integer (count)
+			Result.append (" item")
+			if count > 1 then
+				Result.append_character ('s')
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -211,6 +299,6 @@ invariant
 	items_not_void: items /= Void
 
 note
-	copyright: "2010-2021, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end
