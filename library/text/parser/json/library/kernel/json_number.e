@@ -16,35 +16,98 @@ inherit
 		end
 
 create
-	make_integer, make_natural, make_real
+	make_numeric,
+	make_integer, make_natural, make_real,
+	make_integer_64, make_natural_64, make_real_64,
+	make_integer_32, make_natural_32, make_real_32
 
 feature {NONE} -- initialization
 
-	make_integer (an_argument: INTEGER_64)
-			-- Initialize an instance of JSON_NUMBER from the integer value of `an_argument'.
+	make_numeric (a_num: NUMERIC)
 		do
-			item := an_argument.out
+			if attached {INTEGER_32_REF} a_num as i then
+				make_integer_32 (i)
+			elseif attached {INTEGER_64_REF} a_num as i then
+				make_integer_64 (i)
+			elseif attached {NATURAL_32_REF} a_num as n then
+				make_natural_32 (n)
+			elseif attached {NATURAL_64_REF} a_num as n then
+				make_natural_64 (n)
+			elseif attached {REAL_32_REF} a_num as r then
+				make_real_32 (r)
+			elseif attached {REAL_64_REF} a_num as r then
+				make_real_64 (r)
+			elseif attached {INTEGER_8_REF} a_num as i then
+				make_integer_32 (i.to_integer_32)
+			elseif attached {INTEGER_16_REF} a_num as i then
+				make_integer_32 (i.to_integer_32)
+			elseif attached {NATURAL_8_REF} a_num as n then
+				make_natural_32 (n.to_natural_32)
+			elseif attached {NATURAL_16_REF} a_num as n then
+				make_natural_32 (n.to_natural_32)
+			else
+				check False end
+				make_integer_32 (0)
+			end
+		end
+
+	make_integer,
+	make_integer_64 (v: INTEGER_64)
+			-- Initialize an instance of JSON_NUMBER from the integer value of `v'.
+		do
+			item := v.out
 			numeric_type := integer_type
 		end
 
-	make_natural (an_argument: NATURAL_64)
-			-- Initialize an instance of JSON_NUMBER from the unsigned integer value of `an_argument'.
+	make_natural,
+	make_natural_64 (v: NATURAL_64)
+			-- Initialize an instance of JSON_NUMBER from the unsigned integer value of `v'.
 		do
-			item := an_argument.out
+			item := v.out
 			numeric_type := natural_type
 		end
 
-	make_real (an_argument: REAL_64)
-			-- Initialize an instance of JSON_NUMBER from the floating point value of `an_argument'.
+	make_real,
+	make_real_64 (v: REAL_64)
+			-- Initialize an instance of JSON_NUMBER from the floating point value of `v'.
 		do
-			if an_argument.is_nan then
+			if v.is_nan then
 				item := nan_real_value
-			elseif an_argument.is_negative_infinity then
+			elseif v.is_negative_infinity then
 				item := negative_infinity_real_value
-			elseif an_argument.is_positive_infinity then
+			elseif v.is_positive_infinity then
 				item := positive_infinity_real_value
 			else
-				item := an_argument.out
+				item := v.out
+			end
+			numeric_type := double_type
+		end
+
+	make_integer_32 (i: INTEGER_32)
+			-- Initialize an instance of JSON_NUMBER from the integer value of `i'.
+		do
+			item := i.out
+			numeric_type := integer_type
+		end
+
+	make_natural_32 (n: NATURAL_32)
+			-- Initialize an instance of JSON_NUMBER from the unsigned integer value of `n'.
+		do
+			item := n.out
+			numeric_type := natural_type
+		end
+
+	make_real_32 (r: REAL_32)
+			-- Initialize an instance of JSON_NUMBER from the floating point value of `r'.
+		do
+			if r.is_nan then
+				item := nan_real_value
+			elseif r.is_negative_infinity then
+				item := negative_infinity_real_value
+			elseif r.is_positive_infinity then
+				item := positive_infinity_real_value
+			else
+				item := r.out
 			end
 			numeric_type := double_type
 		end
@@ -106,12 +169,28 @@ feature -- Access
 
 feature -- Conversion
 
+	integer_32_item: INTEGER_32
+			-- Associated integer value.
+		require
+			is_integer_32: is_integer_32
+		do
+			Result := item.to_integer_32
+		end
+
 	integer_64_item: INTEGER_64
 			-- Associated integer value.
 		require
-			is_integer: is_integer
+			is_integer_64: is_integer_64
 		do
 			Result := item.to_integer_64
+		end
+
+	natural_32_item: NATURAL_32
+			-- Associated natural value.
+		require
+			is_natural_32: is_natural_32
+		do
+			Result := item.to_natural_32
 		end
 
 	natural_64_item: NATURAL_64
@@ -138,6 +217,22 @@ feature -- Conversion
 			end
 		end
 
+	real_32_item: REAL_32
+			-- Associated real 32 value.
+		require
+			is_real_32: is_real_32
+		do
+			if item = nan_real_value then
+				Result := {REAL_32}.nan
+			elseif item = negative_infinity_real_value then
+				Result := {REAL_32}.negative_infinity
+			elseif item = positive_infinity_real_value then
+				Result := {REAL_32}.positive_infinity
+			else
+				Result := item.to_real_32
+			end
+		end
+
 feature -- Status report
 
 	is_integer: BOOLEAN
@@ -146,16 +241,52 @@ feature -- Status report
 			Result := numeric_type = integer_type
 		end
 
+	is_integer_64: BOOLEAN
+			-- Is Current an integer 64 number?
+		do
+			Result := numeric_type = integer_type and then item.is_integer_64
+		end
+
+	is_integer_32: BOOLEAN
+			-- Is Current an integer 32 number?
+		do
+			Result := numeric_type = integer_type and then item.is_integer_32
+		end
+
 	is_natural: BOOLEAN
 			-- Is Current a natural number?
 		do
 			Result := numeric_type = natural_type
 		end
 
+	is_natural_64: BOOLEAN
+			-- Is Current a natural 64 number?
+		do
+			Result := numeric_type = natural_type and then item.is_natural_64
+		end
+
+	is_natural_32: BOOLEAN
+			-- Is Current a natural 32 number?
+		do
+			Result := numeric_type = natural_type and then item.is_natural_32
+		end
+
 	is_double, is_real: BOOLEAN
 			-- Is Current a real number?
 		do
 			Result := numeric_type = real_type
+		end
+
+	is_real_64: BOOLEAN
+			-- Is Current a real 64 number?
+		do
+			Result := numeric_type = real_type and then item.is_real_64
+		end
+
+	is_real_32: BOOLEAN
+			-- Is Current a real 32 number?
+		do
+			Result := numeric_type = real_type and then item.is_real_32
 		end
 
 feature -- Visitor pattern

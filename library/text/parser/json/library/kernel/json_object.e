@@ -66,11 +66,36 @@ feature -- Change Element
 			a_key_not_present: not has_key (a_key)
 		do
 			if a_value = Void then
-				items.extend (create {JSON_NULL}, a_key)
+				put_null (a_key)
 			else
 				items.extend (a_value, a_key)
 			end
 		end
+
+	replace (a_value: detachable JSON_VALUE; a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
+		do
+			if a_value = Void then
+				replace_with_null (a_key)
+			else
+				items.force (a_value, a_key)
+			end
+		end
+
+	remove (a_key: JSON_STRING)
+			-- Remove item indexed by `a_key' if any.
+		do
+			items.remove (a_key)
+		end
+
+	wipe_out
+			-- Reset all items to default values; reset status.
+		do
+			items.wipe_out
+		end
+
+feature -- Helpers
 
 	put_string (a_value: READABLE_STRING_GENERAL; a_key: JSON_STRING)
 			-- Assuming there is no item of key `a_key',
@@ -90,7 +115,8 @@ feature -- Change Element
 			put (l_value, a_key)
 		end
 
-	put_integer (a_value: INTEGER_64; a_key: JSON_STRING)
+	put_integer,
+	put_integer_64 (a_value: INTEGER_64; a_key: JSON_STRING)
 			-- Assuming there is no item of key `a_key',
 			-- insert `a_value' with `a_key'.
 		require
@@ -98,11 +124,11 @@ feature -- Change Element
 		local
 			l_value: JSON_NUMBER
 		do
-			create l_value.make_integer (a_value)
+			create l_value.make_integer_64 (a_value)
 			put (l_value, a_key)
 		end
 
-	put_natural (a_value: NATURAL_64; a_key: JSON_STRING)
+	put_integer_32 (a_value: INTEGER_32; a_key: JSON_STRING)
 			-- Assuming there is no item of key `a_key',
 			-- insert `a_value' with `a_key'.
 		require
@@ -110,11 +136,12 @@ feature -- Change Element
 		local
 			l_value: JSON_NUMBER
 		do
-			create l_value.make_natural (a_value)
+			create l_value.make_integer_32 (a_value)
 			put (l_value, a_key)
 		end
 
-	put_real (a_value: DOUBLE; a_key: JSON_STRING)
+	put_natural,
+	put_natural_64 (a_value: NATURAL_64; a_key: JSON_STRING)
 			-- Assuming there is no item of key `a_key',
 			-- insert `a_value' with `a_key'.
 		require
@@ -122,7 +149,44 @@ feature -- Change Element
 		local
 			l_value: JSON_NUMBER
 		do
-			create l_value.make_real (a_value)
+			create l_value.make_natural_64 (a_value)
+			put (l_value, a_key)
+		end
+
+	put_natural_32 (a_value: NATURAL_32; a_key: JSON_STRING)
+			-- Assuming there is no item of key `a_key',
+			-- insert `a_value' with `a_key'.
+		require
+			key_not_present: not has_key (a_key)
+		local
+			l_value: JSON_NUMBER
+		do
+			create l_value.make_natural_32 (a_value)
+			put (l_value, a_key)
+		end
+
+	put_real,
+	put_real_64 (a_value: REAL_64; a_key: JSON_STRING)
+			-- Assuming there is no item of key `a_key',
+			-- insert `a_value' with `a_key'.
+		require
+			key_not_present: not has_key (a_key)
+		local
+			l_value: JSON_NUMBER
+		do
+			create l_value.make_real_64 (a_value)
+			put (l_value, a_key)
+		end
+
+	put_real_32 (a_value: REAL_32; a_key: JSON_STRING)
+			-- Assuming there is no item of key `a_key',
+			-- insert `a_value' with `a_key'.
+		require
+			key_not_present: not has_key (a_key)
+		local
+			l_value: JSON_NUMBER
+		do
+			create l_value.make_real_32 (a_value)
 			put (l_value, a_key)
 		end
 
@@ -138,20 +202,18 @@ feature -- Change Element
 			put (l_value, a_key)
 		end
 
-	replace (a_value: detachable JSON_VALUE; a_key: JSON_STRING)
+	put_null (a_key: JSON_STRING)
 			-- Assuming there is no item of key `a_key',
-			-- insert `a_value' with `a_key'.
+			-- insert Null with `a_key'.
+		require
+			key_not_present: not has_key (a_key)
 		do
-			if a_value = Void then
-				items.force (create {JSON_NULL}, a_key)
-			else
-				items.force (a_value, a_key)
-			end
+			put (create {JSON_NULL}, a_key)
 		end
 
 	replace_with_string (a_value: READABLE_STRING_GENERAL; a_key: JSON_STRING)
-			-- Assuming there is no item of key `a_key',
-			-- insert `a_value' with `a_key'.
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
 		local
 			l_value: JSON_STRING
 		do
@@ -163,39 +225,72 @@ feature -- Change Element
 			replace (l_value, a_key)
 		end
 
-	replace_with_integer (a_value: INTEGER_64; a_key: JSON_STRING)
-			-- Assuming there is no item of key `a_key',
-			-- insert `a_value' with `a_key'.
+	replace_with_integer,
+	replace_with_integer_64 (a_value: INTEGER_64; a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
 		local
 			l_value: JSON_NUMBER
 		do
-			create l_value.make_integer (a_value)
+			create l_value.make_integer_64 (a_value)
 			replace (l_value, a_key)
 		end
 
-	replace_with_with_natural (a_value: NATURAL_64; a_key: JSON_STRING)
-			-- Assuming there is no item of key `a_key',
-			-- insert `a_value' with `a_key'.
+	replace_with_integer_32 (a_value: INTEGER_32; a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
 		local
 			l_value: JSON_NUMBER
 		do
-			create l_value.make_natural (a_value)
+			create l_value.make_integer_32 (a_value)
 			replace (l_value, a_key)
 		end
 
-	replace_with_real (a_value: DOUBLE; a_key: JSON_STRING)
-			-- Assuming there is no item of key `a_key',
-			-- insert `a_value' with `a_key'.
+	replace_with_natural,
+	replace_with_natural_64 (a_value: NATURAL_64; a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
 		local
 			l_value: JSON_NUMBER
 		do
-			create l_value.make_real (a_value)
+			create l_value.make_natural_64 (a_value)
+			replace (l_value, a_key)
+		end
+
+	replace_with_natural_32 (a_value: NATURAL_32; a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
+		local
+			l_value: JSON_NUMBER
+		do
+			create l_value.make_natural_32 (a_value)
+			replace (l_value, a_key)
+		end
+
+	replace_with_real,
+	replace_with_real_64 (a_value: REAL_64; a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
+		local
+			l_value: JSON_NUMBER
+		do
+			create l_value.make_real_64 (a_value)
+			replace (l_value, a_key)
+		end
+
+	replace_with_real_32 (a_value: REAL_32; a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
+		local
+			l_value: JSON_NUMBER
+		do
+			create l_value.make_real_32 (a_value)
 			replace (l_value, a_key)
 		end
 
 	replace_with_boolean (a_value: BOOLEAN; a_key: JSON_STRING)
-			-- Assuming there is no item of key `a_key',
-			-- insert `a_value' with `a_key'.
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
 		local
 			l_value: JSON_BOOLEAN
 		do
@@ -203,16 +298,11 @@ feature -- Change Element
 			replace (l_value, a_key)
 		end
 
-	remove (a_key: JSON_STRING)
-			-- Remove item indexed by `a_key' if any.
+	replace_with_null (a_key: JSON_STRING)
+			-- Associate `a_value` with `a_key`
+			-- Replace existing value if any.
 		do
-			items.remove (a_key)
-		end
-
-	wipe_out
-			-- Reset all items to default values; reset status.
-		do
-			items.wipe_out
+			replace (create {JSON_NULL}, a_key)
 		end
 
 feature -- Status report
@@ -236,6 +326,7 @@ feature -- Access
  		do
  			Result := items.item (a_key)
  		end
+
 
 	string_item (a_key: JSON_STRING): detachable JSON_STRING
 		do
@@ -282,11 +373,122 @@ feature -- Access
 			end
 		end
 
+feature -- Access basic values
+
+ 	string_8_value (a_key: JSON_STRING): detachable READABLE_STRING_8
+ 		require
+ 			is_string_value: attached string_item (a_key)
+ 		do
+ 			if attached string_item (a_key) as js then
+ 				Result := js.unescaped_string_8
+ 			end
+ 		end
+
+ 	string_32_value (a_key: JSON_STRING): detachable READABLE_STRING_32
+ 		require
+ 			is_string_value: attached string_item (a_key)
+ 		do
+ 			if attached string_item (a_key) as js then
+ 				Result := js.unescaped_string_32
+ 			end
+ 		end
+
+ 	integer_32_value (a_key: JSON_STRING): INTEGER_32
+		require
+ 			is_integer_32_value: attached number_item (a_key) as jnum and then jnum.is_integer_32
+ 		do
+ 			if attached number_item (a_key) as jnum then
+ 				if jnum.is_integer_32 then
+	 				Result := jnum.integer_32_item
+	 			else
+	 				check is_integer_32: False end
+	 			end
+ 			end
+ 		end
+
+ 	integer_64_value (a_key: JSON_STRING): INTEGER_64
+		require
+ 			is_integer_64_value: attached number_item (a_key) as jnum and then jnum.is_integer_64
+ 		do
+ 			if attached number_item (a_key) as jnum then
+ 				if jnum.is_integer_64 then
+	 				Result := jnum.integer_64_item
+	 			else
+	 				check is_integer_64: False end
+	 			end
+ 			end
+ 		end
+
+ 	natural_32_value (a_key: JSON_STRING): NATURAL_32
+		require
+ 			is_natural_32_value: attached number_item (a_key) as jnum and then jnum.is_natural_32
+ 		do
+ 			if attached number_item (a_key) as jnum then
+ 				if jnum.is_natural_32 then
+	 				Result := jnum.natural_32_item
+	 			else
+	 				check is_natural_32: False end
+	 			end
+ 			end
+ 		end
+
+ 	natural_64_value (a_key: JSON_STRING): NATURAL_64
+		require
+ 			is_natural_64_value: attached number_item (a_key) as jnum and then jnum.is_natural_64
+ 		do
+ 			if attached number_item (a_key) as jnum then
+ 				if jnum.is_natural_64 then
+	 				Result := jnum.natural_64_item
+	 			else
+	 				check is_natural_64: False end
+	 			end
+ 			end
+ 		end
+
+ 	real_32_value (a_key: JSON_STRING): REAL_32
+		require
+ 			is_real_32_value: attached number_item (a_key) as jnum and then jnum.is_real_32
+ 		do
+ 			if attached number_item (a_key) as jnum then
+ 				if jnum.is_real_32 then
+	 				Result := jnum.real_32_item
+	 			else
+	 				check is_real_32: False end
+	 			end
+ 			end
+ 		end
+
+ 	real_64_value (a_key: JSON_STRING): REAL_64
+		require
+ 			is_real_64_value: attached number_item (a_key) as jnum and then jnum.is_real_64
+ 		do
+ 			if attached number_item (a_key) as jnum then
+ 				if jnum.is_real_64 then
+	 				Result := jnum.real_64_item
+	 			else
+	 				check is_real_64: False end
+	 			end
+ 			end
+ 		end
+
+ 	boolean_value (a_key: JSON_STRING): BOOLEAN
+		require
+ 			is_boolean_value: attached boolean_item (a_key)
+ 		do
+ 			if attached boolean_item (a_key) as jbool then
+	 			Result := jbool.item
+ 			end
+ 		end
+
+feature -- Internal		
+
 	current_keys: ARRAY [JSON_STRING]
 			-- Array containing actually used keys.
 		do
 			Result := items.current_keys
 		end
+
+feature -- Conversion
 
 	representation: STRING
 			-- <Precursor>
@@ -294,14 +496,14 @@ feature -- Access
 			create Result.make (2)
 			Result.append_character ('{')
 			across
-				items as ic
+				items as i
 			loop
 				if Result.count > 1 then
 					Result.append_character (',')
 				end
-				Result.append (ic.key.representation)
+				Result.append (@i.key.representation)
 				Result.append_character (':')
-				Result.append (ic.item.representation)
+				Result.append (i.representation)
 			end
 			Result.append_character ('}')
 		end
@@ -370,7 +572,12 @@ feature -- Status report
 	debug_output: STRING
 			-- String that should be displayed in debugger to represent `Current'.
 		do
-			Result := count.out + " item(s)"
+			create Result.make (10)
+			Result.append_integer (count)
+			Result.append (" item")
+			if count > 1 then
+				Result.append_character ('s')
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -382,6 +589,6 @@ invariant
 	items_not_void: items /= Void
 
 note
-	copyright: "2010-2022, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

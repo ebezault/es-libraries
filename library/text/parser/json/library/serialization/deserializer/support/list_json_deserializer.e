@@ -38,9 +38,9 @@ feature -- Conversion
 						l_item_type := {G}
 					end
 					across
-						j_array as ic
+						j_array as v
 					loop
-						if attached {G} ctx.value_from_json (ic.item, l_item_type) as g then
+						if attached {G} ctx.value_from_json (v, l_item_type) as g then
 							Result.force (g)
 						end
 					end
@@ -49,6 +49,6 @@ feature -- Conversion
 		end
 
 note
-	copyright: "2010-2016, Javier Velilla and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

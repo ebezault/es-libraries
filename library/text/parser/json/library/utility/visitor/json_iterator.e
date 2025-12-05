@@ -18,9 +18,9 @@ feature -- Visitor Pattern
 			-- Visit `a_json_array'.
 		do
 			across
-				a_json_array as c
+				a_json_array as v
 			loop
-				c.item.accept (Current)
+				v.accept (Current)
 			end
 		end
 
@@ -43,9 +43,9 @@ feature -- Visitor Pattern
 			-- Visit `a_json_object'.
 		do
 			across
-				a_json_object as c
+				a_json_object as v
 			loop
-				visit_json_object_member (c.key, c.item)
+				visit_json_object_member (@v.key, v)
 			end
 		end
 
@@ -61,6 +61,6 @@ feature -- Visitor Pattern
 		end
 
 note
-	copyright: "2010-2024, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

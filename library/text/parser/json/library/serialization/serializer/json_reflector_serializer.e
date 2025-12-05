@@ -42,11 +42,11 @@ feature {NONE} -- Implementation
 						Result := j_array
 						i := 1
 						across
-							l_special as ic
+							l_special as v
 						loop
 							fn := i.out
 							ctx.on_field_start (fn)
-							j_array.add (to_json (ic.item, ctx))
+							j_array.add (to_json (v, ctx))
 							ctx.on_field_end (fn)
 							i := i + 1
 						end
@@ -147,6 +147,6 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright: "2010-2024, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

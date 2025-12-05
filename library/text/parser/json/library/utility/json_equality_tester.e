@@ -83,12 +83,12 @@ feature -- Status
 						if jo1.count = jo2.count then
 								-- note: the order does not matter.
 							across
-								jo1 as ic
+								jo1 as v
 							until
 								Result = False
 							loop
-								if attached jo2.item (ic.key) as v2 then
-									Result := same_json_values (ic.item, v2)
+								if attached jo2.item (@v.key) as v2 then
+									Result := same_json_values (v, v2)
 								else
 									Result := False
 								end
@@ -123,6 +123,6 @@ feature -- Status
 		end
 
 note
-	copyright: "2010-2022, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

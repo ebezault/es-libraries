@@ -35,10 +35,10 @@ feature -- Conversion
 		do
 			create Result.make (j.count)
 			across
-				j as ic
+				j as v
 			loop
-				if attached json.object (ic.item, Void) as l_object then
-					if attached {HASHABLE} json.object (ic.key, Void) as h then
+				if attached json.object (v, Void) as l_object then
+					if attached {HASHABLE} json.object (@v.key, Void) as h then
 						Result.put (l_object, h)
 					else
 						check
@@ -57,21 +57,23 @@ feature -- Conversion
 		local
 			js: JSON_STRING
 			failed: BOOLEAN
+			k: HASHABLE
 		do
 			create Result.make
 			across
-				o as c
+				o as v
 			loop
-				if attached {JSON_STRING} json.value (c.key) as l_key then
+				k := @v.key
+				if attached {JSON_STRING} json.value (k) as l_key then
 					js := l_key
 				else
-					if attached {READABLE_STRING_GENERAL} c.key as s_key then
+					if attached {READABLE_STRING_GENERAL} k as s_key then
 						create js.make_from_string_general (s_key)
 					else
-						create js.make_from_string (c.key.out)
+						create js.make_from_string (k.out)
 					end
 				end
-				if attached json.value (c.item) as jv then
+				if attached json.value (v) as jv then
 					Result.put (jv, js)
 				else
 					failed := True
@@ -83,6 +85,6 @@ feature -- Conversion
 		end
 
 note
-	copyright: "2010-2014, Javier Velilla and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end -- class JSON_HASH_TABLE_CONVERTER

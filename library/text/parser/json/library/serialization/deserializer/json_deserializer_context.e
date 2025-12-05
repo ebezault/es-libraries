@@ -33,9 +33,9 @@ feature -- Cleaning
 			deserializer_location.wipe_out
 			deserializers_cache := Void
 			across
-				deserializers as ic
+				deserializers as v
 			loop
-				ic.item.reset
+				v.reset
 			end
 			reset_error
 		end
@@ -96,12 +96,12 @@ feature -- Access
 			if Result = Void then
 				o_type := a_type
 				across
-					deserializers as ic
+					deserializers as deser
 				until
 					Result /= Void
 				loop
-					Result := ic.item
-					k_type := ic.key
+					Result := deser
+					k_type := @deser.key
 					if o_type ~ k_type then
 							-- Found
 					elseif
@@ -251,6 +251,6 @@ feature {NONE} -- Implementation
 	deserializers_cache: detachable HASH_TABLE [JSON_DESERIALIZER, TYPE [detachable ANY]]
 
 ;note
-	copyright: "2010-2024, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

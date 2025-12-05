@@ -103,9 +103,9 @@ feature -- Status report
 		do
 			create Result.make_empty
 			across
-				errors as ic
+				errors as e
 			loop
-				Result.append_string (ic.item)
+				Result.append_string (e)
 				Result.append_character ('%N')
 			end
 		end
@@ -830,6 +830,6 @@ feature {NONE} -- JSON String Buffer
 			-- JSON is_number buffer.		
 
 ;note
-	copyright: "2010-2019, Javier Velilla, Jocelyn Fiat, Eiffel Software and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

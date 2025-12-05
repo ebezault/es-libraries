@@ -77,12 +77,12 @@ feature {NONE} -- Implementation
 	reference_info (obj: ANY): detachable TUPLE [identifier: STRING_32; value: ANY; caller_count: INTEGER]
 		do
 			across
-				references as ic
+				references as r
 			until
 				Result /= Void
 			loop
-				if ic.item.value = obj then
-					Result := ic.item
+				if r.value = obj then
+					Result := r
 				end
 			end
 		end
@@ -155,6 +155,6 @@ invariant
 	json_values.count = references.count
 
 note
-	copyright: "2010-2016, Javier Velilla and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end

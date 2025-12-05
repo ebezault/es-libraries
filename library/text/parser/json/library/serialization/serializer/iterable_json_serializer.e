@@ -24,12 +24,12 @@ feature -- Conversion
 				create j_array.make_empty
 				i := 0
 				across
-					arr as ic
+					arr as v
 				loop
 					i := i + 1
 					ctx.on_field_start (i.out)
 					if
-						attached ic.item as l_item and then
+						attached v as l_item and then
 						attached ctx.to_json (l_item, Current) as j_value
 					then
 						j_array.extend (j_value)
@@ -45,6 +45,6 @@ feature -- Conversion
 		end
 
 note
-	copyright: "2010-2016, Javier Velilla and others https://github.com/eiffelhub/json."
+	copyright: "2010-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others https://github.com/eiffelhub/json."
 	license: "https://github.com/eiffelhub/json/blob/master/License.txt"
 end
