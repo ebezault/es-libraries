@@ -1271,7 +1271,7 @@ feature -- Emails
 				error_handler.add_custom_error (0, "Mailer error", "Error occurred while processing email.")
 				storage.save_mail (e)
 			else
-				e.set_is_sent (True)
+				e.mark_sent (Void)
 				storage.save_mail (e)
 			end
 		end
