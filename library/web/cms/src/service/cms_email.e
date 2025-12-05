@@ -33,6 +33,9 @@ feature -- Status report
 	is_sent: BOOLEAN
 			-- Current Email is sent.
 
+
+	sent_at: detachable DATE_TIME
+
 feature -- Element change
 
 	set_id (a_id: READABLE_STRING_8)
@@ -57,9 +60,22 @@ feature -- Element change
 	set_is_sent (b: BOOLEAN)
 		do
 			is_sent := b
+			if not b then
+				sent_at := Void
+			end
+		end
+
+	mark_sent (dt: detachable DATE_TIME)
+		do
+			if dt = Void then
+				create sent_at.make_now_utc
+			else
+				sent_at := dt
+			end
+			set_is_sent (True)
 		end
 
 note
-	copyright: "2011-2021, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
+	copyright: "2011-2025, Jocelyn Fiat, Javier Velilla, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 end

@@ -453,11 +453,16 @@ feature -- Emails
 			lst: LIST [READABLE_STRING_8]
 		do
 			create Result.make_with_capacity (5)
+
+				-- Info related to the processing of the email
 			create obj.make_with_capacity (2)
 			if m.is_sent then
 				obj.put_string ("sent", "status")
+				if attached m.sent_at as dt then
+					obj.put_string ({CMS_API}.date_time_to_iso8601_string (dt), "sent_at")
+				end
 			else
-				obj.put_string ("waiting", "status")
+				obj.put_string ("pending", "status")
 			end
 			if attached m.to_user as u then
 				obj.put_string (u.id.out, "to_user.id")
@@ -467,9 +472,9 @@ feature -- Emails
 				obj.put_string (u.id.out, "from_user.id")
 				obj.put_string (u.name, "from_user.name")
 			end
-
 			Result.put (obj, "info")
 
+				-- Email's data
 			Result.put_string ({CMS_API}.date_time_to_iso8601_string (m.date), "date")
 			Result.put_string (m.subject, "subject")
 			Result.put_string (m.from_address, "from_address")
@@ -609,7 +614,14 @@ feature -- Emails
 
 					if attached {JSON_OBJECT} jo.item ("info") as j_info then
 						if attached j_info.string_item ("status") as st and then st.same_string ("sent") then
-							Result.set_is_sent (True)
+							if
+								attached j_info.string_item ("sent_at") as j_sent_at and then
+								attached {CMS_API}.date_time_from_iso8601_string (j_sent_at.unescaped_string_8) as dt
+							then
+								Result.mark_sent (dt)
+							else
+								Result.set_is_sent (True)
+							end
 						end
 						if
 							attached j_info.string_item ("to_user.id") as j_uid and then
@@ -658,6 +670,10 @@ feature -- Emails
 					attached mail_from_json_string (l_data) as l_email
 				then
 					Result := l_email
+				else
+--					create Result.make (a_from: [like from_address] READABLE_STRING_8, a_to_address: READABLE_STRING_8, a_subject: [like subject] READABLE_STRING_8, a_content: [like content] READABLE_STRING_8)
+				end
+				if Result /= Void then
 					if attached sql_read_string_8 (1) as l_mid then
 						Result.set_id (l_mid)
 					end
@@ -665,13 +681,26 @@ feature -- Emails
 						Result.set_date (l_date)
 					end
 
--- from_user is not yet implemented nor used.					
---					i64 := sql_read_integer_64 (5)
---					if i64 > 0 then
---						Result.set_from_user (create {CMS_PARTIAL_USER}.make_with_id (i64))
---					end
+					if attached sql_read_string_8 (4) as l_status then
+						if l_status.is_case_insensitive_equal ("sent") then
+							Result.set_is_sent (True)
+						end
+					end
 
+						-- From user
+					l_uid := sql_read_string_32 (5)
+					if l_uid /= Void then
+						if l_uid.is_integer_64  then
+							i64 := l_uid.to_integer_64
+							if i64 > 0 then
+								Result.set_from_user (create {CMS_PARTIAL_USER}.make_with_id (i64))
+							end
+						else
+								-- Unicode username ?
+						end
+					end
 
+						-- To user
 					l_uid := sql_read_string_32 (6)
 					if l_uid /= Void then
 						if l_uid.is_integer_64  then
@@ -683,14 +712,8 @@ feature -- Emails
 								-- Unicode username ?
 						end
 					end
-
-
---					l_subject := sql_read_string_8 (7)
-
-					if attached sql_read_string_8 (4) as l_status then
-						if l_status.is_case_insensitive_equal ("sent") then
-							Result.set_is_sent (True)
-						end
+					if attached sql_read_string_8 (7) as l_subject then
+						Result.set_subject (l_subject)
 					end
 				end
 			end
