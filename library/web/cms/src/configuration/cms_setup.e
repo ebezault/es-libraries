@@ -373,6 +373,37 @@ feature -- Access: Site
 			end
 		end
 
+feature -- Metadata
+
+	metadata (k: READABLE_STRING_GENERAL): detachable READABLE_STRING_32
+		do
+			if attached metadata_table as tb then
+				Result := tb [k]
+			end
+		end
+
+	set_metadata (k: READABLE_STRING_GENERAL; v: detachable READABLE_STRING_32)
+		local
+			tb: like metadata_table
+		do
+			tb := metadata_table
+			if v = Void then
+				if tb /= Void then
+					tb.remove (k)
+				end
+			else
+				if tb = Void then
+					create tb.make_caseless (1)
+					metadata_table := tb
+				end
+				tb [k] := v
+			end
+		end
+
+feature {CMS_ACCESS} -- Metadata		
+
+	metadata_table: detachable STRING_TABLE [READABLE_STRING_32]
+
 feature {NONE} -- Constants
 
 	default_webapi_base_path: STRING = "/api"
@@ -574,6 +605,15 @@ feature -- Access: directory
 			s: STRING_32
 		do
 			create Result.make (10)
+			if attached metadata_table as tb then
+				across
+					tb as md
+				loop
+					if not md.is_whitespace then
+						Result [{STRING_32} "Metadata." + (@md.key)] := md
+					end
+				end
+			end
 			Result["Current direction"] := (create {EXECUTION_ENVIRONMENT}).current_working_path.name
 			Result["Site"] := site_location.name
 			Result["Cache"] := cache_location.name
