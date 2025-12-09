@@ -124,6 +124,7 @@ feature -- Prompts
 			until
 				Result /= Void or q
 			loop
+				sh.output.put_string (" ")
 				sh.output.put_string_32 (a_prompt)
 				if l_dft_index > 0 then
 					sh.output.put_string_32 ("[" + l_dft_index.out + "]")
