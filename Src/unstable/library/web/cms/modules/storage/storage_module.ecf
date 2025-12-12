@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-23-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-23-0 http://www.eiffel.com/developers/xml/configuration-1-23-0.xsd" name="storage_module" uuid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890" library_target="storage_module">
+	<description>Storage CMS Module</description>
+	<target name="storage_module">
+		<root all_classes="true"/>
+		<file_rule>
+			<exclude>/\..*$</exclude>
+		</file_rule>
+		<option warning="error" />
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="cms" location="..\..\cms.ecf" readonly="false"/>
+		<library name="cms_model" location="..\..\library\model\cms_model.ecf" readonly="false"/>
+		<library name="http" location="$ISE_LIBRARY\contrib\library\network\protocol\http\http.ecf"/>
+		<library name="json" location="$ISE_LIBRARY\contrib\library\text\parser\json\library\json.ecf" readonly="false"/>
+		<library name="wsf" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\wsf\wsf.ecf"/>
+		<cluster name="src" location=".\" recursive="true"/>
+	</target>
+</system>
+

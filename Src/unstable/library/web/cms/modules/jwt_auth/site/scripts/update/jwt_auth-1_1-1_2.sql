@@ -1,6 +1,6 @@
 CREATE TABLE jwt_auth_new (
   `uid` INTEGER NOT NULL,
-  `token` VARCHAR(1024) NOT NULL,
+  `token` VARCHAR(512) NOT NULL,
   `secret` 	TEXT NOT NULL,
   `apps` 	TEXT,
   `refresh`	TEXT NOT NULL,

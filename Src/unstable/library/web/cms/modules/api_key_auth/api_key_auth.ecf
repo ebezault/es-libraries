@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-23-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-23-0 http://www.eiffel.com/developers/xml/configuration-1-23-0.xsd" name="api_key_auth" uuid="32396231-D684-4802-8B4E-177D2CC32664" library_target="api_key_auth">
+	<target name="api_key_auth">
+		<root all_classes="true"/>
+		<file_rule>
+			<exclude>/EIFGENs$</exclude>
+		</file_rule>
+		<option warning="error"/>
+		<library name="auth_module" location="$ISE_LIBRARY\unstable\library\web\cms\modules\auth\auth.ecf"/>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="cms" location="$ISE_LIBRARY\unstable\library\web\cms\cms.ecf" readonly="false"/>
+		<library name="cms_model" location="$ISE_LIBRARY\unstable\library\web\cms\library\model\cms_model.ecf"/>
+		<library name="cms_session_auth_module" location="$ISE_LIBRARY\unstable\library\web\cms\modules\session_auth\cms_session_auth.ecf" readonly="false"/>
+		<library name="crypto" location="$ISE_LIBRARY\unstable\library\text\encryption\crypto\crypto.ecf"/>
+		<library name="error" location="$ISE_LIBRARY\contrib\library\utility\general\error\error.ecf"/>
+		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
+		<library name="wsf" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\wsf\wsf.ecf"/>
+		<library name="wsf_html" location="$ISE_LIBRARY\contrib\library\web\framework\ewf\wsf_html\wsf_html.ecf"/>
+		<cluster name="src" location=".\">
+			<cluster name="persistence" location="$|persistence\"/>
+			<cluster name="webapi" location="$|webapi\"/>
+		</cluster>
+	</target>
+</system>

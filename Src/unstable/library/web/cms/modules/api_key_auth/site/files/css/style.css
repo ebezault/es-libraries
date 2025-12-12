@@ -1,0 +1,13 @@
+.api-token > form {
+  padding: 0.5rem;
+}
+.api-token.secret form > * input[name=secret] {
+  padding: 1rem;
+  background-color: #faa;
+}
+.api-token.inactive form > * {
+  background-color: #ccc;
+}
+.api-token.revoked form > * {
+  background-color: #fa6;
+}
