@@ -35,6 +35,11 @@
 				<platform value="windows"/>
 			</condition>
 		</external_object>
+		<external_object location="msvcrt.lib">
+            <condition>
+                <platform value="windows"/>
+            </condition>
+        </external_object>		
 		<external_cflag value="`${ISE_LIBRARY}/library/store/dbms/rdbms/mysql/Clib/mysql-config --cflags`">
 			<condition>
 				<platform excluded_value="windows"/>
