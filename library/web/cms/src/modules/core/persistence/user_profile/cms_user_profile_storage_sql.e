@@ -32,7 +32,7 @@ feature -- Access
 			l_parameters.put (a_user.id, "uid")
 			l_parameters.put (a_item_name, "key")
 			sql_query (sql_select_user_profile_item, l_parameters)
-			if not has_error then
+			if not has_error and not sql_after then
 				Result := sql_read_string_32 (2)
 			end
 			sql_finalize_query (sql_select_user_profile_item)
@@ -192,13 +192,13 @@ feature {NONE} -- Queries
 	sql_select_user_profile_items: STRING = "SELECT `key`, value FROM user_profiles WHERE uid=:uid;"
 			-- user profile items for :uid;
 
-	sql_select_user_profile_item: STRING = "SELECT `key`, value FROM user_profiles WHERE uid=:uid AND `key`=:key"
+	sql_select_user_profile_item: STRING = "SELECT `key`, value FROM user_profiles WHERE uid=:uid AND `key`=:key ;"
 			-- user profile items for :uid;
 
-	sql_select_users_with_profile_item: STRING = "SELECT uid FROM user_profiles WHERE `key`=:key and value=:value"
+	sql_select_users_with_profile_item: STRING = "SELECT uid FROM user_profiles WHERE `key`=:key and value=:value ;"
 			-- users with profile item named :key and value :value;
 
-	sql_select_users_with_profile_item_named: STRING = "SELECT uid FROM user_profiles WHERE `key`=:key"
+	sql_select_users_with_profile_item_named: STRING = "SELECT uid FROM user_profiles WHERE `key`=:key ;"
 			-- users with profile item named :key;
 
 	sql_insert_user_profile_item: STRING = "INSERT INTO user_profiles (uid, `key`, value) VALUES (:uid, :key, :value);"
