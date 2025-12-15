@@ -389,6 +389,7 @@ feature -- Access
 	sql_item (a_index: INTEGER): detachable ANY
 		require
 			no_error: not has_error
+			not_after: not sql_after
 			valid_index: sql_valid_item_index (a_index)
 		deferred
 		end
