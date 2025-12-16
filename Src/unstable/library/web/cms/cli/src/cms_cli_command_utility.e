@@ -9,29 +9,56 @@ class
 
 feature -- Utilities
 
-	pop_arguments (args: detachable READABLE_STRING_32): TUPLE [arg, args: detachable READABLE_STRING_32]
+	pop_arguments (args: detachable READABLE_STRING_32): detachable TUPLE [arg: READABLE_STRING_32; args: detachable READABLE_STRING_32]
 		local
 			a: READABLE_STRING_32
 			l_args: READABLE_STRING_32
-			i: INTEGER
+			i, j, prev: INTEGER
 		do
 			if args /= Void and then not args.is_whitespace then
+					-- Skip beginning spaces
 				from
 					i := 1
+				until
+					i > args.count or not args [i].is_space
+				loop
+					i := i + 1
+				end
+				prev := i
+
+					-- Search for next space
+				from
 				until
 					i > args.count or args [i].is_space
 				loop
 					i := i + 1
 				end
+					-- Skip extra spaces
+				if i <= args.count then
+					from
+						j := 0
+					until
+						i + j > args.count or not args [i + j].is_space
+					loop
+						j := j + 1
+					end
+					i := i + j - 1
+				end
 				if i > args.count then
-					a := args
+					if j > 1 then
+						a := args.substring (prev, args.count - j)
+					else
+						a := args.substring (prev, args.count)
+					end
 					l_args := Void
 				else
-					a := args.head (i - 1)
+					a := args.substring (prev, i - j)
 					l_args := args.substring (i + 1, args.count)
 				end
+				Result := [a, l_args]
+			else
+				Result := Void
 			end
-			Result := [a, l_args]
 		end
 
 feature -- Prompts		
