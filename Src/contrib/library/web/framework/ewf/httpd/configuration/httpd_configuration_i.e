@@ -133,12 +133,21 @@ feature -- Element change
 			end
 		end
 
-	set_http_server_name (v: detachable separate READABLE_STRING_8)
+	set_http_server_name_from_separate (v: detachable separate READABLE_STRING_8)
 		do
 			if v = Void then
 				unset_http_server_name
 			else
 				create {IMMUTABLE_STRING_8} http_server_name.make_from_separate (v)
+			end
+		end		
+
+	set_http_server_name (v: detachable READABLE_STRING_8)
+		do
+			if v = Void then
+				unset_http_server_name
+			else
+				http_server_name := v
 			end
 		end
 
