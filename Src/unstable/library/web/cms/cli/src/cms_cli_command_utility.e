@@ -59,6 +59,8 @@ feature -- Utilities
 			else
 				Result := Void
 			end
+		ensure
+			arg_not_empty_if: Result /= Void implies attached Result.arg as e_arg and then not e_arg.is_whitespace
 		end
 
 feature -- Prompts		
