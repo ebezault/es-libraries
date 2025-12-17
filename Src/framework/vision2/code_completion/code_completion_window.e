@@ -194,6 +194,9 @@ feature -- Status report
 			-- Indicates if completion will be reactived automatically when the completion list is closed.
 			-- This is the result of a '.' being entered when completion is active.
 
+	is_auto_completing: BOOLEAN
+			-- Is completion triggered automatically as opposed to selected or approved by [Enter] action?
+
 feature -- Status Setting
 
 	show
@@ -359,7 +362,9 @@ feature {NONE} -- Events handling
 					cc.handle_character (c)
 					select_closest_match
 				else
+					is_auto_completing := True
 					close_and_complete
+					is_auto_completing := False
 					cc.handle_character (c)
 					exit
 				end
@@ -1098,6 +1103,23 @@ feature {NONE} -- Implementation
 --			choice_list.selected_items.first. selected_item.pointer_motion_actions.call ([1,1,1.0,1.0,1.0,1,1])
 		end
 
+	restore_buffered_input
+			-- Restored buffered_input when it was previously removed by `remove_characters_entered_since_display`
+		require
+			buffered_input_not_void: buffered_input /= Void
+			code_completable_not_void: code_completable /= Void
+		do
+			if
+				attached buffered_input as b and
+				attached code_completable as c
+			then
+				c.insert_string (b)
+			else
+				check from_precondition: attached buffered_input end
+				check from_precondition: attached code_completable end
+			end
+		end
+
 	remove_characters_entered_since_display
 			-- Remove characters entered so we may put them back
 		require
@@ -1556,7 +1578,7 @@ invariant
 	choice_list_attached: choice_list /= Void
 
 note
-	copyright: "Copyright (c) 1984-2020, Eiffel Software and others"
+	copyright: "Copyright (c) 1984-2025, Eiffel Software and others"
 	license:   "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
