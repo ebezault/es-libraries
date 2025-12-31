@@ -207,7 +207,7 @@ feature {NATIVE_STRING_HANDLER} -- Access
 					else
 						create Result.make (multi_byte_to_utf_16 (l_c_string.item, default_pointer, 0))
 					end
-					multi_byte_to_utf_16 (l_c_string.item, Result.item, Result.count).do_nothing
+					multi_byte_to_utf_16 (l_c_string.item, Result.item, Result.count // Wchar_length).do_nothing
 				end
 			else
 				if attached Result then
@@ -619,8 +619,16 @@ feature {NONE} -- Implementation
 			}"
 		end
 
+	Wchar_length: INTEGER
+			-- Length of wchar_t.
+		external
+			"C inline use %"eif_eiffel.h%""
+		alias
+			"return sizeof(wchar_t);"
+		end
+
 note
-	copyright: "Copyright (c) 1984-2020, Eiffel Software and others"
+	copyright: "Copyright (c) 1984-2025, Eiffel Software and others"
 	license:   "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
