@@ -86,7 +86,7 @@ feature -- Status setting
 			eif_thr_mutex_destroy (mutex_pointer)
 			mutex_pointer := default_pointer
 		ensure
-			not_set: not is_set
+			not_set: {PLATFORM}.is_thread_capable implies not is_set
 		end
 
 feature -- Obsolete
@@ -150,7 +150,7 @@ feature {NONE} -- Externals
 		end
 
 note
-	copyright: "Copyright (c) 1984-2021, Eiffel Software and others"
+	copyright: "Copyright (c) 1984-2025, Eiffel Software and others"
 	license:   "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
