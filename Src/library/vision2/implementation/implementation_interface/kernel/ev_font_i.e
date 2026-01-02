@@ -243,7 +243,7 @@ feature {EV_FONT, EV_ANY_I} -- Implementation
 			-- Update `Current' with all attributes of `other'.
 		require
 			other_not_void: other /= Void
-			type_identity: same_type (other)
+			type_identity: attached interface as l_interface and then l_interface.same_type (other)
 		do
 			set_values (
 				other.family,
