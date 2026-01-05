@@ -188,6 +188,8 @@ feature -- Element change
 			wel_log_font.update_by_font (wel_font)
 		end
 
+feature {EV_FONT, EV_ANY_I} -- Implementation
+
 	copy_font (other: attached like interface)
 			-- Update `Current' with all attributes of `other'.
 			-- Redefined on Windows as certain properties of fonts
@@ -763,7 +765,7 @@ invariant
 	wel_font_exists: wel_font /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2017, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2026, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
