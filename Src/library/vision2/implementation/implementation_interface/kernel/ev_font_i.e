@@ -243,7 +243,7 @@ feature {EV_FONT, EV_ANY_I} -- Implementation
 			-- Update `Current' with all attributes of `other'.
 		require
 			other_not_void: other /= Void
-			type_identity: same_type (other)
+			type_identity: attached interface as r_interface and then r_interface.same_type (other)
 		do
 			set_values (
 				other.family,
@@ -305,7 +305,7 @@ invariant
 	--vertical_resolution_bigger_than_zero: vertical_resolution > 0
 
 note
-	copyright:	"Copyright (c) 1984-2017, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2026, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
